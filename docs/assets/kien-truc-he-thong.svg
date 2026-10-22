@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="870" viewBox="0 0 1800 870"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#68879a"/></marker></defs><rect width="1800" height="870" fill="white"/>
+<text x="45" y="45" font-family="DejaVu Sans,Arial,sans-serif" font-size="31" font-weight="bold" fill="#183b50" text-anchor="start">Findie · Kiến trúc MVP đề xuất</text>
+<text x="45" y="80" font-family="DejaVu Sans,Arial,sans-serif" font-size="23" font-weight="normal" fill="#183b50" text-anchor="start">R2 lưu ảnh; PostgreSQL lưu nghiệp vụ và vector; .NET kiểm soát mọi quyền truy cập</text>
+<rect x="40" y="315" width="330" height="180" rx="12" fill="#edf3f6" stroke="#8da7b6" stroke-width="2"/>
+<text x="205.0" y="359" font-family="DejaVu Sans,Arial,sans-serif" font-size="29" font-weight="bold" fill="#183b50" text-anchor="middle">React</text>
+<text x="205.0" y="398" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">TypeScript · Vite</text>
+<text x="205.0" y="432" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Giao diện web</text>
+<rect x="505" y="280" width="520" height="250" rx="12" fill="#183b50" stroke="#8da7b6" stroke-width="2"/>
+<text x="765.0" y="324" font-family="DejaVu Sans,Arial,sans-serif" font-size="29" font-weight="bold" fill="white" text-anchor="middle">.NET / ASP.NET Core</text>
+<text x="765.0" y="363" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="white" text-anchor="middle">API · OIDC + cookie · SignalR</text>
+<text x="765.0" y="397" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="white" text-anchor="middle">EF Core · Npgsql · AWS SDK</text>
+<text x="765.0" y="431" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="white" text-anchor="middle">Tác vụ nền bền vững</text>
+<rect x="1180" y="125" width="575" height="175" rx="12" fill="#edf3f6" stroke="#8da7b6" stroke-width="2"/>
+<text x="1467.5" y="169" font-family="DejaVu Sans,Arial,sans-serif" font-size="29" font-weight="bold" fill="#183b50" text-anchor="middle">PostgreSQL + pgvector</text>
+<text x="1467.5" y="208" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Dữ liệu · tin nhắn · tác vụ</text>
+<text x="1467.5" y="242" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Vector Qwen 2048 chiều</text>
+<rect x="1180" y="335" width="575" height="195" rx="12" fill="#edf3f6" stroke="#8da7b6" stroke-width="2"/>
+<text x="1467.5" y="379" font-family="DejaVu Sans,Arial,sans-serif" font-size="29" font-weight="bold" fill="#183b50" text-anchor="middle">Cloudflare R2 riêng tư</text>
+<text x="1467.5" y="418" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Ảnh gốc + bản an toàn tách biệt</text>
+<text x="1467.5" y="452" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Chỉ .NET đọc/ghi đối tượng</text>
+<text x="1467.5" y="486" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Chỉ công khai bản đã được duyệt</text>
+<rect x="1080" y="590" width="675" height="215" rx="12" fill="#edf3f6" stroke="#8da7b6" stroke-width="2"/>
+<text x="1417.5" y="634" font-family="DejaVu Sans,Arial,sans-serif" font-size="29" font-weight="bold" fill="#183b50" text-anchor="middle">Python / FastAPI nội bộ</text>
+<text x="1417.5" y="673" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Qwen3-VL-Embedding-2B: vector text/ảnh</text>
+<text x="1417.5" y="707" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">Qwen3-VL-4B-Instruct: đề xuất vùng cần che</text>
+<text x="1417.5" y="741" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="normal" fill="#183b50" text-anchor="middle">OpenCV: làm mờ / che kín + bỏ EXIF</text>
+<path d="M370,405 H505" fill="none" stroke="#68879a" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="438" y="387" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="normal" fill="#183b50" text-anchor="middle">HTTPS</text>
+<path d="M1025,330 H1100 V212 H1180" fill="none" stroke="#68879a" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M1025,435 H1180" fill="none" stroke="#68879a" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M765,530 V698 H1080" fill="none" stroke="#68879a" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="735" y="615" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="normal" fill="#183b50" text-anchor="end">Ảnh / mô tả đã kiểm tra</text>
+<text x="735" y="647" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="normal" fill="#183b50" text-anchor="end">Kết quả trả về cho .NET</text>
+<text x="45" y="770" font-family="DejaVu Sans,Arial,sans-serif" font-size="24" font-weight="bold" fill="#183b50" text-anchor="start">Con người kiểm tra bản xử lý trước khi công khai.</text>
+<text x="45" y="808" font-family="DejaVu Sans,Arial,sans-serif" font-size="22" font-weight="normal" fill="#183b50" text-anchor="start">FastAPI không giữ khóa R2 hay quyền truy cập database nghiệp vụ.</text>
+<text x="45" y="844" font-family="DejaVu Sans,Arial,sans-serif" font-size="21" font-weight="normal" fill="#183b50" text-anchor="start">Bản thiết kế ngày 22/10/2026 · Chưa triển khai hoặc đo chất lượng AI.</text>
+</svg>

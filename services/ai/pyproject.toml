@@ -1,0 +1,16 @@
+[project]
+name = "findie-ai"
+version = "0.1.0"
+description = "Internal Findie AI service scaffold; model experiments run in Colab."
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "fastapi==0.159.1",
+  "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+dev = ["httpx2==2.16.0", "pytest==9.1.1"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
