@@ -14,4 +14,5 @@
 .idea/
 notebooks/colab/outputs/
 .cache/docs/
+.cache/db-backups/
 *.log

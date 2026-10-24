@@ -1,4 +1,4 @@
-"""Exercise the built API's dependency status without PostgreSQL or model downloads."""
+"""Exercise API status and authentication boundaries without PostgreSQL or model downloads."""
 
 import json
 import os
@@ -10,7 +10,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 
 class AiHandler(BaseHTTPRequestHandler):
@@ -27,13 +27,14 @@ class AiHandler(BaseHTTPRequestHandler):
         pass
 
 
-def get(path):
+def get(path, method="GET"):
     try:
-        response = urlopen(f"http://127.0.0.1:{api_port}{path}", timeout=10)
+        response = urlopen(Request(f"http://127.0.0.1:{api_port}{path}", method=method), timeout=10)
     except HTTPError as error:
         response = error
     with response:
-        return response.status, json.load(response)
+        body = response.read()
+        return response.status, json.loads(body) if body else None
 
 
 api_directory = Path(__file__).resolve().parents[1]
@@ -49,6 +50,8 @@ with ThreadingHTTPServer(("127.0.0.1", 0), AiHandler) as ai, tempfile.TemporaryF
         "Ai__BaseUrl": f"http://127.0.0.1:{ai.server_port}",
         "Ai__ServiceToken": "smoke-token",
         "Ai__TimeoutSeconds": "1",
+        "Authentication__Google__ClientId": "",
+        "Authentication__Google__ClientSecret": "",
     }
     process = subprocess.Popen(
         ["dotnet", "run", "--no-build", "--no-launch-profile", "--urls", f"http://127.0.0.1:{api_port}"],
@@ -71,13 +74,20 @@ with ThreadingHTTPServer(("127.0.0.1", 0), AiHandler) as ai, tempfile.TemporaryF
             "name": "Findie API", "stage": "scaffold", "database": "unavailable", "ai": "unavailable",
             "features": {"business": False, "authentication": False, "storage": False},
         }
+        for path in ("/api/users/me", "/api/reception-points", "/api/reception-points/00000000-0000-0000-0000-000000000001"):
+            assert get(path) == (401, None)
+        assert get("/api/auth/google")[0] == 503
+        assert get("/api/auth/google?returnUrl=https://evil.example")[0] == 400
+        assert get("/api/auth/google/callback")[0] == 401
+        for endpoint in ("register", "login", "refresh", "forgotPassword", "resetPassword", "manage/2fa", "manage/info"):
+            assert get(f"/api/auth/{endpoint}", "POST")[0] == 404
         assert AiHandler.saw_token
         AiHandler.ready = True
         assert get("/api/system/status")[1]["ai"] == "ready"
         ai.shutdown()
         ai.server_close()
         assert get("/api/system/status")[1]["ai"] == "unavailable"
-        print("PASS: liveness, database failure, AI readiness/failure, token header, scaffold flags")
+        print("PASS: liveness, database failure, AI readiness/failure, token header, feature flags, unauthorized endpoints")
     finally:
         process.terminate()
         try:

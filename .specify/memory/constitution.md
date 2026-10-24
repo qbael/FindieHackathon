@@ -1,9 +1,20 @@
 <!--
-Báo cáo tác động đồng bộ — 2026-10-22.
-Phiên bản 1.1.0 -> 1.1.1 theo yêu cầu chủ dự án: chọn Qwen3-VL-4B-Instruct.
-Đồng bộ tài liệu Markdown/Word, sơ đồ kiến trúc và ERD; các nguyên tắc không đổi.
-Embedding tiếp tục dùng Qwen3-VL-Embedding-2B, vector 2048 chiều.
-Chưa triển khai mô hình hoặc đo VRAM/độ trễ; không có di trú dữ liệu.
+Báo cáo tác động đồng bộ — 2026-10-23.
+Phiên bản 1.3.0 -> 1.4.0 theo yêu cầu trực tiếp của chủ dự án, là phê duyệt sửa đổi này.
+Lý do: tuyệt đối không lưu ảnh gốc đầu vào trên R2; chỉ lưu output đã xử lý ở Python.
+Giữ thiết kế 1.3.0: Python sở hữu findie_search/hybrid; .NET giữ nghiệp vụ; RabbitMQ lâu dài.
+Mở rộng nguyên tắc II, IV, V: ảnh gốc chỉ ở bộ nhớ ứng dụng trong request có deadline,
+transport ảnh tạm không durable/DLQ; retry ảnh đầu vào mất khi process mất RAM.
+Tác động: đồng bộ đặc tả, kiến trúc, công nghệ, thiết kế DB và các bản tài liệu/sơ đồ phát hành.
+DDL/ERD/từ điển 16 bảng/164 cột là snapshot bootstrap trước hybrid, không phải schema đích.
+TODO migration: thay FK gốc bắt buộc bằng processed_object_id, object_kind processed và retention;
+không diễn giải original_object_id thành output. Kiểm kê/dọn original cũ có kiểm soát nếu có.
+Tiếp tục migration findie_search/ACL/FTS, vector không FK xuyên DB, outbox snapshot/tombstone
+và document_version. ai_jobs.redact_image bootstrap không biểu diễn được luồng ảnh tạm mới.
+TODO triển khai: queue ảnh non-durable/exclusive/auto-delete, nonpersistent/TTL/no body DLQ, chặn raw log/
+backup; broker có thể page xuống đĩa, không tuyên bố bảo đảm chỉ RAM hoặc xóa forensic.
+RabbitMQ.Client/aio-pika/psycopg 3 và cấu hình hybrid là đề xuất chưa cài/chưa đo.
+Chỉ sửa tài liệu; không đổi SQL/runtime hoặc thực hiện di trú dữ liệu trong lần cập nhật này.
 -->
 
 # Hiến chương dự án Findie
@@ -43,7 +54,14 @@ kiểm tra quyền.
 Dữ liệu trả về công khai và đầu vào tìm kiếm KHÔNG ĐƯỢC chứa câu trả lời xác minh, tin nhắn
 riêng hoặc địa chỉ nhà của cá nhân. Chỉ người gửi yêu cầu và người xét duyệt có quyền mới
 được xem câu trả lời. Bằng chứng riêng tư KHÔNG ĐƯỢC đưa vào vector tìm kiếm công khai.
-Tệp tải lên PHẢI được kiểm tra nội dung thực tế, dung lượng, kích thước ảnh và quyền truy cập.
+Ảnh gốc đầu vào, kể cả ảnh truy vấn, KHÔNG ĐƯỢC ghi vào R2, tệp tạm ứng dụng, DB/outbox,
+nhật ký, DLQ hoặc backup. .NET PHẢI kiểm quyền/giới hạn byte và giữ upload trong bộ nhớ có
+giới hạn; Python PHẢI giải mã, kiểm MIME/pixel, nhận diện vùng nhạy cảm và xử lý trước khi
+có thể lưu bất kỳ object ảnh nào. Có vùng nhạy cảm PHẢI che/mờ; không có vùng nhạy cảm vẫn
+PHẢI chuẩn hóa, loại EXIF và encode ảnh mới. Lỗi mô hình KHÔNG ĐƯỢC coi là không nhạy cảm;
+không có output hợp lệ thì KHÔNG ĐƯỢC ghi R2. Không có API/download ảnh gốc. Byte đầu vào
+chỉ ở RAM .NET/Python trong request, PHẢI được bỏ sau hoàn tất/lỗi/deadline; transport broker
+tạm có giới hạn riêng và không tạo cam kết forensic chỉ RAM.
 Thông tin bí mật PHẢI nằm ở phía máy chủ; nhật ký KHÔNG ĐƯỢC chứa thông tin đăng nhập, token
 hoặc bằng chứng riêng tư. Kế hoạch triển khai PHẢI quy định giới hạn tần suất cho đăng tin,
 gửi yêu cầu, tải tệp và nhắn tin.
@@ -71,6 +89,13 @@ chỉ được so sánh trong các không gian mô hình tương thích. Vector 
 danh mô hình, phiên bản mô hình, số chiều và phiên bản nội dung nguồn; kết quả từ nội dung
 cũ KHÔNG ĐƯỢC ghi đè vector biểu diễn nội dung mới hơn.
 
+Python PHẢI tạo, kiểm tra, chuẩn hóa và lưu embedding vào database tìm kiếm riêng, đồng thời
+thực hiện hybrid search. Baseline đề xuất kết hợp cosine pgvector với PostgreSQL full-text
+search bằng weighted RRF; KHÔNG ĐƯỢC cộng điểm khác thang đo hoặc tự suy diễn từ khóa OCR
+cho truy vấn chỉ có ảnh. Bảng cấu hình/mục tiêu độ chính xác theo trường hợp ở mục 5.3 của
+[kiến trúc hệ thống](../../docs/system-architecture.md) là nguồn chuẩn để hiệu chỉnh và đo;
+KHÔNG ĐƯỢC trình bày trọng số hoặc mục tiêu chưa đo như độ chính xác đã đạt.
+
 Bài đăng hợp lệ PHẢI được giữ lại khi AI lỗi, kèm trạng thái lập chỉ mục rõ ràng và cơ chế
 thử lại. KHÔNG ĐƯỢC giữ giao dịch cơ sở dữ liệu mở trong lúc mô hình suy luận. Tìm kiếm PHẢI
 phân biệt không có kết quả với lỗi dịch vụ, đồng thời cung cấp bộ lọc cơ bản khi AI không
@@ -78,10 +103,31 @@ khả dụng. Việc mở rộng thời gian hoặc khu vực PHẢI được hi
 tìm kiếm tiếng Việt và đối sánh ảnh PHẢI được đánh giá bằng dữ liệu có nhãn trước khi công
 bố các khẳng định về chất lượng.
 
+.NET PHẢI ghi job/outbox chứa snapshot công khai hoặc tombstone cùng giao dịch thay nguồn,
+duyệt/thu hồi ảnh, nơi giữ, xuất bản/ẩn, trao trả hoặc xóa; phát lệnh sau commit qua RabbitMQ.
+Phiên bản tài liệu từng món PHẢI tăng đơn điệu, kèm phiên bản/hash từng nguồn. Python PHẢI
+ghi có điều kiện theo phiên bản và giữ watermark/tombstone để message cũ không phục hồi
+nội dung đã gỡ. .NET PHẢI kiểm quyền, điều kiện hiển thị và phiên bản nguồn hiện tại trước
+mỗi DTO kết quả và lượt đọc chi tiết; loại ứng viên cũ, chỉ lấy bù trong giới hạn hữu hạn.
+Giao nhận có thể lặp; kết quả PHẢI giữ mã job, correlation, lease, phiên bản/hash nguồn và cấu hình mô
+hình. Python PHẢI commit vector/bản chiếu tìm kiếm trước khi phát biên nhận thành công;
+transaction này KHÔNG ĐƯỢC coi là nguyên tử với transaction hoàn tất job của .NET. .NET PHẢI
+kiểm biên nhận trước khi commit trạng thái job, chỉ ACK sau commit hoặc sau khi chủ đích
+loại kết quả trùng/lỗi thời. Python chỉ ACK lệnh sau khi kết quả được broker
+xác nhận và định tuyến. Retry PHẢI hữu hạn, do .NET lưu số lần thử/lịch thử lại; message sai
+schema hoặc poison vĩnh viễn của lệnh chỉ mục bền vững PHẢI vào DLQ có retention,
+KHÔNG ĐƯỢC lặp requeue vô hạn. Ngoại lệ ảnh gốc: `image.redact` và message ảnh đầu vào
+PHẢI là request/reply tạm, không ghi raw bytes trong durable job/outbox hoặc body DLQ.
+Chỉ retry khi ảnh còn trong RAM và chưa hết deadline; crash/mất RAM PHẢI yêu cầu tải lại,
+không hứa phát lại ảnh gốc từ job bền vững. Lỗi kết thúc chỉ giữ mã lỗi an toàn và drop body.
+
 ### V. Xây dựng hệ thống tối giản có thể kiểm chứng
 
-MVP PHẢI bắt đầu với một giao diện React, một backend nghiệp vụ .NET, một dịch vụ AI
-FastAPI nội bộ và một cơ sở dữ liệu PostgreSQL, cùng kho lưu tệp ảnh riêng. Dịch vụ hoặc
+MVP PHẢI bắt đầu với một giao diện React, một backend nghiệp vụ .NET, một Python AI worker,
+RabbitMQ, một PostgreSQL instance với hai logical database `findie`/`findie_search` và kho
+lưu tệp ảnh riêng. `findie` chỉ do .NET truy cập; `findie_search` chỉ do Python truy cập.
+Không cần thêm sản phẩm hoặc máy chủ vector DB cho baseline. FastAPI chỉ phục vụ health
+và vận hành nội bộ; lệnh/kết quả AI PHẢI đi qua RabbitMQ. Dịch vụ hoặc
 thư viện bổ sung PHẢI giải quyết một nhu cầu hiện tại đã được ghi nhận. Tái sử dụng khả năng
 sẵn có của nền tảng và cách tổ chức trong dự án trước khi thêm lớp trừu tượng hoặc hạ tầng.
 
@@ -94,8 +140,9 @@ triển khai và hiệu năng chưa đo PHẢI được ghi chú đúng thực t
 
 ## Bộ công nghệ và ranh giới trách nhiệm
 
-Bốn nền tảng đã chọn dưới đây được lấy từ đặc tả sản phẩm. Công nghệ bổ trợ vẫn là phương án
-đề xuất cho đến khi kế hoạch tính năng ghi nhận việc lựa chọn và các phiên bản tương thích.
+Các nền tảng đã chọn dưới đây được lấy từ đặc tả sản phẩm và yêu cầu sửa đổi của chủ dự án.
+Công nghệ bổ trợ vẫn là phương án đề xuất cho đến khi kế hoạch tính năng ghi nhận việc
+lựa chọn và các phiên bản tương thích.
 [Tài liệu kiến trúc hệ thống](../../docs/system-architecture.md) cụ thể hóa thiết kế đề xuất,
 không tự biến thư viện hoặc mô hình đang cân nhắc thành yêu cầu bắt buộc của hiến chương.
 
@@ -103,24 +150,43 @@ không tự biến thư viện hoặc mô hình đang cân nhắc thành yêu c�
 | --- | --- | --- |
 | Giao diện web | React | TypeScript và Vite |
 | API nghiệp vụ | .NET | ASP.NET Core Web API; EF Core với Npgsql |
-| Dịch vụ AI | Python với FastAPI | Qwen3-VL-Embedding-2B cho vector văn bản/ảnh; Qwen3-VL-4B-Instruct đề xuất vùng nhạy cảm; OpenCV làm mờ hoặc che kín vùng đã xác nhận |
-| Dữ liệu | PostgreSQL | pgvector và thư viện tích hợp .NET; bắt đầu bằng tìm kiếm vector chính xác |
+| Dịch vụ AI | Python AI worker; FastAPI cho health/vận hành | Qwen3-VL-Embedding-2B cho vector văn bản/ảnh; Qwen3-VL-4B-Instruct cho nhận diện/OCR/vùng nhạy cảm; OpenCV xử lý ảnh |
+| Kết nối .NET–Python | RabbitMQ, AMQP 0-9-1 lâu dài | RabbitMQ.Client cho .NET, aio-pika cho Python; chưa cài đặt/chốt phiên bản |
+| Dữ liệu nghiệp vụ | PostgreSQL, database `findie`; chỉ .NET | EF Core/Npgsql cho nghiệp vụ, job/outbox và metadata R2 |
+| Vector và tìm kiếm | PostgreSQL + pgvector, database `findie_search`; chỉ Python | psycopg 3, vector cosine chính xác 2048 chiều, PostgreSQL FTS và weighted RRF; cấu hình cần đo |
 | Nhắn tin | .NET quản lý và kiểm tra quyền | SignalR, với tin nhắn lưu bền vững trong PostgreSQL |
-| Ảnh và chỉ đường | Cloudflare R2 riêng tư đã chọn; PostgreSQL lưu tham chiếu tệp | AWS SDK for .NET qua S3 API; tách ảnh gốc và bản an toàn; liên kết chỉ đường thông thường |
+| Ảnh và chỉ đường | Cloudflare R2 riêng tư chỉ chứa ảnh output đã xử lý; PostgreSQL lưu tham chiếu output | AWS SDK for .NET qua S3 API; một processed object hiện hành mỗi ảnh; liên kết chỉ đường thông thường |
 
 React PHẢI gọi qua .NET để thực hiện thao tác nghiệp vụ. .NET PHẢI quản lý quy tắc nghiệp vụ,
 phân quyền, truy cập PostgreSQL, điều kiện xuất hiện trong tìm kiếm và lưu trữ tin nhắn bền
-vững. FastAPI PHẢI chỉ thực hiện suy luận mô hình và xử lý ảnh bằng OpenCV; KHÔNG ĐƯỢC quản lý
-yêu cầu nhận đồ, nơi giữ, quyền hội thoại hoặc truy cập trực tiếp cơ sở dữ liệu nghiệp vụ.
-.NET có thể gửi ảnh gốc riêng tư đã kiểm tra đến API xử lý ảnh nội bộ để phát hiện vùng cần
-che và tạo bản an toàn; dữ liệu này KHÔNG ĐƯỢC ghi log hoặc dùng làm vector công khai.
+vững, quản lý job/outbox, đọc/ghi R2 và tạo DTO từ dữ liệu nghiệp vụ hiện tại. Python PHẢI thực hiện embedding,
+nhận diện/OCR và toàn bộ xử lý ảnh: giải mã, kiểm MIME/pixel, chuẩn hóa, EXIF, resize, làm
+mờ/che và encode; kiểm vector, lưu vector/bản chiếu công khai và thực hiện hybrid search
+trong `findie_search`. .NET KHÔNG ĐƯỢC giải mã/biến đổi ảnh, tạo/ghi/truy vấn vector hoặc
+xếp hạng hybrid. Python KHÔNG ĐƯỢC quản lý yêu
+cầu nhận đồ, nơi giữ, quyền hội thoại hoặc truy cập trực tiếp DB nghiệp vụ/R2.
+.NET chỉ gửi byte ảnh gốc từ bộ nhớ qua luồng RabbitMQ tạm để Python tạo output;
+dữ liệu này KHÔNG ĐƯỢC ghi R2, log, durable outbox hoặc dùng làm vector công khai.
 Chỉ mô tả công khai, ảnh an toàn đã được duyệt hoặc đầu vào truy vấn tạm được phép xử lý
 mới được dùng để tạo vector. Qwen chỉ đề xuất vùng cần che; OpenCV áp dụng xử lý và con người
-kiểm tra trước khi công khai. Khi xử lý hoặc duyệt lỗi, KHÔNG ĐƯỢC trả ảnh gốc thay thế.
+kiểm tra output trước khi công khai. Khi cần che thêm, chỉ xử lý lại output hiện có hoặc
+yêu cầu tải lại ảnh gốc; không thể lấy lại hay bỏ mờ từ một original đã lưu. Khi xử lý hoặc
+duyệt lỗi, KHÔNG ĐƯỢC trả ảnh gốc thay thế.
 
-Lưu lượng công khai PHẢI dùng HTTPS. FastAPI và PostgreSQL KHÔNG ĐƯỢC truy cập trực tiếp từ
-internet công khai. Lời gọi giữa các dịch vụ PHẢI kiểm tra định danh bên gọi và đầu vào,
-áp dụng thời gian chờ và xử lý lỗi rõ ràng. Thời điểm sự kiện hệ thống PHẢI được lưu theo
+Lưu lượng công khai PHẢI dùng HTTPS. FastAPI, RabbitMQ và PostgreSQL KHÔNG ĐƯỢC truy cập trực
+tiếp từ internet công khai. Mỗi service PHẢI giữ kết nối broker riêng lâu dài, tái sử dụng
+channel publish/consume, có heartbeat và reconnect; KHÔNG ĐƯỢC gọi HTTP trực tiếp cho AI.
+Broker PHẢI kiểm tra định danh, ACL theo exchange/queue và bảo vệ dữ liệu khi truyền.
+Ảnh dùng body AMQP nhị phân, metadata JSON nhỏ trong header; không base64 hoặc URL tùy ý.
+Giới hạn cơ sở đề xuất là 10 MiB cho mỗi body ảnh; văn bản/biên nhận/ứng viên dùng JSON,
+vector được Python lưu trực tiếp tại database tìm kiếm. Broker không
+là kho ảnh lâu dài nhưng vẫn có dữ liệu riêng tư trong message và có thể trên đĩa; PHẢI có
+retention/TTL và giới hạn hàng đợi phù hợp. Queue ảnh `findie.ai.image` PHẢI non-durable,
+auto-delete, message nonpersistent, TTL hữu hạn và không dead-letter raw body; cuối luồng
+ACK/drop và chỉ giữ mã lỗi an toàn. Topology/owner cần chốt ở bootstrap. RabbitMQ vẫn có
+thể page message nonpersistent xuống đĩa: TTL/logical delete không bảo đảm xóa forensic.
+PHẢI chặn raw body log, DLQ và backup. Hợp đồng message PHẢI kiểm đầu vào, timeout
+và lỗi rõ ràng. Thời điểm sự kiện hệ thống PHẢI được lưu theo
 UTC và hiển thị theo `Asia/Ho_Chi_Minh`; ngày và khoảng giờ do người dùng ước lượng PHẢI
 giữ nguyên tính không chắc chắn.
 
@@ -134,17 +200,25 @@ vụ (SLA).
 
 ### Luồng kỹ thuật bắt buộc
 
-1. **Đăng tin và lập chỉ mục:** React gửi thông tin món đồ và ảnh đến .NET. Backend kiểm tra
-   định danh, dữ liệu đầu vào và thông tin nơi giữ, lưu ảnh gốc riêng tư trên R2 cùng bài đăng, rồi ghi nhận
-   tác vụ xử lý ảnh và lập chỉ mục. Chỉ ảnh an toàn đã được duyệt mới được hiển thị công khai
-   và lập chỉ mục ảnh; bài đăng/mô tả hợp lệ vẫn được giữ khi xử lý ảnh lỗi. Backend gọi FastAPI bên ngoài giao dịch cơ sở dữ liệu, kiểm
-   tra siêu dữ liệu vector trả về và phiên bản nội dung hiện tại, rồi lưu vector tương thích.
-   Khi lỗi, bài đăng vẫn có thể được xem qua danh sách cơ bản và thử lập chỉ mục lại sau.
+1. **Đăng tin và lập chỉ mục:** React gửi dữ liệu và ảnh đến .NET; backend kiểm nghiệp vụ,
+   quyền/giới hạn byte, giữ ảnh gốc trong RAM và gửi `image.redact` tạm qua RabbitMQ. Python
+   kiểm tệp, nhận diện nhạy cảm, che/mờ nếu có và luôn chuẩn hóa/loại EXIF/encode output;
+   lỗi hoặc không có output hợp lệ thì không ghi R2. .NET nhận output, kiểm hợp đồng/hash/
+   số byte rồi mới dự trữ object loại `processed`, ghi output riêng tư vào R2 ngoài transaction.
+   Sau upload thành công, .NET commit metadata/liên kết ảnh và snapshot/outbox nghiệp vụ.
+   Ảnh chờ người có quyền duyệt, chưa vào manifest chỉ mục ảnh; chỉ output đã duyệt mới
+   công khai và được Python lưu embedding vào `findie_search`. Byte gốc bị bỏ khi xong/lỗi/
+   deadline; crash cần tải lại. Job/outbox chỉ mục từ output đã lưu có thể retry bền vững.
+   Python commit vector/bản chiếu/FTS trước biên nhận; .NET commit trạng thái job riêng.
+   Bài đăng/mô tả hợp lệ vẫn có thể được giữ và xem bằng danh sách cơ bản khi xử lý ảnh lỗi.
 2. **Tìm kiếm:** React gửi mô tả tiếng Việt hoặc ảnh, kèm điều kiện khu vực và thời gian nếu
-   có. .NET từ chối truy vấn rỗng, lấy vector tương ứng và chỉ tìm trong các bài đăng đủ điều
-   kiện, chưa trao trả. Tìm bằng văn bản và bằng ảnh là hai nhánh riêng. Đặc tả tính năng PHẢI
-   quy định hành vi khi có cả hai đầu vào; KHÔNG ĐƯỢC kết hợp điểm nếu chưa đánh giá. Kết quả
-   hiển thị đúng người hoặc nơi đang giữ thực tế và cách nhận lại tương ứng.
+   có. .NET từ chối truy vấn rỗng, gửi `search.hybrid` bằng correlation/deadline hữu hạn qua
+   RabbitMQ. Python tạo vector tạm và tìm trong `findie_search`, lọc trước khi lấy ứng viên,
+   hợp nhất thứ hạng từ khóa/vector theo profile phù hợp, trả ID cùng phiên bản/nguồn/hạng.
+   .NET kiểm quyền, bộ lọc, nguồn và tình trạng hiện tại, loại ứng viên cũ rồi tạo DTO giữ
+   thứ tự hợp lệ; khi cần chỉ refill hữu hạn. Ảnh-only dùng vector và bộ lọc, không bịa nhánh
+   từ khóa; kết hợp văn bản/ảnh PHẢI theo profile đã đánh giá. Khi tìm kiếm không khả dụng,
+   .NET thông báo rõ và cung cấp danh sách/bộ lọc nghiệp vụ cơ bản.
 3. **Yêu cầu nhận đồ và hội thoại:** Với đồ do cá nhân giữ, .NET lưu yêu cầu và câu trả lời
    nếu có. Người đang giữ có quyền phê duyệt hoặc từ chối. Chỉ phê duyệt mới cho phép mở
    hội thoại giữa các bên. Tin nhắn PHẢI được lưu bền vững trước khi xác nhận gửi thành công;
@@ -184,8 +258,8 @@ vụ (SLA).
 
 ### Các quyết định cần chốt trong kế hoạch tính năng
 
-- **TODO(IDENTITY):** Chọn cách đăng nhập và quản lý phiên, quyền xem khi chưa đăng nhập,
-  cách cấp quyền nhân viên trước khi triển khai tài khoản hoặc luồng được bảo vệ.
+- **TODO(IDENTITY):** Đã chọn tạm thời chỉ Google OAuth và phiên cookie Identity ngày 24/10/2026;
+  còn quyền xem khi chưa đăng nhập, thời hạn phiên và cách cấp quyền nhân viên.
 - **TODO(RECOVERY_POLICY):** Quy định người tạo câu hỏi và việc bắt buộc trả lời, bằng chứng
   khi xác minh trực tiếp, duyệt nhiều yêu cầu, rút yêu cầu hoặc thu hồi phê duyệt, quyền hội
   thoại sau đổi nơi giữ hoặc hoàn tất trao trả, bước đồng ý trước tiếp nhận nếu có và người
@@ -195,8 +269,18 @@ vụ (SLA).
 - **TODO(SEARCH_ACCEPTANCE):** Quy định độ rộng khu vực và thời gian, hành vi khi có cả hai
   đầu vào, dữ liệu đánh giá và mục tiêu đo được về chất lượng, độ trễ trước khi nghiệm thu AI.
 - **TODO(IMPLEMENTATION_BASELINE):** Chốt phiên bản môi trường chạy, thư viện và mô hình,
-  việc chọn công nghệ bổ trợ, cấu hình R2 và giới hạn tải lên, hạ tầng triển khai, phần cứng
-  và ngân sách trong kế hoạch.
+  việc chọn công nghệ bổ trợ, cấu hình R2 và giới hạn tải lên/pixel, hạ tầng triển khai,
+  phần cứng và ngân sách trong kế hoạch. Chốt hợp đồng RabbitMQ, giới hạn byte/header/queue,
+  heartbeat/reconnect, timeout lease, publisher confirm/mandatory routing, ACK, backoff/DLQ,
+  ACL/retention; kiểm thử message trùng, mất kết nối và crash giữa DB–broker. Tái dùng
+  `ai_jobs` cho job/lease phù hợp; schema bootstrap chưa có outbox snapshot/tombstone hoặc
+  đầy đủ loại lệnh đồng bộ/xóa. Trước triển khai PHẢI có migration tạo kho tìm kiếm và ACL,
+  chuyển/tạo lại vector bỏ FK xuyên DB, FTS/GIN, outbox bền vững và ánh xạ `document_version`;
+  kiểm thử chỉ mục trễ, đổi nguồn/duyệt, ẩn/xóa và kết quả cũ sau tombstone. Không đổi SQL
+  hoặc triển khai migration trong lần cập nhật tài liệu này.
+  Migration ảnh PHẢI bỏ FK original bắt buộc, dùng `processed_object_id`/kind `processed`,
+  không lưu prefix original/temporary, tách xử lý ảnh tạm khỏi retry job bền vững; kiểm kê
+  original cũ nếu có và lập kế hoạch dọn có kiểm soát, không xóa dữ liệu trong lần sửa này.
 
 Đây là các quyết định được ghi rõ để xử lý sau, không phải chỗ trống chưa điền của mẫu hiến chương.
 
@@ -224,5 +308,13 @@ không thay đổi các quy tắc. Phiên bản 1.1.0 ghi nhận R2, phương á
 xử lý ảnh riêng tư nội bộ để tạo bản công khai an toàn theo yêu cầu chủ dự án. Đây là thay
 đổi thiết kế tài liệu; chưa có dữ liệu hay ứng dụng vận hành cần di trú. Phiên bản 1.1.1
 ghi nhận lựa chọn Instruct 4B theo yêu cầu chủ dự án ngày 2026-10-22.
+Phiên bản 1.2.0 mở rộng ranh giới Python/.NET và bắt buộc kết nối RabbitMQ lâu dài theo yêu
+cầu trực tiếp của chủ dự án ngày 2026-10-23; đây là phê duyệt áp dụng sửa đổi tài liệu.
+Phiên bản 1.3.0 bổ sung Python sở hữu kho vector và hybrid search, tách hai logical database
+và đồng bộ chỉ mục có kiểm soát theo yêu cầu trực tiếp của chủ dự án cùng ngày; yêu cầu này
+là phê duyệt áp dụng sửa đổi. DDL bootstrap cần migration trước triển khai thiết kế mới.
+Phiên bản 1.4.0 giới hạn R2 chỉ lưu output đã xử lý, loại lưu ảnh gốc và retry ảnh gốc bền
+vững theo yêu cầu trực tiếp của chủ dự án ngày 2026-10-23, là phê duyệt áp dụng sửa đổi.
+FK original và loại object trong DDL cũ không tương thích, phải migration trước triển khai.
 
-**Phiên bản**: 1.1.1 | **Ngày phê chuẩn**: 2026-10-21 | **Sửa đổi gần nhất**: 2026-10-22
+**Phiên bản**: 1.4.0 | **Ngày phê chuẩn**: 2026-10-21 | **Sửa đổi gần nhất**: 2026-10-23

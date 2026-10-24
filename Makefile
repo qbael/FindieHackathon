@@ -1,9 +1,11 @@
-.PHONY: setup db-up db-down db-check api ai web check
+.PHONY: setup db-up db-down db-migrate db-check api-integration api ai web check
 
 setup:
 	python3 scripts/init_env.py
 	uv sync --project services/ai --locked
 	dotnet restore apps/api --locked-mode
+	dotnet restore apps/api/tests/auth --locked-mode
+	dotnet tool restore
 	npm ci --prefix apps/web
 
 db-up:
@@ -12,8 +14,17 @@ db-up:
 db-down:
 	docker compose down
 
+db-migrate:
+	set -a; . ./.env; set +a; python3 scripts/db/migrate.py
+	set -a; . ./.env; set +a; python3 scripts/db/provision_search.py
+
 db-check:
-	docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < docs/database-check.sql
+	dotnet build apps/api --no-restore
+	python3 apps/api/tests/integration.py
+	python3 -m unittest discover -s tests -p 'test_search_schema.py' -v
+
+api-integration: db-check
+
 
 api:
 	set -a; . ./.env; set +a; dotnet run --project apps/api

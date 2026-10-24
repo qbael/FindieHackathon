@@ -5,15 +5,15 @@ Tài liệu sản phẩm, thiết kế, hướng dẫn phát triển và tư li�
 ## Sản phẩm và thiết kế
 
 - Đặc tả ứng dụng: [Markdown](DAC_TA_FINDIE.md), [Word](DAC_TA_FINDIE.docx), [PDF](DAC_TA_FINDIE.pdf).
-- [Kiến trúc hệ thống](system-architecture.md).
-- Cơ sở dữ liệu: [thiết kế](database-design.md), [từ điển cột](database-column-dictionary.md), [DDL](database-schema.sql), [SQL kiểm tra](database-check.sql).
-- Sơ đồ ERD: [bản chỉnh sửa draw.io](findie-erd.drawio), [ảnh tổng quan](assets/findie-erd-overview.png).
+- [Kiến trúc hệ thống](system-architecture.md): v1.4.0 ngày 23/10/2026; .NET nghiệp vụ/R2/quyền/DTO cuối ↔ RabbitMQ lâu dài ↔ Python AI/ảnh, lưu embedding và hybrid search theo profile. Đã có schema hai database logic `findie` (.NET) và `findie_search` (Python) với role riêng; chưa triển khai RabbitMQ/consumer/hybrid search. Ảnh gốc chỉ tạm để xử lý, không lưu R2; R2 chỉ giữ ảnh đầu ra đã che/mờ hoặc ảnh sạch chuẩn hóa khi không có PII, phải duyệt trước công khai.
+- [Thiết kế cơ sở dữ liệu đích](database-design.md): phân quyền hai database logic cho .NET và Python. Runtime .NET có EF Core/Identity, outbox và migration có bảo vệ dữ liệu bootstrap cũ; xem [API](api.md).
+- Snapshot bootstrap: [từ điển cột](database-column-dictionary.md), [DDL](database-schema.sql), [SQL kiểm tra](database-check.sql), [ERD draw.io](findie-erd.drawio), [ảnh ERD](assets/findie-erd-overview.png). Các tệp này vẫn mô tả 16 bảng/164 cột và liên kết ảnh gốc/bản xử lý cũ; chưa phải schema hybrid search hai database hoặc chính sách chỉ lưu ảnh đầu ra. Giữ nguyên để đối chiếu migration, không dùng luồng lưu ảnh gốc cũ làm kiến trúc đích.
 - [Hiến chương dự án](../.specify/memory/constitution.md) được giữ tại vị trí cấu hình của Spec Kit.
 
 ## Phát triển và kiểm thử
 
-- [Cài đặt và chạy local](development.md).
-- [API .NET](api.md).
+- [Cài đặt và chạy local](development.md), gồm cấu hình OAuth Google; ứng dụng hiện chỉ hỗ trợ đăng nhập Google.
+- [API .NET](api.md): Google cookie/CSRF, hồ sơ và điểm tiếp nhận.
 - [Thử AI trên Google Colab](colab.md).
 - Hồ sơ khởi tạo: [phạm vi](specs/001-project-bootstrap/spec.md), [kế hoạch](specs/001-project-bootstrap/plan.md), [nhiệm vụ](specs/001-project-bootstrap/tasks.md), [đánh giá sẵn sàng](specs/001-project-bootstrap/readiness-review.md).
 

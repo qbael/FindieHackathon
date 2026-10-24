@@ -11,6 +11,20 @@ test('accepts actual scaffold readiness without inventing availability', () => {
     features: { business: false, authentication: false, storage: false },
   };
   assert.deepEqual(readSystemStatus(value), value);
+  const identityEnabled = { ...value, features: { ...value.features, authentication: true } };
+  assert.deepEqual(readSystemStatus(identityEnabled), identityEnabled);
+});
+
+test('rejects non-boolean authentication flags', () => {
+  for (const authentication of [undefined, null, 0, 1, 'false', 'true', {}, []]) {
+    assert.throws(() => readSystemStatus({
+      name: 'Findie API',
+      stage: 'scaffold',
+      database: 'ready',
+      ai: 'unavailable',
+      features: { business: false, authentication, storage: false },
+    }));
+  }
 });
 
 test('rejects malformed or unexpected API responses', () => {

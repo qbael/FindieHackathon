@@ -2,7 +2,7 @@
 
 Chức năng luồng nghiệp vụ và công nghệ lựa chọn
 
-Phiên bản 1.1.1 · Ngày 22 tháng 10 năm 2026
+Phiên bản 1.4.0 · Ngày 23 tháng 10 năm 2026
 
 ## 1 Tổng quan và phạm vi
 
@@ -10,7 +10,7 @@ Findie kết nối người mất đồ, người nhặt được và các đi�
 
 Tài liệu này xác định chức năng, dữ liệu đầu vào, luồng xử lý, quy tắc nghiệp vụ và tiêu chí nghiệm thu cho MVP. Đối tượng sử dụng là nhóm sản phẩm, thiết kế, phát triển và kiểm thử.
 
-**Trạng thái sản phẩm:** demo ý tưởng với giao diện và dữ liệu minh họa. Phần 2 đến phần 7 kết hợp hành vi thể hiện trong demo với các ràng buộc MVP được đề xuất và đánh dấu riêng. React, .NET, Python với FastAPI và PostgreSQL đã được lựa chọn. Cập nhật ngày 21/10/2026 bổ sung Cloudflare R2 để lưu ảnh, họ mô hình Qwen và OpenCV làm mờ ảnh theo yêu cầu. Cập nhật ngày 22/10/2026 chọn bản Instruct 4B. Các thư viện, model embedding và lược đồ cụ thể bên dưới là thiết kế đề xuất, chưa phải triển khai đã vận hành.
+**Trạng thái sản phẩm:** có demo ý tưởng, bộ khung React/.NET/FastAPI và notebook AI độc lập. Kiến trúc đích v1.4.0 ngày 23/10/2026 chốt Python xử lý AI/ảnh, lưu embedding và hybrid search; .NET quản lý nghiệp vụ/quyền/R2/job và DTO cuối. R2 chỉ lưu output Python: có nhạy cảm thì che/mờ, không phát hiện thì chuẩn hóa/encode sạch; tuyệt đối không upload original. Input chỉ tạm trong RAM ứng dụng rồi bỏ sau hoàn tất/lỗi/deadline, mất input phải tải lại. Hai database findie/findie_search cùng PostgreSQL instance, giao tiếp service qua RabbitMQ lâu dài. Luồng này chưa triển khai/benchmark; phần 2–7 vẫn phân biệt demo và MVP đề xuất.
 
 ### Mục tiêu
 
@@ -78,7 +78,7 @@ Kết quả tìm kiếm chỉ gợi ý món đồ có đặc điểm tương t�
 4. Người dùng chọn Tự giữ để trả, Nơi ngoài hệ thống hoặc Điểm tiếp nhận.
 5. Người dùng kiểm tra thông tin và gửi đăng tin.
 6. Hệ thống kiểm tra dữ liệu, lưu bài đăng và hiển thị kết quả. Nếu gửi vào điểm tiếp nhận, xử lý theo phần 6.
-7. Theo yêu cầu bổ sung cho MVP, ảnh gốc nằm riêng tư trên R2. Qwen gợi ý vùng nhạy cảm, OpenCV tạo bản che/mờ; người có quyền duyệt ảnh kiểm tra, bổ sung vùng còn sót và duyệt bản sạch trước công khai. Trong lúc chờ hoặc khi xử lý lỗi, bài đăng dùng ảnh thay thế trung tính; không công khai ảnh gốc.
+7. Theo yêu cầu bổ sung cho MVP, ảnh gốc chỉ giữ tạm để Python kiểm tra; có nhạy cảm thì tạo ảnh che/mờ, không phát hiện thì chuẩn hóa/encode lại và bỏ EXIF. .NET chỉ lưu output vào R2 riêng tư; original không lưu R2 và bị bỏ sau request. Người có quyền kiểm output trước công khai; khi AI lỗi không tạo được output hợp lệ thì không ghi R2 cho lần đó và dùng placeholder.
 
 ### Dữ liệu đầu vào
 
@@ -100,7 +100,7 @@ Các giới hạn dung lượng và tính bắt buộc ở bảng là cấu hìn
 - Tải ảnh hoặc đăng tin thất bại: không báo đăng thành công; cho phép gửi lại mà không tạo bài trùng.
 - Khoảng giờ không hợp lệ hoặc ngày trong tương lai: yêu cầu sửa trước khi gửi.
 - Chọn nơi ngoài hệ thống nhưng thiếu địa chỉ: yêu cầu bổ sung để người tìm biết nơi đến nhận.
-- Qwen/OpenCV lỗi hoặc ảnh chưa duyệt: giữ bài đăng và mô tả công khai hợp lệ, cho thử xử lý lại; ảnh gốc không hiển thị công khai hoặc được dùng tạo vector ảnh tìm kiếm.
+- Qwen/OpenCV lỗi: không lưu input gốc trên R2, bỏ buffer khi kết thúc và cho tải lại; khi output còn chờ duyệt dùng placeholder. Bài đăng/mô tả hợp lệ có thể giữ riêng; chỉ output được duyệt mới lập chỉ mục ảnh.
 
 <!-- pagebreak -->
 
@@ -240,8 +240,8 @@ Mô hình dưới đây là thiết kế logic đề xuất cho MVP, không ph�
 | --- | --- | --- |
 | Tài khoản | Mã, tên hiển thị, issuer và subject của OIDC | Có nhiều bài đăng và yêu cầu; không tự lưu mật khẩu trong thiết kế đề xuất |
 | Món đồ | Mã, mô tả, nơi nhặt, thời điểm, loại nơi giữ, nơi giữ hiện tại, trạng thái | Có ảnh, câu hỏi và yêu cầu |
-| Đối tượng R2 | Bucket/key, chủ sở hữu, MIME, byte/pixel, SHA-256, trạng thái upload/xóa | Đăng ký bền vững trước upload; ảnh tham chiếu object gốc và bản sạch |
-| Ảnh | Mã món đồ, object gốc/bản sạch, thứ tự, phiên bản, trạng thái xử lý/duyệt | Thuộc một món đồ; chỉ bản sạch được duyệt được hiển thị |
+| Đối tượng R2 | Bucket/key, chủ sở hữu, MIME, byte/pixel, hash và trạng thái output | Chỉ dự trữ/upload sau Python trả ảnh hợp lệ; mỗi phiên bản có một processed output, không original object |
+| Ảnh | Mã món đồ, processed_object_id, thứ tự, phiên bản và xử lý/duyệt | Không giữ cặp original/sanitized; chỉ output được duyệt hiển thị và lập chỉ mục |
 | Điểm tiếp nhận | Mã, tên, địa chỉ, hướng dẫn | Có nhân viên và đồ đang giữ |
 | Phân công tại điểm | Tài khoản, điểm, quyền | Giới hạn phạm vi thao tác nhân viên |
 | Câu hỏi xác minh | Mã món đồ, nội dung, thứ tự | Tối đa 3 câu mỗi món |
@@ -249,10 +249,10 @@ Mô hình dưới đây là thiết kế logic đề xuất cho MVP, không ph�
 | Hội thoại và tin nhắn | Yêu cầu, người gửi, nội dung, thời điểm | Chỉ hai bên được phép truy cập |
 | Yêu cầu tiếp nhận | Món đồ, nơi giữ cũ, điểm đích, trạng thái | Không thay nơi giữ trong lúc chờ |
 | Lịch sử bàn giao | Món đồ, nơi giao và nhận, người xác nhận, thời điểm | Ghi nhận thay đổi nơi giữ hoặc hoàn tất trả |
-| Hồ sơ mô hình và vector | Tên/revision Qwen, profile tiền xử lý/prompt, 2048 chiều, phiên bản nguồn | Vector văn bản công khai hoặc ảnh sạch đã duyệt; giữ riêng loại nguồn |
-| Tác vụ nền | Loại xử lý, đối tượng nguồn, phiên bản, trạng thái, lease và retry | Xử lý ảnh, tạo vector và dọn object R2 bền vững |
+| Hồ sơ mô hình và vector | Tên/revision Qwen, profile, 2048 chiều, source/document version | Python sở hữu trong findie_search; chỉ mô tả công khai/ảnh sạch đã duyệt; không giữ vector truy vấn tạm |
+| Tác vụ nền | Job, lease/retry và outbox snapshot/tombstone theo phiên bản | .NET sở hữu nguồn và ý định đồng bộ; Python commit kho tìm kiếm trước biên nhận, .NET hoàn tất job riêng |
 
-Thiết kế chi tiết gồm [từ điển dữ liệu và các ràng buộc](database-design.md), [DDL PostgreSQL](database-schema.sql) và [ERD chỉnh sửa bằng draw.io](findie-erd.drawio). Đây là thiết kế cho ứng dụng mới, chưa áp dụng lên cơ sở dữ liệu thật. DDL quy định tên bảng, khóa chính/ngoại, unique/check và chỉ mục; ERD dùng để rà soát quan hệ.
+[Thiết kế dữ liệu đích](database-design.md) tách findie (.NET) và findie_search (Python). [DDL](database-schema.sql), [từ điển cột](database-column-dictionary.md) và [ERD](findie-erd.drawio) hiện là snapshot bootstrap 16 bảng/164 cột: còn item_embeddings trong nghiệp vụ và original_object_id bắt buộc/cặp original–sanitized, không tương thích chính sách chỉ lưu processed output 1.4.0. Cần migration kho tìm kiếm/outbox và mô hình ảnh một processed_object_id, cùng DDL/ERD/kiểm thử cập nhật; không có di trú hoặc xóa R2 thật trong lần sửa tài liệu này.
 
 ### Phân loại thông tin
 
@@ -262,13 +262,13 @@ Người dùng chỉ được sửa bài đăng, đọc yêu cầu và hội tho
 
 ### Tính nhất quán
 
-Backend kiểm tra quyền và trạng thái hiện tại trước mỗi thao tác duyệt, tiếp nhận hoặc trả đồ. Dùng giao dịch và kiểm tra phiên bản hoặc khóa bản ghi khi cần để ngăn hai thao tác đồng thời ghi nhận hai nơi giữ hay hai lần trả. Khi mô tả hoặc ảnh thay đổi, phải cập nhật hoặc vô hiệu hóa vector cũ. Thay ảnh gốc, vùng che hoặc bản sạch phải tăng phiên bản và hủy hiệu lực phê duyệt cũ; worker chỉ được ghi kết quả khớp phiên bản hiện tại. R2 và PostgreSQL không chung giao dịch: giữ công việc xóa/dọn tệp có retry, thu hồi hiển thị trước khi xóa object, không coi upload thành công là bài đăng đã lưu thành công.
+Backend .NET kiểm quyền/trạng thái và giao dịch nghiệp vụ để ngăn hai nơi giữ/hai lần trả. Chỉ output đã xử lý mới được đăng ký/upload R2, sau đó lưu metadata/liên kết và index outbox. Thay đổi nội dung/ảnh/quyền duyệt phải tăng phiên bản và ghi snapshot/tombstone cùng nghiệp vụ; Python lưu vector có điều kiện theo watermark. Thu hồi hiển thị có hiệu lực ở nguồn chuẩn ngay, .NET loại ứng viên cũ dù chỉ mục chậm. R2, nghiệp vụ và kho tìm kiếm không cùng transaction; retry bền vững chỉ bắt đầu từ output đã lưu, không hứa phục hồi raw đã mất.
 
 <!-- pagebreak -->
 
 ## 9 Công nghệ và kiến trúc hệ thống
 
-Bộ nền tảng đã chọn gồm React, .NET, Python/FastAPI, PostgreSQL và Cloudflare R2. Qwen và OpenCV được bổ sung theo yêu cầu. Bảng dưới là danh mục công nghệ dùng cho thiết kế MVP; các thư viện, mã mô hình và cách triển khai cụ thể vẫn cần kiểm thử tương thích và ghim phiên bản trước xây dựng. Chưa có cam kết chất lượng hoặc chi phí.
+Bộ nền tảng đã chọn gồm React, .NET, Python, RabbitMQ, PostgreSQL và Cloudflare R2. Python xử lý toàn bộ AI/ảnh, trực tiếp lưu embedding và tìm kiếm hybrid; .NET thực hiện nghiệp vụ/phân quyền và kiểm tra kết quả hiện tại. Vector database tiếp tục dùng PostgreSQL + pgvector, tách database/credential cho Python trên cùng instance. Thư viện, revision và cấu hình xếp hạng là đề xuất cần ghim, kiểm thử và benchmark; chưa có cam kết chất lượng/độ trễ/chi phí.
 
 | Thành phần | Công nghệ dự kiến | Vai trò |
 | --- | --- | --- |
@@ -276,55 +276,118 @@ Bộ nền tảng đã chọn gồm React, .NET, Python/FastAPI, PostgreSQL và 
 | Giao tiếp trình duyệt | Fetch API, HTTPS/JSON, @microsoft/signalr | Gọi API và nhận sự kiện chat |
 | API nghiệp vụ | C#, .NET, ASP.NET Core Web API | Xác thực, quyền, bài đăng, nhận đồ, tiếp nhận và trả đồ [T2] |
 | Đăng nhập | ASP.NET Core OpenID Connect và Cookie Authentication | Đề xuất OIDC với phiên cookie; DB lưu issuer/subject; nhà cung cấp còn chờ chọn |
-| Dữ liệu | PostgreSQL, SQL | Lưu nghiệp vụ, lịch sử, tin nhắn, tác vụ nền và metadata ảnh |
+| Dữ liệu nghiệp vụ | PostgreSQL, database findie | Chỉ .NET: nguồn nghiệp vụ, lịch sử, tin nhắn, metadata R2 và job/outbox |
 | Truy cập dữ liệu | Entity Framework Core, Npgsql, migrations | Giao dịch, kiểm soát đồng thời và quản lý lược đồ [T4] |
-| Vector | pgvector, Pgvector.EntityFrameworkCore | vector(2048), exact cosine search; chưa tạo ANN index [T5] |
-| AI service | Python, FastAPI, Uvicorn, Pydantic, python-multipart | API nội bộ, kiểm tra input/output [T3] |
+| Vector database | PostgreSQL + pgvector, findie_search; psycopg 3, pgvector-python | Chỉ Python: lưu/đọc vector(2048), bản chiếu công khai và FTS; chưa triển khai [T5, T17] |
+| Hybrid search | Python; cosine exact + PostgreSQL FTS + weighted RRF | Python truy hồi/hợp nhất ứng viên, cấu hình và mục tiêu theo từng trường hợp [T5, T15, T16] |
+| AI service | Python AI worker, aio-pika, Pydantic; FastAPI/Uvicorn cho health/ops | Embedding, nhận diện/OCR, xử lý ảnh, lưu vector và hybrid search; lệnh/kết quả qua RabbitMQ [T3, T14] |
+| Giao tiếp .NET và Python | RabbitMQ, AMQP 0-9-1; RabbitMQ.Client, aio-pika | Kết nối/channel lâu dài; heartbeat, reconnect; lệnh và kết quả bất đồng bộ có publisher confirms/manual ACK [T12–T14] |
 | Inference | PyTorch, Transformers, Accelerate, qwen-vl-utils | Nạp hai mô hình Qwen; dùng mã inference chính thức được rà soát và ghim revision |
 | Tìm kiếm text/ảnh | Qwen/Qwen3-VL-Embedding-2B | Một model chung cho text và ảnh, baseline 2048 chiều [T6] |
 | Gợi ý vùng nhạy cảm | Qwen/Qwen3-VL-4B-Instruct | Bản Instruct 4B đã chọn; gợi ý vùng cần che/mờ từ OCR/định vị, không tự kết luận an toàn [T7] |
-| Xử lý pixel | OpenCV (opencv-python-headless), NumPy, Pillow | GaussianBlur, che vùng chữ/mã; chuẩn hóa hướng ảnh và xuất bản sạch [T9] |
-| Kho ảnh | Cloudflare R2, S3 API, AWSSDK.S3 | Lưu gốc riêng tư và bản sạch; .NET kiểm soát truy cập [T10] |
-| Tác vụ nền | BackgroundService, HttpClient của .NET; PostgreSQL | Xử lý ảnh, embedding và xóa tệp; retry/lease bền vững |
+| Xử lý ảnh | OpenCV (opencv-python-headless), NumPy, Pillow trong Python | Kiểm MIME thực/giải mã/pixel, chuẩn hóa hướng/resize, GaussianBlur hoặc che kín, bỏ EXIF/GPS và mã hóa bản sạch [T9] |
+| Kho ảnh | Cloudflare R2, S3 API, AWSSDK.S3 | Chỉ .NET lưu output Python đã che/mờ hoặc không PII; không có original/temp input R2 [T10] |
+| Điều phối tác vụ nền | BackgroundService, RabbitMQ.Client của .NET; PostgreSQL | .NET ghi job/outbox và nhận biên nhận; Python commit kho tìm kiếm trước; .NET quản lý trạng thái/retry và dọn R2 |
 | Chat | ASP.NET Core SignalR | Lưu tin nhắn trước khi phát; kiểm tra quyền từng thao tác [T8] |
 | Chỉ đường | Liên kết bản đồ | Mở địa chỉ có sẵn, chưa cần Maps SDK |
-| Vận hành | Git, Docker, Docker Compose, HTTPS | Môi trường demo tái lập; mạng nội bộ, logging/health check sẵn có |
+| Vận hành | Git, Docker, Docker Compose, HTTPS, AMQPS | Mạng riêng; broker có volume, ACL/TLS, giới hạn queue và retention/DLQ; theo dõi health, reconnect và tồn đọng |
 | Kiểm thử | xUnit, ASP.NET Core integration testing, pytest, Playwright | API/DB, xử lý ảnh/AI và hành trình web |
 | Thiết kế dữ liệu | SQL, diagrams.net/draw.io | DDL và ERD chỉnh sửa được |
 
-Hai model card Qwen công bố giấy phép Apache-2.0 [T6, T7]. Tên model không đủ để tái lập: cần ghim commit trọng số, mã inference, processor, prompt và phiên bản gói. Chưa cần Redis, Kafka, Elasticsearch, vector database riêng hoặc model reranker trong MVP.
+Hai model card Qwen công bố Apache-2.0 [T6, T7]; cần ghim trọng số, mã inference, processor/prompt và phiên bản gói. Không thêm Redis, Kafka, Elasticsearch, sản phẩm/máy chủ vector DB khác hoặc reranker cho baseline. Database tìm kiếm riêng dùng PostgreSQL hiện có.
 
 ### Kiến trúc triển khai
 
-![Phân vai React NET FastAPI và PostgreSQL](assets/kien-truc-he-thong.png)
+![Phân vai React NET RabbitMQ Python PostgreSQL và R2](assets/kien-truc-he-thong.png)
 
-React gọi API .NET qua HTTPS và nhận sự kiện chat qua SignalR. .NET kiểm tra phiên, quyền và nghiệp vụ, đọc ghi PostgreSQL, lưu/lấy ảnh ở R2 và gọi FastAPI nội bộ. FastAPI chạy Qwen để tạo vector hoặc gợi ý vùng nhạy cảm, OpenCV tạo bản che/mờ; .NET kiểm soát bước duyệt và dùng pgvector tìm bài đăng hợp lệ.
+React gọi .NET qua HTTPS/SignalR. .NET kiểm phiên/quyền/nghiệp vụ, đọc ghi database findie, quản lý R2 và gửi lệnh qua RabbitMQ. Python xử lý ảnh/embedding, ghi trực tiếp findie_search và thực hiện hybrid search; không trả vector để .NET lưu/tìm. Python trả ứng viên đã xếp hạng và nguồn/phiên bản; .NET kiểm điều kiện hiện tại rồi lấy thông tin nghiệp vụ để trả DTO. Python không có credential findie/R2; .NET không tạo/ghi/truy vấn vector hoặc xếp hạng hybrid.
 
-MVP có một frontend, một backend .NET gồm tác vụ nền, một AI service, một PostgreSQL và Cloudflare R2. AI service không sở hữu luồng duyệt, quyền chat hay quyết định bàn giao; không có credential DB/R2. Backend chuyển dữ liệu đã kiểm tra đến AI, không cho dịch vụ tự tải URL do người dùng cung cấp. Chặn truy cập công khai tới AI service, kiểm tra yêu cầu giữa hai dịch vụ và đặt thời gian chờ. Chuỗi kết nối DB, khóa dịch vụ chỉ nằm ở phía máy chủ. Chạy một instance .NET cho demo; mở rộng nhiều instance cần thiết kế phân phối sự kiện SignalR tương ứng.
+MVP có React, một bản chạy .NET, một Python AI service có FastAPI health/ops, RabbitMQ, một PostgreSQL instance với hai database findie/findie_search và Cloudflare R2. Credential/role tách theo service; không truy cập chéo DB. Python không sở hữu quyền chat, duyệt hoặc bàn giao. Compose hiện tại mới chạy database bootstrap; chưa có RabbitMQ, search store hoặc hybrid search. HTTP probe hiện hữu chỉ kiểm tra trạng thái. Mở rộng nhiều bản chạy phải giải quyết định tuyến reply/SignalR.
+
+### Kết nối RabbitMQ và hợp đồng dữ liệu
+
+Mỗi tiến trình .NET và Python mở một kết nối TCP/AMQP đến RabbitMQ khi khởi động, giữ channel publish/consume riêng và tái sử dụng cho nhiều tác vụ. Đây là hai kết nối đến broker, không phải socket trực tiếp giữa hai dịch vụ. Dùng heartbeat, thử kết nối ban đầu khi broker chưa sẵn sàng, reconnect có backoff/jitter và phục hồi topology/consumer. Python chạy inference ngoài vòng lặp I/O để không chặn heartbeat; ban đầu giới hạn đồng thời theo VRAM. Không tạo connection hoặc queue cho từng truy vấn [T12–T14].
+
+Baseline dùng exchange lâu dài findie.ai.commands/findie.ai.results. Lệnh index.upsert/index.remove và tìm text search.hybrid đi các queue chỉ mục/search bền vững; kết quả chỉ mục/ứng viên có confirm/mandatory và ACK sau commit. Raw image.redact và search.hybrid.image đi queue tạm exclusive/non-durable/auto-delete do Python khai báo, tên do broker sinh, nonpersistent/TTL hữu hạn; không tạo queue theo từng ảnh và không body DLQ/tracing/backup raw. Mất worker/queue hoặc deadline thì bỏ payload, chỉ giữ mã lỗi an toàn và yêu cầu tải lại nếu input không còn RAM. Không dùng non-durable non-exclusive đã bị hạn chế ở RabbitMQ mới. Transient không bảo đảm chỉ RAM tại broker [T12, T13, T18].
+
+Hợp đồng gồm schema_version, operation, correlation_id/deadline; job chỉ mục có job_id/lease, document/source version/hash và model/profile. Snapshot/manifest cho index.upsert chỉ tham chiếu output đã lưu/duyệt; index.remove mang ID/version tombstone. Raw input không có R2 key và không nằm trong outbox/job. search.hybrid trả ứng viên có ID/hạng/phiên bản/profile, ảnh trả output và metadata hợp lệ; không trả vector để .NET lưu/tìm. Bytes ảnh dùng body nhị phân, baseline 10 MiB/body, metadata JSON header 16 KiB đề xuất; dữ liệu dài dùng body JSON riêng. Không base64, URL tùy ý, OCR/raw trong log hoặc kho tìm kiếm.
+
+Broker nằm mạng riêng, AMQPS/ACL/vhost theo service, giới hạn queue/prefetch/deadline. Cấm raw body trong log/DLQ/backup; message ảnh tạm vẫn có thể bị RabbitMQ page xuống đĩa, TTL/ACK chỉ mô tả vòng đời logic, không bảo đảm xóa vật lý tức thì [T18]. Bỏ input ở .NET/Python trong cleanup; tránh upload/proxy/multipart tự spool ra đĩa ứng dụng. Luồng chỉ mục/output có retention/backup riêng. Reconnect/ACK không khôi phục ảnh tạm đã mất; người dùng tải lại, còn nguồn output đã lưu mới đủ retry bền vững.
 
 <!-- pagebreak -->
 
 ## 10 Tìm kiếm thông minh và yêu cầu chất lượng
 
-### Lưu ảnh R2 và xử lý riêng tư
+### R2 chỉ lưu ảnh đầu ra, ảnh gốc bị loại bỏ
 
-Ảnh tải lên đi qua .NET để kiểm tra quyền, nội dung thực, dung lượng và kích thước sau giải mã. R2 dùng bucket private theo môi trường, tắt public r2.dev/custom domain; prefix original, sanitized và temporary chỉ để tổ chức dữ liệu, không thay cho phân quyền. PostgreSQL giữ tham chiếu object, không giữ bytes hoặc signed URL. SDK và credential R2 chỉ ở máy chủ [T10].
+**Ảnh gốc do người dùng tải lên không được ghi R2, kể cả bucket riêng tư hoặc prefix tạm.** .NET nhận bytes có trần dung lượng vào RAM, gửi qua luồng RabbitMQ ảnh tạm cho Python; không dùng upload/multipart hoặc reverse proxy tự spool ra đĩa. Python giải mã/kiểm tệp trong bộ nhớ và trả ảnh đầu ra. Cả hai service bỏ reference/buffer input trong cleanup sau thành công, lỗi hoặc deadline; thu hồi preview/object URL của ứng dụng khi xong. Quy tắc này không xóa tệp gốc do người dùng giữ trên thiết bị.
 
-.NET đăng ký key/chủ sở hữu/trạng thái trong stored_objects trước upload; tải ảnh gốc riêng tư lên R2 ngoài giao dịch, rồi hoàn tất metadata, liên kết ảnh và công việc xử lý trong giao dịch ngắn. Bản đăng ký còn dở hỗ trợ retry/dọn tệp an toàn. Sau đó gọi FastAPI ngoài giao dịch DB. Qwen3-VL-4B-Instruct gợi ý vùng khuôn mặt, giấy tờ, thẻ, điện thoại, địa chỉ hoặc QR/barcode nhạy cảm. Output phải qua kiểm tra JSON, tọa độ và kích thước/hướng ảnh. OpenCV dùng GaussianBlur cho vùng cần làm mờ; chữ, số định danh hoặc mã vẫn có thể đọc được phải che kín. Xuất lại từ pixel đã xử lý và loại EXIF/GPS, metadata không cần thiết.
+| Kết quả kiểm tra Python | Ảnh được .NET lưu R2 | Xử lý ảnh gốc |
+| --- | --- | --- |
+| Có vùng nhạy cảm | OpenCV làm mờ/che kín vùng đã kiểm; chuẩn hóa, encode lại và bỏ EXIF/GPS | Không upload R2; bỏ buffer sau xử lý |
+| Không phát hiện vùng nhạy cảm và kiểm tệp hợp lệ | Ảnh được chuẩn hóa/encode lại, bỏ EXIF/GPS; không cần làm mờ pixel | Không giữ thêm bản raw; bỏ buffer sau xử lý |
+| Tệp không hợp lệ, AI/JSON/OpenCV lỗi hoặc không tạo được output hợp lệ | Không ghi R2 cho lần xử lý đó; báo lỗi/giữ placeholder | Bỏ input khi kết thúc; mất input hoặc hết hạn thì yêu cầu tải lại |
 
-Người có quyền duyệt ảnh xem trước, bổ sung vùng còn sót và duyệt đúng phiên bản bản sạch. Chính sách cấp quyền duyệt, gồm việc người đăng có được tự duyệt hay không, phải chốt trước triển khai. Chỉ bản đã duyệt được dùng công khai và tạo vector ảnh. Model không phát hiện vùng nhạy cảm vẫn cần duyệt; lỗi hoặc chưa duyệt phải giữ ảnh gốc riêng tư và dùng placeholder. Đây là thiết kế giảm lộ dữ liệu, chưa có bằng chứng đạt mức che/mờ bảo đảm; cần bộ ảnh đánh giá.
+.NET chỉ **sau khi nhận output hợp lệ** mới dự trữ `stored_objects` cho ảnh đầu ra, tạo key ngẫu nhiên dưới `processed/`, upload ngoài transaction DB rồi ghi metadata/hash/kích thước và liên kết ảnh. Không có object/prefix `original/` hoặc `temporary/` chứa input; ảnh truy vấn cũng không ghi R2. Mỗi ảnh nghiệp vụ tham chiếu một `processed_object_id` hiện hành (tên đích đề xuất), không có FK nguồn original. Thay thế tạo output version mới, dọn output cũ theo retention; không giữ một cặp raw/blur.
 
-API phục vụ bản sạch sau kiểm tra trạng thái bài đăng và quyền hiện tại. Ảnh gốc chỉ qua endpoint riêng có quyền cho người đăng/người xử lý được ủy quyền; không trả khóa/URL gốc công khai và không cache response riêng tư. MVP chưa cần presigned URL; nếu bổ sung, chỉ cấp thời hạn ngắn cho bản sạch, vì người giữ URL có thể dùng đến khi hết hạn [T11]. Xóa/gỡ ảnh phải thu hồi hiển thị và vector trước, retry xóa R2 sau; có tác vụ dọn object mồ côi với khoảng chờ để tránh xóa nhầm upload chưa hoàn tất.
+Dùng bucket private, tắt public `r2.dev`/custom domain, .NET dùng credential/SDK giới hạn; Python không có credential R2 [T10]. Chỉ output đã duyệt đúng nguồn/phiên bản mới được hiển thị và tạo embedding ảnh công khai. Endpoint có quyền chỉ xem output; không tồn tại API tải lại original. Presigned URL nếu bổ sung chỉ cho output đủ điều kiện, thời hạn ngắn [T11]. Trước khi upload hoàn tất, output cũng chỉ trong RAM: crash có thể phải tải lại, không hứa phục hồi từ object chưa tồn tại.
 
-### Xử lý tìm kiếm
+### Nhận diện, làm mờ và kiểm tra đầu ra
 
-**Khi đăng tin:** lưu bài đăng, metadata và tác vụ bền vững. Mô tả công khai có thể tạo vector độc lập trong lúc ảnh đang xử lý; ảnh chỉ tạo vector từ bản sạch đã duyệt. Khi AI lỗi, giữ bài đăng và trạng thái chờ/lỗi rõ ràng, có retry; không công khai ảnh gốc để thay thế.
+`Qwen3-VL-4B-Instruct` chỉ gợi ý vùng khuôn mặt, giấy tờ/thẻ, điện thoại/địa chỉ và QR/barcode nhạy cảm. Python kiểm schema/nhãn/tọa độ hữu hạn và quy đổi theo ảnh đã chuẩn hóa; OpenCV làm mờ, che kín chữ/mã khi blur còn đọc được. Không coi output mô hình là lệnh hay bảo đảm ẩn danh. Kết quả không có vùng nhạy cảm vẫn qua encode/loại metadata; **AI lỗi khác với không phát hiện nhạy cảm**.
 
-**Tìm theo mô tả:** dùng Qwen3-VL-Embedding-2B mã hóa mô tả tiếng Việt và so với vector văn bản công khai. **Tìm theo ảnh:** dùng cùng model mã hóa ảnh truy vấn tạm và so với vector ảnh sạch. Baseline giữ hai chế độ riêng; dù model hỗ trợ không gian chung, chưa tự trộn điểm hoặc bật text–image cross-search trước đánh giá [T6].
+Output hợp lệ được lưu R2 riêng tư ở trạng thái chờ duyệt. Người có quyền chỉ kiểm bản đầu ra và bổ sung vùng che nếu còn sót; thao tác thêm che chạy trong Python trên output hiện có rồi thay phiên bản. Không hỗ trợ khôi phục/unblur từ original đã bỏ; cần nguồn rõ hơn thì người dùng tải lại. Duyệt không được bỏ qua xử lý bằng cách đổi nhãn raw thành output. Chính sách ai được duyệt vẫn cần chốt.
 
-Vector chuẩn hóa L2, 2048 chiều, lưu cùng tên/revision model, profile prompt/tiền xử lý và phiên bản nguồn. Chỉ so sánh cùng profile tương thích; cùng số chiều chưa đủ. Điểm cosine là điểm tương đồng, không phải xác suất đúng chủ. Dùng exact cosine search trong pgvector sau bộ lọc; vector(2048) vượt giới hạn 2000 chiều của ANN index trên kiểu vector, nên không tạo HNSW/IVFFlat ở MVP. Nếu cần tối ưu, đo phương án halfvec hoặc MRL ít chiều hơn trước đổi và lập chỉ mục lại [T5].
+Chỉ output **đã duyệt và khớp phiên bản hiện tại** được công khai/embedding; lúc chờ, lỗi hoặc bị từ chối dùng placeholder. Bài đăng/mô tả hợp lệ có thể lưu độc lập khi ảnh lỗi; không giữ original để tự retry sau khởi động lại. Cần kiểm cả cổng upload, proxy, decoder và log để bảo đảm ứng dụng không tạo bản sao input ngoài vòng đời tạm.
 
-.NET kiểm tra giá trị hữu hạn, vector khác không, model/profile và phiên bản nguồn trước khi lưu kết quả; không giữ giao dịch DB lúc gọi AI. Kết quả từ nội dung cũ không được ghi đè dữ liệu hiện tại. Ảnh tìm kiếm chỉ xử lý tạm trong bộ nhớ; nếu ghi R2 temporary thì xóa ngay sau xử lý/lỗi và có lifecycle dự phòng. Không lưu ảnh truy vấn vào bài đăng hoặc vector bền vững.
+### Lập chỉ mục và đồng bộ nguồn
+
+.NET lưu bài đăng/mô tả hợp lệ độc lập khi ảnh chờ/lỗi. Input ảnh chỉ RAM/request và image.redact tạm; không ghi raw vào ai_jobs/outbox. Chỉ sau output Python hợp lệ được upload R2 và duyệt đúng phiên bản mới tạo outbox lập chỉ mục ảnh bền vững; text công khai có thể lập chỉ mục độc lập. ai_jobs/bootstrap chưa đủ lược đồ processed-only/outbox đích. Python tạo embedding ngoài SQL transaction rồi commit vector/projection/FTS tại findie_search trước receipt; .NET hoàn tất job trong transaction riêng. Crash mất raw/output chưa upload thì yêu cầu tải lại; output đã lưu/duyệt cho phép retry index từ R2.
+
+Mọi sửa/ẩn/gỡ/trao trả, đổi nơi giữ hoặc thu hồi duyệt phải tạo snapshot mới hoặc tombstone bền vững cùng nghiệp vụ. Python lưu watermark đơn điệu và snapshot hash; nhiều source job text/ảnh có ID riêng được tham chiếu cùng manifest, nhưng cùng document_version khác snapshot là xung đột. Trước commit kết quả inference, kiểm lại document/source version dưới khóa hoặc cập nhật có điều kiện; tombstone ngăn lệnh cũ hồi sinh dữ liệu. Bỏ receipt cũ ở .NET không tự xóa vector đã ghi. Cần đối soát/rebuild, retry/backoff hữu hạn, idempotency, ACK sau commit và giữ ý định xử lý khi broker/search DB lỗi. Không mở transaction SQL trong lúc suy luận.
+
+### Lưu vector và hybrid search do Python đảm nhận
+
+**Python AI service đảm nhận cả lưu embedding và hybrid search trong vector database.** .NET nhận truy vấn từ React, kiểm dữ liệu/bộ lọc và chuyển `search.hybrid` qua RabbitMQ; không lấy vector về để tự tìm. Python trả danh sách ứng viên có thứ hạng, .NET kiểm điều kiện nghiệp vụ hiện tại rồi lấy thông tin món đồ từ database nghiệp vụ để trả giao diện.
+
+Mô tả tiếng Việt không rỗng hoặc ảnh hợp lệ là đầu vào; tìm chỉ bằng mô tả vẫn là quy tắc cốt lõi. Nếu có cả ảnh và mô tả, baseline tiếp tục chọn một chế độ. Hybrid ở đây kết hợp **từ khóa và ngữ nghĩa** khi có văn bản; không tự bật trộn điểm vector text–image hoặc tìm chéo phương thức. Ảnh đơn thuần dùng vector ảnh cùng bộ lọc cấu trúc; không bịa từ khóa/OCR để coi như có nhánh lexical.
+
+### Thuật toán hybrid search cơ sở
+
+1. Python chọn `search_profile_id`/phiên bản từ quy tắc đầu vào đã kiểm chứng, tạo vector truy vấn tạm bằng `Qwen3-VL-Embedding-2B`, kiểm cấu hình tương thích và chuẩn hóa L2. Chỉ tìm trong vector cùng modality, model/revision, `processing_profile`, 2048 chiều và nguồn hiện hành trong bản chiếu.
+2. Áp dụng bộ lọc công khai, chưa trao trả, trạng thái ảnh/duyệt, khu vực và khoảng thời gian vào **cả hai nhánh trước khi giới hạn ứng viên**. Chỉ mục là bản chiếu có thể chậm; .NET vẫn phải kiểm lại nguồn chuẩn sau đó. Không tự nới bộ lọc nếu chưa có lựa chọn mở rộng được thông báo cho người dùng.
+3. **Nhánh ngữ nghĩa:** exact cosine search bằng toán tử `<=>` của pgvector. **Nhánh từ khóa:** PostgreSQL full-text search trên mô tả công khai, `tsvector`/`tsquery`, xếp theo `ts_rank_cd`, chỉ mục GIN. Dùng cấu hình thống nhất `simple` kết hợp `unaccent` cho query/document như baseline thử nghiệm tiếng Việt; cần đo có dấu/không dấu, từ ghép và nhãn hiệu, không giả định đã có bộ tách từ tiếng Việt hoặc BM25 [T5, T15].
+4. Thu gọn từng danh sách thành món đồ duy nhất; nhiều ảnh của cùng món chỉ lấy thứ hạng ảnh tốt nhất trước hợp nhất. Hợp nhất bằng **weighted Reciprocal Rank Fusion**: `score(item) = w_dense / (60 + rank_dense) + w_keyword / (60 + rank_keyword)`, thứ hạng bắt đầu từ 1, nhánh không có món đóng góp 0; hai trọng số theo bảng cấu hình bên dưới. Sắp xếp giảm dần theo điểm, dùng ID món để phá hòa ổn định. Không cộng trực tiếp cosine và `ts_rank_cd` khác thang đo; RRF không phải xác suất [T5, T16].
+5. Python trả `item_id`, nguồn ảnh nếu có, document/source version, model/profile, thứ hạng/điểm thành phần và `search_profile_id`/phiên bản. .NET lấy dữ liệu hiện tại theo ID, kiểm quyền, trạng thái published/active, chưa trao trả, nguồn chưa thay đổi, ảnh sạch/duyệt còn hiệu lực và bộ lọc, giữ thứ tự tương đối của các ứng viên hợp lệ. Nếu thiếu do bỏ ứng viên cũ, có thể xin thêm ứng viên trong giới hạn số vòng/deadline; không để refill vô hạn và không trả ứng viên cũ để đủ số lượng.
+
+Kho `findie_search` chỉ giữ mô tả công khai, vector text/ảnh sạch, metadata lọc an toàn, phiên bản/provenance và watermark/tombstone. Không chứa credential R2, bằng chứng, tin nhắn hoặc địa chỉ nhà riêng; các ID chỉ tham chiếu logic đến database nghiệp vụ, không có FK xuyên database. Python dùng credential giới hạn tại kho tìm kiếm; .NET không có quyền ghi/truy vấn vector ở đó. PostgreSQL + pgvector đóng vai trò vector database; không cần thêm Qdrant, Milvus hay Elasticsearch cho baseline.
+
+`vector(2048)` hỗ trợ lưu và tìm chính xác; ANN trên kiểu `vector` có giới hạn số chiều riêng. Baseline giữ exact search, chỉ cân nhắc `halfvec(2048)`/MRL hoặc phương án tăng tốc sau benchmark; chỉ mục GIN từ khóa vẫn cần xây trong kho tìm kiếm mới [T5].
+
+### Request/reply tìm kiếm qua RabbitMQ
+
+.NET gửi search.hybrid cho text hoặc search.hybrid.image qua queue ảnh tạm cho bytes ảnh, kèm bộ lọc hợp lệ, correlation_id/deadline và giới hạn ứng viên. Python tạo vector truy vấn rồi trả ứng viên đã hybrid ranking trong findie_search, không gửi embedding để .NET tìm. Tái sử dụng connection/channel lâu dài; không tạo theo từng query.
+
+.NET giữ waiter trong thời gian chờ HTTP hữu hạn, không giữ DB transaction; kết quả muộn/trùng/không còn waiter được ACK/bỏ. Query embedding chỉ trong bộ nhớ Python, không lưu vector DB. Raw ảnh query không vào R2/temp file/job/outbox/log/DLQ; dùng route nonpersistent/TTL, cleanup cả khi lỗi, mất payload phải tải lại. RabbitMQ vẫn có thể page transient bytes xuống đĩa, không có cam kết forensic RAM-only/xóa tức thì. Query text/output/ứng viên theo chính sách transport và retention riêng.
+
+Model, broker hoặc vector DB lỗi/hết hạn phải báo lỗi dịch vụ rõ ràng, giữ được dữ liệu nhập và cho xem danh sách/bộ lọc cơ bản do .NET đọc từ DB nghiệp vụ; không báo nhầm “không có kết quả”. Truy vấn thành công nhưng không có ứng viên phù hợp cho sửa điều kiện; không tạo kết quả giả. MVP một bản chạy .NET; trước mở rộng phải định tuyến reply về đúng waiter hoặc có trạng thái truy vấn dùng chung. Python không quyết định quyền sở hữu hay việc trao trả.
+
+### Bảng cấu hình và mục tiêu độ chính xác theo trường hợp
+
+**Các giá trị dưới đây là đề xuất khởi đầu để hiệu chỉnh, chưa phải kết quả đo hoặc cam kết đã đạt.** Trọng số điều chỉnh ưu tiên xếp hạng, không phải phần trăm xác suất đúng chủ. Đề xuất trả tối đa 10 món mỗi trang; giữ tối thiểu 50 ứng viên hợp nhất nội bộ để đo Recall@50 khi có đủ dữ liệu.
+
+| Trường hợp | Trọng số dense / từ khóa | Ứng viên dense / từ khóa | Hit@10 mục tiêu | Recall@50 mục tiêu | Thực đo |
+| --- | --- | --- | --- | --- | --- |
+| Từ khóa đặc thù: nhãn hiệu/model công khai | 0.30 / 0.70 | 100 / 100 | ≥95% | ≥95% | Chưa đo |
+| Mô tả tiếng Việt có nhiều đặc điểm | 0.60 / 0.40 | 100 / 100 | ≥90% | ≥95% | Chưa đo |
+| Mô tả chung, từ đồng nghĩa hoặc mở rộng đã chọn | 0.80 / 0.20 | 200 / 200 | ≥80% | ≥90% | Chưa đo |
+| Chỉ có ảnh truy vấn hợp lệ | 1.00 / 0.00 | 200 / 0 | ≥85% | ≥95% | Chưa đo |
+
+`Hit@10` là tỷ lệ truy vấn có món đúng trong 10 kết quả đầu; `Recall@50` là tỷ lệ món liên quan có nhãn được thu hồi trong 50 kết quả đầu, lấy trung bình theo truy vấn. Đo trên truy vấn có ít nhất một món đúng; báo riêng truy vấn không có món phù hợp và tỷ lệ gợi ý nhầm. Thứ hạng được tính theo **món đồ duy nhất sau kiểm tra nghiệp vụ cuối cùng**, không đếm nhiều ảnh một món. Vì mỗi truy vấn thường chỉ có một món đúng, không dùng Precision@10 = 90% làm chỉ tiêu thay thế.
+
+Chưa đặt ngưỡng cosine hoặc RRF cố định cho “khớp/không khớp”. Phải hiệu chỉnh ngưỡng từ chối/gợi ý theo từng profile và model/revision trên tập calibration, đo trên tập test độc lập rồi ghi ngưỡng, mục tiêu được chốt, kết quả thực đo, kích thước tập, độ trễ và ngày đánh giá vào bảng. Không dùng điểm cosine/RRF như xác suất hay tự gắn nhãn “chính xác 95%” cho một món. Quy tắc chọn profile cũng cần được kiểm thử, không chỉ chỉnh trọng số.
+
+Dữ liệu đánh giá phải có tiếng Việt có/không dấu, cách gọi đồng nghĩa, tên nhãn hiệu/model, ảnh khác góc và đồ gần giống; tách train/calibration/test theo món đồ, không để ảnh gần trùng của một món ở cả hai tập. So sánh keyword-only, vector-only và hybrid cùng bộ lọc để chứng minh lợi ích; ghi cả trường hợp không tìm thấy. Ảnh-only có trọng số lexical bằng 0 là fallback vector + bộ lọc, không tuyên bố có hai nhánh hybrid khi thiếu văn bản.
 
 ### Yêu cầu chất lượng đề xuất
 
@@ -339,7 +402,7 @@ Vector chuẩn hóa L2, 2048 chiều, lưu cùng tên/revision model, profile pr
 
 ### Kiểm soát ở ranh giới hệ thống
 
-Kiểm tra nội dung tệp ngoài phần mở rộng, dung lượng, kích thước ảnh và quyền tải lên. Áp dụng giới hạn tần suất đăng tin, gửi yêu cầu và tin nhắn để tránh lạm dụng. Nhật ký không ghi mật khẩu, token hoặc toàn bộ câu trả lời xác minh. Các mốc ngày giờ hiển thị theo Asia/Ho_Chi_Minh; thời gian sự kiện hệ thống được lưu nhất quán để tránh nhầm múi giờ.
+.NET kiểm quyền tải lên, dung lượng byte và dữ liệu nghiệp vụ; Python kiểm nội dung thực thay vì tin phần mở rộng, số frame và trần pixel trước giải mã đầy đủ. Cả hai kiểm schema/giới hạn message tại publish/consume. Áp dụng giới hạn tần suất đăng tin, tìm kiếm, gửi yêu cầu và tin nhắn. Nhật ký không ghi mật khẩu, token, ảnh/OCR hoặc toàn bộ câu trả lời xác minh. Các mốc ngày giờ hiển thị theo Asia/Ho_Chi_Minh; thời gian sự kiện hệ thống được lưu nhất quán theo UTC.
 
 <!-- pagebreak -->
 
@@ -367,14 +430,20 @@ Kiểm tra nội dung tệp ngoài phần mở rộng, dung lượng, kích thư
 | AC16 | MVP | Hai người cùng xác nhận trả một món | Chỉ một lần trả được ghi nhận |
 | AC17 | MVP | Mạng lỗi khi gửi thao tác | Có thông báo; gửi lại không nhân đôi dữ liệu |
 | AC18 | MVP | AI lỗi hoặc không có kết quả phù hợp | Báo đúng tình trạng, cho sửa điều kiện hoặc xem danh sách cơ bản |
-| AC19 | MVP mới | Truy cập object ảnh gốc bằng URL công khai hoặc API không có quyền | Bị từ chối; DTO công khai không lộ key/URL gốc |
-| AC20 | MVP mới | Ảnh có giấy tờ, mặt người, số hoặc mã nhạy cảm | Qwen gợi ý vùng, OpenCV che/mờ; người dùng kiểm tra rồi mới công khai bản sạch |
-| AC21 | MVP mới | AI/OpenCV lỗi, JSON sai hoặc ảnh chưa duyệt | Ảnh gốc vẫn riêng tư; hiện placeholder; mô tả hợp lệ vẫn lưu và tìm được khi có vector |
+| AC19 | MVP mới | Kiểm tra mọi upload/URL/API/prefix R2 của original | Original không được upload R2; không có API/download object gốc kể cả tài khoản có quyền |
+| AC20 | MVP mới | Ảnh có vùng nhạy cảm hoặc không có vùng nhạy cảm | Nhánh có PII lưu output che/mờ; nhánh không PII lưu output chuẩn hóa; cả hai bỏ raw, loại EXIF và chỉ public sau duyệt |
+| AC21 | MVP mới | AI/OpenCV lỗi, JSON sai hoặc output chưa duyệt | Lỗi không được lưu raw làm output; cleanup input, mất payload phải tải lại; output chờ duyệt dùng placeholder, giữ mô tả hợp lệ |
 | AC22 | MVP mới | Kiểm tra ảnh sạch và thay ảnh sau duyệt | Không còn EXIF/GPS; bản mới phải duyệt lại; vector/kết quả worker cũ không có hiệu lực |
-| AC23 | MVP mới | Query ảnh lỗi, upload dở hoặc xóa bài lúc R2 lỗi | Dọn tệp tạm/mồ côi; thu hồi hiển thị trước, retry xóa mà không mất bản ghi công việc |
+| AC23 | MVP mới | Query ảnh lỗi, crash/deadline hoặc xóa bài lúc R2 lỗi | Không staging input R2; bỏ buffer, không raw DLQ/log; dọn output mồ côi, thu hồi hiển thị trước và retry chỉ từ nguồn output đã lưu |
 | AC24 | MVP mới | Sai model revision/profile, số chiều hoặc dùng ảnh chưa duyệt để embedding | Backend từ chối kết quả; chỉ index bản sạch đúng phiên bản và vector 2048 chiều hợp lệ |
 
-Đánh giá AI cần bộ truy vấn tiếng Việt có nhãn và các ảnh cùng món ở góc chụp khác nhau. Bộ kiểm tra riêng tư cần vùng nhạy cảm có nhãn, đo mức bỏ sót và khả năng còn đọc được sau che/mờ; thử model không phát hiện gì, ảnh xoay và vùng nhỏ. Theo dõi khả năng tìm đúng trong nhóm kết quả đầu, đồng thời thử đồ khác nhưng cùng màu hoặc cùng kiểu. Chỉ chốt mục tiêu định lượng sau khi có dữ liệu và hạ tầng thử nghiệm.
+Đánh giá AI cần bộ truy vấn tiếng Việt có nhãn và ảnh khác góc; theo dõi Hit@10/Recall@50 ở bảng cấu hình, báo mục tiêu đề xuất và kết quả thực đo riêng. Đo theo món đồ duy nhất sau kiểm tra nghiệp vụ, tách tập theo món để tránh ảnh gần trùng rò rỉ giữa calibration/test; thử cả truy vấn không có món đúng. Kiểm tra riêng tư gồm vùng nhạy cảm có nhãn, mức bỏ sót/khả năng đọc sau che, ảnh xoay/vùng nhỏ và model không phát hiện gì. Chỉ chốt ngưỡng nghiệm thu sau đo; không coi điểm tương đồng là xác suất.
+
+Kiểm thử tích hợp RabbitMQ thật phải bao phủ tái sử dụng kết nối, broker chưa sẵn sàng khi khởi động, mất mạng/reconnect/đăng ký lại consumer, restart broker có volume, publish không route/không confirm, Python chết sau phát kết quả trước ACK và .NET chết sau commit trước ACK. Kiểm tra message lặp/sai schema, DLQ, nguồn/lease cũ, retry hết giới hạn, truy vấn hết deadline và queue đầy. Job bài đăng đã commit phải được khôi phục; kết quả không áp dụng hai lần; inference không chặn heartbeat; ảnh riêng tư không lọt vào log. Đây là tiêu chí triển khai, chưa phải kết quả kiểm thử của bộ khung hiện tại.
+
+Kiểm thử hybrid/search store phải xác nhận Python là bên lưu và truy vấn vector; .NET chỉ kiểm quyền/nguồn/duyệt hiện tại và trả DTO. Bao phủ crash sau commit search DB trước biên nhận, snapshot/tombstone đảo thứ tự, nhiều source job cùng manifest, xóa/thu hồi duyệt khi embedding chạy, retry sau tombstone và restore/rebuild. So sánh lexical-only/vector-only/hybrid, lọc trước candidate limit, dedupe nhiều ảnh một món, thiếu lexical, tie, ngưỡng theo profile và refill hữu hạn. Chưa chạy các kiểm thử này hoặc đo các mục tiêu độ chính xác.
+
+Kiểm thử chính sách ảnh 1.4.0 phải bắt cả nhánh PII/no-PII, AI/tệp lỗi, proxy/multipart spool, broker disconnect, crash/deadline và query ảnh. Spy/mock mọi lệnh S3 PUT phải chứng minh chỉ bytes output đã kiểm được upload, không raw hoặc prefix tạm; không có endpoint original hoặc body trong job/log/DLQ/backup. Sau kết thúc phải cleanup buffer; retry sau mất RAM phải yêu cầu tải lại. Thử thêm che trên output đã lưu, không unblur từ input đã bỏ. Chỉ kiểm logical lifecycle, không tuyên bố xóa forensic broker từ TTL.
 
 <!-- pagebreak -->
 
@@ -386,9 +455,9 @@ Kiểm tra nội dung tệp ngoài phần mở rộng, dung lượng, kích thư
 2. **Xác minh:** ai tạo câu hỏi, có bắt buộc trả lời câu đã tạo hay không và bằng chứng cần xuất trình tại điểm.
 3. **Nhiều yêu cầu:** có cho duyệt nhiều người cùng lúc, cách rút hoặc thu hồi yêu cầu, cách đóng yêu cầu sau trả.
 4. **Nơi giữ:** cách xử lý điểm đồng ý trước nhưng chưa nhận thực tế; ai cập nhật khi đồ gửi ngoài hệ thống đã trả.
-5. **Dữ liệu và vận hành:** thời hạn lưu ảnh gốc/bản sạch/tệp tạm, câu trả lời, chat; quyền duyệt ảnh, cách sửa/gỡ và xóa backup; đầu mối xử lý tranh chấp.
-6. **Tìm kiếm:** độ rộng bộ lọc thời gian, cách dùng ảnh cùng mô tả, bộ dữ liệu đánh giá và mục tiêu chất lượng.
-7. **Công nghệ:** R2 đã chốt; cần xác nhận các mã Qwen đề xuất sau benchmark, ghim revision/profile và phiên bản gói/runtime; chọn nhà cung cấp OIDC, CPU/GPU, cấu hình bucket/retention và ngân sách sau đo thử.
+5. **Dữ liệu và vận hành:** không lưu raw; chốt retention output/broker tạm, quyền duyệt, cleanup buffers/proxy/log/DLQ/backup; migration processed-only, kiểm kê/xử lý original lịch sử nếu có; không thực thi xóa dữ liệu trong lần sửa tài liệu.
+6. **Tìm kiếm:** chốt bộ lọc, quy tắc chọn profile, trọng số/RRF/candidate limits và ngưỡng gợi ý theo trường hợp; bộ dữ liệu có nhãn/calibration/test, mục tiêu được duyệt và kết quả thực đo theo bảng cấu hình. Không tự bật trộn điểm text–image.
+7. **Công nghệ:** Python lưu/tìm vector và RabbitMQ đã chốt; cần ghim model/runtime/client, migration hai database/ACL, FTS/GIN, outbox/document version/watermark/tombstone, đối soát/rebuild/backup, CPU/GPU, payload/queue/SQL limits và ngân sách. SQL/ERD bootstrap chưa là schema hybrid đích.
 
 Các nội dung trên là điểm cần quyết định, không phải chức năng đã được xác nhận trong demo. Đăng ký điểm tiếp nhận, dashboard quản trị đầy đủ, thông báo đẩy, thanh toán, giao vận và tích hợp mạng xã hội nằm ngoài phạm vi đặc tả MVP này.
 
@@ -406,9 +475,9 @@ Các tư liệu S1 đến S5 nằm trong thư mục [docs/demo/findie-dang-bai](
 
 - **T1:** [React với TypeScript](https://react.dev/learn/typescript) và [Vite](https://vite.dev/guide/).
 - **T2:** [ASP.NET Core Web API](https://learn.microsoft.com/en-us/aspnet/core/web-api/).
-- **T3:** [FastAPI nhận tệp](https://fastapi.tiangolo.com/tutorial/request-files/).
+- **T3:** [FastAPI](https://fastapi.tiangolo.com/), dùng cho health/ops nội bộ; transport suy luận là RabbitMQ.
 - **T4:** [Npgsql EF Core](https://www.npgsql.org/efcore/).
-- **T5:** [pgvector](https://github.com/pgvector/pgvector) và [pgvector cho .NET](https://github.com/pgvector/pgvector-dotnet).
+- **T5:** [pgvector và hybrid search](https://github.com/pgvector/pgvector#hybrid-search), vector cosine và kết hợp PostgreSQL full-text.
 - **T6:** [Qwen3-VL-Embedding-2B](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B), model card chính thức cho embedding text/ảnh và 2048 chiều.
 - **T7:** [Qwen3-VL-4B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct), model card chính thức cho OCR và định vị vùng.
 - **T8:** [ASP.NET Core SignalR](https://learn.microsoft.com/en-us/aspnet/core/signalr/introduction).
@@ -417,4 +486,14 @@ Các tư liệu S1 đến S5 nằm trong thư mục [docs/demo/findie-dang-bai](
 - **T10:** [R2 với AWS SDK for .NET](https://developers.cloudflare.com/r2/examples/aws/aws-sdk-net/) và [quyền công khai của bucket](https://developers.cloudflare.com/r2/buckets/public-buckets/).
 - **T11:** [R2 presigned URL](https://developers.cloudflare.com/r2/api/s3/presigned-urls/) và [object lifecycle](https://developers.cloudflare.com/r2/buckets/object-lifecycles/).
 
-Nguồn R2, Qwen Embedding, OpenCV và giới hạn pgvector được đối chiếu ngày 21/10/2026; model card Qwen3-VL-4B-Instruct được đối chiếu ngày 22/10/2026; các nguồn nền tảng còn lại từ bản đặc tả ngày 20/10/2026. Tài liệu mô tả khả năng của thành phần, không thay cho kiểm thử tích hợp, benchmark hoặc xác nhận chi phí thực tế. Chi tiết kỹ thuật nằm trong [kiến trúc hệ thống](system-architecture.md).
+- **T12:** [RabbitMQ Connections](https://www.rabbitmq.com/docs/connections) và [Heartbeats](https://www.rabbitmq.com/docs/heartbeats), kết nối lâu dài và phát hiện đứt kết nối.
+- **T13:** [RabbitMQ Reliability](https://www.rabbitmq.com/docs/reliability), [Publisher Confirms và Consumer ACK](https://www.rabbitmq.com/docs/confirms), [request/reply](https://www.rabbitmq.com/tutorials/tutorial-six-python), độ bền, giao nhận lặp và correlation.
+- **T14:** [RabbitMQ .NET client API guide](https://www.rabbitmq.com/client-libraries/dotnet-api-guide) và [aio-pika](https://docs.aio-pika.com/), client .NET/Python và phục hồi kết nối.
+
+- **T15:** [PostgreSQL 17 text search/ranking](https://www.postgresql.org/docs/17/textsearch-controls.html), [GIN](https://www.postgresql.org/docs/17/textsearch-indexes.html) và [unaccent](https://www.postgresql.org/docs/17/unaccent.html); baseline tiếng Việt cần đo.
+- **T16:** [Ví dụ RRF pgvector-python](https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search/rrf.py); trọng số/mục tiêu Findie là đề xuất riêng.
+- **T17:** [psycopg 3](https://www.psycopg.org/psycopg3/docs/) và [pgvector-python](https://github.com/pgvector/pgvector-python), truy cập kho vector từ Python.
+
+- **T18:** [RabbitMQ temporary/exclusive queues và storage](https://www.rabbitmq.com/docs/queues), [TTL](https://www.rabbitmq.com/docs/ttl) và [classic queue storage](https://www.rabbitmq.com/docs/classic-queues); transient không đồng nghĩa RAM-only hoặc xóa vật lý tức thì.
+
+Nguồn hybrid search/PostgreSQL/Python client và RabbitMQ/client được đối chiếu ngày 23/10/2026; R2/Qwen Embedding/OpenCV và các nguồn mô hình giữ ngày đối chiếu trước đó. Thuật toán/profile/trọng số/candidate budgets và mục tiêu chất lượng là đề xuất thiết kế, chưa phải kết quả Findie đo được hoặc SLA. Nguồn kỹ thuật xác nhận khả năng thành phần, không thay benchmark hoặc kiểm thử. Chi tiết nằm trong [kiến trúc hệ thống](system-architecture.md).

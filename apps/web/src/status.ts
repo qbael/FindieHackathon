@@ -3,7 +3,7 @@ export type SystemStatus = {
   stage: 'scaffold';
   database: 'ready' | 'unavailable';
   ai: 'ready' | 'unavailable';
-  features: { business: false; authentication: false; storage: false };
+  features: { business: false; authentication: boolean; storage: false };
 };
 
 export function readSystemStatus(value: unknown): SystemStatus {
@@ -18,7 +18,7 @@ export function readSystemStatus(value: unknown): SystemStatus {
     !['ready', 'unavailable'].includes(status.database ?? '') ||
     !['ready', 'unavailable'].includes(status.ai ?? '') ||
     status.features?.business !== false ||
-    status.features?.authentication !== false ||
+    typeof status.features?.authentication !== 'boolean' ||
     status.features?.storage !== false
   ) {
     throw new Error('Phản hồi trạng thái không đúng hợp đồng khởi tạo.');
