@@ -1,7 +1,7 @@
 # Kế hoạch khởi tạo
 
 **Ghi chú ngày 23/10/2026, kiến trúc đích v1.4.0:** đây là hồ sơ bộ khung đã khởi tạo.
-[Kiến trúc đích](../../system-architecture.md) giao Python toàn bộ AI/ảnh, lưu embedding và
+[Kiến trúc đích](../../architecture/system-architecture.md) giao Python toàn bộ AI/ảnh, lưu embedding và
 hybrid search; .NET giữ nghiệp vụ, R2, job/outbox, kiểm quyền/điều kiện hiện tại và DTO cuối.
 RabbitMQ/AMQP lâu dài truyền lệnh/kết quả, lập/xóa chỉ mục và truy vấn/ứng viên. PostgreSQL
 dùng chung một instance với hai database logic: `findie` chỉ .NET truy cập, `findie_search`

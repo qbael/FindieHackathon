@@ -10,7 +10,7 @@ const {chromium}=require('/home/bael/.cache/codex-runtimes/codex-primary-runtime
  await page.addScriptTag({path:'scripts/docs/erd/drawio-mxClient.js'});
  await page.addScriptTag({path:'scripts/docs/erd/mxER.js'});
  await page.evaluate(()=>{mxCodec.allowlist=['mxStylesheet','Array','mxGraphModel','mxCell','mxGeometry','mxRectangle','mxPoint'];});
- const xml=fs.readFileSync('docs/findie-erd.drawio','utf8');
+ const xml=fs.readFileSync('docs/database/findie-erd.drawio','utf8');
  const pages=await page.evaluate(xml=>Array.from(new DOMParser().parseFromString(xml,'text/xml').querySelectorAll('diagram')).map(p=>({id:p.getAttribute('id'),name:p.getAttribute('name'),width:Number(p.querySelector('mxGraphModel').getAttribute('pageWidth')),height:Number(p.querySelector('mxGraphModel').getAttribute('pageHeight'))})),xml);
  let report=[];
  for(const [i,p] of pages.entries()){

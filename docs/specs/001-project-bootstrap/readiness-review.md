@@ -13,11 +13,11 @@ Không cần đợi chốt mọi quyết định để làm mọi việc. Hiến
 
 ## Những yêu cầu đã đủ rõ để làm cơ sở
 
-- Phạm vi và phần ngoài MVP, danh mục F01–F11, các tác nhân cùng ba nhánh nơi giữ đã được ghi rõ ([đặc tả, dòng 15–65](../../DAC_TA_FINDIE.md#2-danh-mục-chức-năng)).
-- BR01–BR06, một nơi giữ hiện tại, một lần hoàn tất trao trả và sự khác nhau giữa phê duyệt, tiếp nhận thực tế, trao trả đã rõ ([đặc tả, dòng 206–231](../../DAC_TA_FINDIE.md#7-quy-tắc-và-trạng-thái-nghiệp-vụ)).
-- Dữ liệu công khai/riêng tư, quyền do backend kiểm soát và việc ảnh chưa duyệt không được công khai/lập chỉ mục ảnh đã có yêu cầu rõ ([đặc tả, dòng 257–265 và 309–327](../../DAC_TA_FINDIE.md#10-tìm-kiếm-thông-minh-và-yêu-cầu-chất-lượng)).
-- Hành vi khi AI lỗi, gửi lại, thao tác đồng thời, kết nối lại hội thoại và kết quả AI lỗi thời đã được mô tả làm cơ sở thiết kế ([kiến trúc, dòng 181–194 và 212–249](../../system-architecture.md#6-yêu-cầu-nhận-đồ-hội-thoại-và-ba-nhánh-nhận-lại-đồ)).
-- AC01–AC24 và NFR01–NFR06 cung cấp khung nghiệm thu nghiệp vụ; nhãn F/BR/AC giúp truy vết khi tách tính năng ([đặc tả, dòng 329–377](../../DAC_TA_FINDIE.md#11-tiêu-chí-nghiệm-thu)).
+- Phạm vi và phần ngoài MVP, danh mục F01–F11, các tác nhân cùng ba nhánh nơi giữ đã được ghi rõ ([đặc tả, dòng 15–65](../../product/DAC_TA_FINDIE.md#2-danh-mục-chức-năng)).
+- BR01–BR06, một nơi giữ hiện tại, một lần hoàn tất trao trả và sự khác nhau giữa phê duyệt, tiếp nhận thực tế, trao trả đã rõ ([đặc tả, dòng 206–231](../../product/DAC_TA_FINDIE.md#7-quy-tắc-và-trạng-thái-nghiệp-vụ)).
+- Dữ liệu công khai/riêng tư, quyền do backend kiểm soát và việc ảnh chưa duyệt không được công khai/lập chỉ mục ảnh đã có yêu cầu rõ ([đặc tả, dòng 257–265 và 309–327](../../product/DAC_TA_FINDIE.md#10-tìm-kiếm-thông-minh-và-yêu-cầu-chất-lượng)).
+- Hành vi khi AI lỗi, gửi lại, thao tác đồng thời, kết nối lại hội thoại và kết quả AI lỗi thời đã được mô tả làm cơ sở thiết kế ([kiến trúc, dòng 181–194 và 212–249](../../architecture/system-architecture.md#6-yêu-cầu-nhận-đồ-hội-thoại-và-ba-nhánh-nhận-lại-đồ)).
+- AC01–AC24 và NFR01–NFR06 cung cấp khung nghiệm thu nghiệp vụ; nhãn F/BR/AC giúp truy vết khi tách tính năng ([đặc tả, dòng 329–377](../../product/DAC_TA_FINDIE.md#11-tiêu-chí-nghiệm-thu)).
 
 Các điểm trên hỗ trợ CHK001–CHK002, CHK012, CHK014, CHK018, CHK020–CHK021, CHK024–CHK025 và CHK027. Đây là nhận xét chất lượng tài liệu, không phải xác nhận đã triển khai hay kiểm thử thành công.
 
@@ -35,13 +35,13 @@ Các điểm trên hỗ trợ CHK001–CHK002, CHK012, CHK014, CHK018, CHK020–
 
 Các quyết định cần có người chịu trách nhiệm, người phê chuẩn và mốc gắn với tính năng; bảng nhóm quyết định hiện chưa phân công tên cụ thể (CHK033; đặc tả §12; kiến trúc §11). Mục Hồ sơ cũng cần chốt phạm vi tối thiểu hoặc loại trừ rõ khi lập đặc tả giao diện (CHK034; đặc tả dòng 61); đây không phải lý do chặn mọi phần độc lập.
 
-Lưu ý về ảnh hưởng dữ liệu: thiết kế hiện nêu rút/thu hồi chưa được mô hình hóa thành trạng thái triển khai và khóa ngoại sẽ chặn đổi yêu cầu đã có hội thoại sang trạng thái khác. Chốt chính sách này có thể cần thay đổi lược đồ có chủ đích, không chỉ thêm nút giao diện ([thiết kế dữ liệu, dòng 235–239](../../database-design.md#hội-thoại-đúng-hai-bên)).
+Lưu ý về ảnh hưởng dữ liệu: thiết kế hiện nêu rút/thu hồi chưa được mô hình hóa thành trạng thái triển khai và khóa ngoại sẽ chặn đổi yêu cầu đã có hội thoại sang trạng thái khác. Chốt chính sách này có thể cần thay đổi lược đồ có chủ đích, không chỉ thêm nút giao diện ([thiết kế dữ liệu, dòng 235–239](../../database/database-design.md#hội-thoại-đúng-hai-bên)).
 
 ## Những điểm cần đồng bộ, không nên báo thiếu sai
 
 - **Đã có baseline cho cả ảnh và mô tả**: người dùng chọn một chế độ, không tự trộn điểm (đặc tả dòng 125, 323; kiến trúc dòng 171–177). Mục quyết định còn mở ở đặc tả dòng 390 nên cập nhật trạng thái hoặc xác nhận baseline trong đặc tả tính năng; không cần phát minh thêm tính năng kết hợp điểm (CHK011).
 - **Không cần chọn lại toàn bộ công nghệ**: kế hoạch bootstrap đã chốt runtime/gói local; cấu hình R2, hạ tầng suy luận và khả năng triển khai thực tế vẫn cần quyết định cho phần liên quan (bootstrap plan dòng 13–21; CHK030). Việc chưa benchmark không đồng nghĩa chưa có yêu cầu chức năng.
-- **Trạng thái tài liệu cần phân lớp rõ hơn**: [Hướng dẫn phát triển](../../development.md) và bootstrap ghi bộ khung đã có; một số tài liệu thiết kế vẫn mô tả trạng thái demo/chưa triển khai. Không dùng nhãn đó để kết luận bộ khung chưa tồn tại, cũng không dùng các nhiệm vụ bootstrap đã hoàn tất để kết luận F01–F11 đã xong (CHK013; bootstrap spec dòng 13–15).
+- **Trạng thái tài liệu cần phân lớp rõ hơn**: [Hướng dẫn phát triển](../../guides/development.md) và bootstrap ghi bộ khung đã có; một số tài liệu thiết kế vẫn mô tả trạng thái demo/chưa triển khai. Không dùng nhãn đó để kết luận bộ khung chưa tồn tại, cũng không dùng các nhiệm vụ bootstrap đã hoàn tất để kết luận F01–F11 đã xong (CHK013; bootstrap spec dòng 13–15).
 - **Hiến chương ưu tiên**: các bất biến bắt buộc đã được hiến chương thông qua dù một số đoạn đặc tả còn ghi “đề xuất”. Khi viết đặc tả tính năng, ghi rõ yêu cầu bắt buộc kế thừa và quyết định sản phẩm thực sự còn mở (CHK010; hiến chương dòng 205–215).
 
 ## Trình tự để bắt đầu phát triển nghiệp vụ

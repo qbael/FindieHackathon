@@ -1,167 +1,274 @@
-import { useEffect, useState } from 'react';
-import { loadUser, logout, type UserProfile } from './auth';
-import { readSystemStatus, type SystemStatus } from './status';
+import { useEffect, useState, type ReactNode } from "react";
+import { loadUser, logout, type UserProfile } from "./lib/auth";
+import { useAction } from "./hooks/hooks";
+import { Breadcrumb, EmptyState, ErrorNotice, Icon, Loading } from "./components/ui";
+import SignIn from "./pages/SignIn";
+import Profile from "./pages/Profile";
+import { Intakes, IntakeDetail } from "./pages/Intakes";
+import { CustodyHistory, ReturnItem } from "./pages/Custody";
+import { Home, Search, ItemDetail, Points } from "./pages/Explore";
+import { PostItem, ReviewImages } from "./pages/Posting";
+import {
+  ClaimItem,
+  Requests,
+  ClaimDetail,
+  MyPosts,
+  TransferItem,
+  Messages,
+} from "./pages/Recovery";
 
 export default function App() {
-  const [status, setStatus] = useState<SystemStatus | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [attempt, setAttempt] = useState(0);
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState('');
-
+  const [loading, setLoading] = useState(path !== "/signin");
+  const [error, setError] = useState<Error | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const action = useAction();
   useEffect(() => {
+    if (path === "/signin") return;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
     let active = true;
-    setAuthLoading(true);
-    setAuthError('');
-    void loadUser(controller.signal).then((profile) => {
-      if (active) setUser(profile);
-    }).catch(() => {
-      if (active) setAuthError('Chưa đọc được phiên đăng nhập. Hãy kiểm tra lại kết nối.');
-    }).finally(() => {
-      clearTimeout(timeout);
-      if (active) setAuthLoading(false);
-    });
-    return () => {
-      active = false;
-      clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [attempt]);
-
-  async function handleLogout() {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      await logout(controller.signal);
-      setUser(null);
-    } catch (cause) {
-      setAuthError(cause instanceof Error && cause.name !== 'AbortError'
-        ? cause.message : 'Đăng xuất chưa hoàn tất trong thời gian chờ. Hãy thử lại.');
-    } finally {
-      clearTimeout(timeout);
-      setAuthLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    const timeout = setTimeout(() => controller.abort(), 6000);
     setLoading(true);
-    setStatus(null);
-    setError('');
-
-    async function loadStatus() {
-      try {
-        const response = await fetch('/api/system/status', { signal: controller.signal });
-        if (!response.ok) throw new Error(`API trả về HTTP ${response.status}.`);
-        const result = readSystemStatus(await response.json());
-        if (active) setStatus(result);
-      } catch (cause) {
-        if (active) setError(
-          cause instanceof Error && cause.name !== 'AbortError'
-            ? cause.message
-            : 'API chưa phản hồi trong thời gian chờ.',
-        );
-      } finally {
+    setError(null);
+    loadUser(controller.signal)
+      .then((value) => {
+        if (active) setUser(value);
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            new Error(
+              "Chưa kiểm tra được phiên đăng nhập. Hãy kiểm tra kết nối và thử lại.",
+            ),
+          );
+      })
+      .finally(() => {
         clearTimeout(timeout);
         if (active) setLoading(false);
-      }
-    }
-
-    void loadStatus();
+      });
     return () => {
       active = false;
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [attempt]);
+  }, [attempt, path]);
 
-  const services = [
-    { name: 'API nghiệp vụ', detail: 'ASP.NET Core', ready: status ? true : null },
-    { name: 'Cơ sở dữ liệu', detail: 'PostgreSQL · pgvector · Docker', ready: status ? status.database === 'ready' : null },
-    { name: 'Dịch vụ AI', detail: 'FastAPI · thử nghiệm mô hình trên Google Colab', ready: status ? status.ai === 'ready' : null },
-  ];
+  const itemRoute = path.match(
+    /^\/items\/([\da-f-]{36})(?:\/(claim|review|transfer|edit|history|return))?$/i,
+  );
+  const claimRoute = path.match(/^\/claims\/([\da-f-]{36})$/i);
+  const intakeRoute = path.match(/^\/intakes\/([\da-f-]{36})$/i);
+  const titles: Record<string, string> = {
+    "/": "Kết nối để tìm lại",
+    "/search": "Tìm đồ thất lạc",
+    "/post": "Đăng tin nhặt được",
+    "/requests": "Yêu cầu trao trả",
+    "/messages": "Tin nhắn",
+    "/posts": "Bài đăng của tôi",
+    "/hubs": "Điểm tiếp nhận Findie Hub",
+    "/intakes": "Theo dõi tiếp nhận",
+    "/profile": "Hồ sơ cá nhân",
+  };
+  useEffect(() => {
+    if (path !== "/signin")
+      document.title = `${titles[path] ?? "Thông tin trao trả"} · Findie`;
+  }, [path]);
 
+  if (path === "/signin") return <SignIn />;
+  function protect(content: () => ReactNode) {
+    if (loading) return <Loading />;
+    if (error)
+      return (
+        <ErrorNotice
+          error={error}
+          retry={() => setAttempt((value) => value + 1)}
+        />
+      );
+    if (!user)
+      return (
+        <EmptyState title="Đăng nhập để tiếp tục" icon="document">
+          <p>
+            Dùng tài khoản Google để bảo vệ quyền riêng tư và kết nối trao trả
+            đồ.
+          </p>
+          <a
+            className="button"
+            href={`/signin?returnUrl=${encodeURIComponent(path + window.location.search)}`}
+          >
+            Tiếp tục với Findie
+            <Icon name="arrow" size={17} />
+          </a>
+        </EmptyState>
+      );
+    return content();
+  }
+  let content: ReactNode;
+  if (path === "/") content = <Home />;
+  else if (path === "/search") content = protect(() => <Search />);
+  else if (path === "/post") content = protect(() => <PostItem />);
+  else if (path === "/posts") content = protect(() => <MyPosts />);
+  else if (path === "/requests")
+    content = protect(() => <Requests user={user!} />);
+  else if (path === "/messages")
+    content = protect(() => <Messages user={user!} />);
+  else if (path === "/hubs") content = protect(() => <Points />);
+  else if (path === "/profile") content = protect(() => <Profile user={user!} onUpdate={setUser} />);
+  else if (path === "/intakes") content = protect(() => <Intakes user={user!} />);
+  else if (intakeRoute) content = protect(() => <IntakeDetail id={intakeRoute[1]} user={user!} />);
+  else if (itemRoute) {
+    const [, id, view] = itemRoute;
+    content = protect(() =>
+      view === "claim" ? (
+        <ClaimItem id={id} />
+      ) : view === "review" ? (
+        <ReviewImages id={id} />
+      ) : view === "transfer" ? (
+        <TransferItem id={id} />
+      ) : view === "edit" ? (
+        <PostItem id={id} />
+      ) : view === "history" ? (
+        <CustodyHistory id={id} />
+      ) : view === "return" ? (
+        <ReturnItem id={id} />
+      ) : (
+        <ItemDetail id={id} />
+      ),
+    );
+  } else if (claimRoute)
+    content = protect(() => <ClaimDetail id={claimRoute[1]} user={user!} />);
+  else
+    content = (
+      <EmptyState title="Không tìm thấy trang">
+        <p>Đường dẫn có thể đã thay đổi.</p>
+        <a className="button" href="/">
+          Về trang chủ
+        </a>
+      </EmptyState>
+    );
+
+  const active =
+    path === "/search" || path === "/" || (itemRoute && !itemRoute[2])
+      ? "search"
+      : path === "/post" ||
+          path === "/posts" ||
+          itemRoute?.[2] === "edit" ||
+          itemRoute?.[2] === "review" ||
+          itemRoute?.[2] === "history" ||
+          itemRoute?.[2] === "return" ||
+          itemRoute?.[2] === "transfer"
+        ? "posts"
+        : path === "/requests" || claimRoute || itemRoute?.[2] === "claim"
+          ? "requests"
+          : path === "/messages"
+            ? "messages"
+            : "hubs";
   return (
-    <main>
-      <header>
-        <a className="brand" href="/" aria-label="Findie — trang khởi tạo">findie<span aria-hidden="true">.</span></a>
-        <span className="environment">Môi trường phát triển</span>
-      </header>
-
-      <section className="intro" aria-labelledby="page-title">
-        <p className="eyebrow">Nền tảng tìm và trao trả đồ thất lạc</p>
-        <h1 id="page-title">Bắt đầu kết nối.</h1>
-        <p className="lead">Nền tảng xác thực và dữ liệu đã được khởi tạo. Trang này giúp kiểm tra kết nối giữa giao diện, API và các dịch vụ nền trước khi xây dựng nghiệp vụ.</p>
-      </section>
-
-      <section className="panel account" aria-labelledby="account-title" aria-busy={authLoading}>
-        <div className="panel-heading">
-          <div>
-            <h2 id="account-title">{user ? `Xin chào, ${user.displayName}` : 'Đăng nhập Findie'}</h2>
-            <p>{user ? user.email : 'Sử dụng tài khoản Google để tiếp tục.'}</p>
-          </div>
-          {user ? (
-            <button type="button" disabled={authLoading} onClick={() => void handleLogout()}>
-              {authLoading ? 'Đang xử lý…' : 'Đăng xuất'}
-            </button>
-          ) : !authLoading && status?.features.authentication ? (
-            <a className="button" href="/api/auth/google?returnUrl=%2F">Đăng nhập bằng Google</a>
-          ) : (
-            <button type="button" disabled>
-              {authLoading || loading ? 'Đang kiểm tra…' : 'Đăng nhập bằng Google'}
-            </button>
-          )}
-        </div>
-        <div aria-live="polite">
-          {authError && <p className="error" role="alert">{authError}</p>}
-          {!user && !loading && status?.features.authentication === false && (
-            <p className="error">Đăng nhập Google chưa được cấu hình trên máy chủ.</p>
-          )}
-        </div>
-      </section>
-
-      <section className="panel" aria-labelledby="services-title" aria-busy={loading}>
-        <div className="panel-heading">
-          <div>
-            <h2 id="services-title">Trạng thái dịch vụ</h2>
-            <p>Đọc trực tiếp từ API khi mở trang hoặc kiểm tra lại.</p>
-          </div>
-          <button type="button" disabled={loading || authLoading} onClick={() => setAttempt((value) => value + 1)}>
-            {loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'}
-          </button>
-        </div>
-        <div aria-live="polite" aria-atomic="true">
-          {error && <p className="error" role="alert">Chưa đọc được trạng thái: {error} Hãy kiểm tra API cục bộ rồi thử lại.</p>}
-          <ul className="services">
-            {services.map((service) => (
-              <li key={service.name}>
-                <div><h3>{service.name}</h3><p>{service.detail}</p></div>
-                <span className={`status ${service.ready === true ? 'ready' : service.ready === false ? 'unavailable' : 'unknown'}`}>
-                  <span className="dot" aria-hidden="true" />
-                  {loading ? 'Đang kiểm tra' : service.ready === true ? 'Sẵn sàng' : service.ready === false ? 'Chưa sẵn sàng' : 'Chưa xác định'}
-                </span>
-              </li>
+    <div className="app-shell">
+      <a className="skip-link" href="#main">
+        Chuyển đến nội dung
+      </a>
+      <header className="site-header">
+        <div className="header-inner">
+          <a href="/" className="brand" aria-label="Findie — Trang chủ">
+            findie<span>.</span>
+          </a>
+          <nav className="main-nav" aria-label="Điều hướng chính">
+            {[
+              ["search", "/", "Tìm đồ"],
+              ["posts", "/posts", "Bài đăng của tôi"],
+              ["requests", "/requests", "Yêu cầu trao trả"],
+              ["messages", "/messages", "Tin nhắn"],
+            ].map(([key, href, label]) => (
+              <a
+                key={key}
+                href={href}
+                aria-current={active === key ? "page" : undefined}
+              >
+                {label}
+              </a>
             ))}
-          </ul>
+          </nav>
+          <div className="header-actions">
+            <a
+              className="hub-link"
+              href="/hubs"
+              aria-current={active === "hubs" ? "page" : undefined}
+            >
+              <Icon name="building" size={18} />
+              <span>Findie Hub</span>
+            </a>
+            <a href="/post" className="button button-small">
+              <Icon name="plus" size={17} />
+              <span>Đăng tin</span>
+            </a>
+            {user ? (
+              <details className="account-menu">
+                <summary aria-label={`Tài khoản ${user.displayName}`}>
+                  <span className="avatar">
+                    {user.displayName.charAt(0).toLocaleUpperCase("vi")}
+                  </span>
+                </summary>
+                <div>
+                  <strong>{user.displayName}</strong>
+                  <a href="/profile">Hồ sơ cá nhân</a>
+                  <a href="/posts">Bài đăng của tôi</a>
+                  <a href="/posts?scope=managed">Đồ đang quản lý</a>
+                  <a href="/intakes">Theo dõi tiếp nhận</a>
+                  <button
+                    type="button"
+                    disabled={action.busy}
+                    onClick={() =>
+                      void action.run(async () => {
+                        await logout(AbortSignal.timeout(6000));
+                        window.location.assign("/");
+                      })
+                    }
+                  >
+                    {action.busy ? "Đang đăng xuất…" : "Đăng xuất"}
+                  </button>
+                </div>
+              </details>
+            ) : (
+              <a
+                className="signin-link"
+                href={`/signin?returnUrl=${encodeURIComponent(path + window.location.search)}`}
+              >
+                Đăng nhập
+              </a>
+            )}
+          </div>
         </div>
-        <p className="note">AI chưa sẵn sàng trong cấu hình hiện tại vì mô hình chỉ chạy thử trong Google Colab; FastAPI chưa thực hiện suy luận.</p>
-      </section>
-
-      <section className="next" aria-labelledby="scope-title">
-        <h2 id="scope-title">Phạm vi hiện tại</h2>
-        <p>Đăng nhập bằng Google, đăng xuất, hồ sơ cá nhân và API danh sách điểm tiếp nhận đã được triển khai.</p>
-        <p>Đăng tin, tìm kiếm, yêu cầu nhận đồ, hội thoại và lưu ảnh Cloudflare R2 chưa được triển khai.</p>
-        <p>Notebook Google Colab dùng để thử nghiệm Qwen và OpenCV trước khi tích hợp. Chưa sử dụng dữ liệu cá nhân thật trong giai đoạn này.</p>
-      </section>
-      <footer>Findie <span aria-hidden="true">/</span> Khởi tạo kỹ thuật</footer>
-    </main>
+      </header>
+      <main
+        id="main"
+        className={`main-content${path === "/" ? " main-home" : ""}`}
+      >
+        {path !== "/" && (
+          <Breadcrumb current={titles[path] ?? "Thông tin trao trả"} />
+        )}
+        <ErrorNotice error={action.error} />
+        {content}
+      </main>
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div>
+            <a href="/" className="brand">
+              findie<span>.</span>
+            </a>
+            <p>Kết nối để tìm lại. Trao trả bằng sự tử tế.</p>
+          </div>
+          <div className="footer-links">
+            <a href="/">Tìm đồ thất lạc</a>
+            <a href="/post">Đăng tin nhặt được</a>
+            <a href="/hubs">Mạng lưới Findie Hub</a>
+          </div>
+          <span className="footer-note">
+            <Icon name="shield" size={16} />
+            Vì một cộng đồng tin cậy
+          </span>
+        </div>
+      </footer>
+    </div>
   );
 }

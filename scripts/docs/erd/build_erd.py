@@ -4,8 +4,8 @@ import re, json, html, textwrap
 ROOT=Path(__file__).resolve().parents[3]
 CACHE=ROOT/'.cache/docs/erd'
 CACHE.mkdir(parents=True,exist_ok=True)
-SQL=(ROOT/'docs/database-schema.sql').read_text()
-OUT=ROOT/'docs/findie-erd.drawio'
+SQL=(ROOT/'docs/database/database-schema.sql').read_text()
+OUT=ROOT/'docs/database/findie-erd.drawio'
 
 def split_top(s):
     out=[]; level=0; quoted=False; start=0
@@ -91,7 +91,7 @@ class Page:
         self.text('eyebrow',f'FINDIE  /  DATABASE DESIGN  /  {num:02d}',60,35,w-120,24,12,C['muted'],True)
         self.text('title',title,60,70,w-120,55,32,C['ink'],True)
         self.text('subtitle',subtitle,60,128,w-120,40,16,C['muted'])
-        self.text('footer',f'{num:02d}  •  Nguồn: docs/database-schema.sql   |   PostgreSQL + pgvector   |   Thiết kế MVP đề xuất • 22.10.2026',60,h-50,w-120,25,12,C['muted'])
+        self.text('footer',f'{num:02d}  •  Nguồn: docs/database/database-schema.sql   |   PostgreSQL + pgvector   |   Thiết kế MVP đề xuất • 22.10.2026',60,h-50,w-120,25,12,C['muted'])
         PAGES.append(self)
     def vertex(self,id,value,x,y,w,h,style,parent='1'):
         assert id not in self.ids,id

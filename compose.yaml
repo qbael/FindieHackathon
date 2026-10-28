@@ -20,5 +20,30 @@ services:
       retries: 20
       start_period: 10s
 
+  rabbitmq:
+    image: rabbitmq:4.3.2-management@sha256:76412b1ed2865b88ed01b4a504f72e888842f2089a7527743d325ce7c9d3a43b
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "+S 2:2"
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./scripts/rabbitmq.conf:/etc/rabbitmq/conf.d/20-findie.conf:ro
+      - type: bind
+        source: ./.cache/rabbitmq/definitions.json
+        target: /etc/rabbitmq/definitions.json
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
+
 volumes:
   postgres_data:
+  rabbitmq_data:

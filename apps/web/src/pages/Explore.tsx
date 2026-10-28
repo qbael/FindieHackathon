@@ -1,0 +1,732 @@
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  ApiError,
+  custodyLabels,
+  formatDate,
+  foundTime,
+  pageNumber,
+  type Item,
+  type Page,
+  type Point,
+} from "../lib/api";
+import { useResource } from "../hooks/hooks";
+import {
+  basicSearchUrl,
+  searchImage,
+  searchText,
+  type SearchFilters,
+  type SearchResponse,
+} from "../lib/search";
+import {
+  Badge,
+  EmptyState,
+  ErrorNotice,
+  Icon,
+  ItemPhoto,
+  Loading,
+  Notice,
+  PageHeader,
+  Pagination,
+  SafetyNote,
+} from "../components/ui";
+
+export function Home() {
+  const [query, setQuery] = useState("");
+  const [from, setFrom] = useState("");
+  const [until, setUntil] = useState("");
+  return (
+    <>
+      <div className="trust-banner">
+        <span>
+          <Icon name="shield" />
+          <span>Cùng cộng đồng tìm lại những điều thân thuộc.</span>
+        </span>
+        <span className="trust-banner-note">
+          An tâm tìm kiếm · An toàn trao trả
+        </span>
+      </div>
+      <section className="hero" aria-labelledby="home-title">
+        <span className="eyebrow hero-eyebrow">
+          <span className="status-dot" />
+          Kết nối để tìm lại
+        </span>
+        <h1 id="home-title">
+          Bạn đang tìm
+          <br className="mobile-break" /> <span>món đồ nào?</span>
+        </h1>
+        <p>
+          Một chút mô tả. Một cơ hội tìm lại.
+          <br />
+          Cùng Findie kết nối với người đang giữ món đồ của bạn.
+        </p>
+      </section>
+      <form className="search-card" action="/search" method="get">
+        <div className="search-card-heading">
+          <Icon name="search" />
+          <h2>Tìm đồ thất lạc</h2>
+          <span>Từ những chi tiết bạn còn nhớ</span>
+        </div>
+        <div className="search-card-body">
+          <div className="field-label">
+            <label htmlFor="home-query">Đặc điểm món đồ</label>
+            <span className="field-hint">Màu sắc, hình dáng, phụ kiện…</span>
+          </div>
+          <div className="textarea-wrap">
+            <textarea
+              id="home-query"
+              name="q"
+              maxLength={200}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Ví dụ: Ví da màu đen, khóa kéo vàng, có một móc khóa nhỏ…"
+              rows={3}
+            />
+            <span className="character-count">{query.length}/200</span>
+          </div>
+          <div className="suggestions">
+            <span>Thử tìm</span>
+            {["Ví da đen", "Chùm chìa khóa", "Balô laptop xám"].map((text) => (
+              <button
+                type="button"
+                key={text}
+                onClick={() => {
+                  setQuery(text);
+                  document.getElementById("home-query")?.focus();
+                }}
+              >
+                {text}
+                <Icon name="plus" size={12} />
+              </button>
+            ))}
+          </div>
+          <div className="search-context">
+            <label>
+              Khu vực nhặt được
+              <div className="input-icon">
+                <Icon name="pin" size={17} />
+                <input
+                  name="area"
+                  placeholder="Phường, quận hoặc thành phố"
+                  maxLength={200}
+                />
+              </div>
+            </label>
+            <label>
+              Từ ngày
+              <input
+                type="date"
+                name="from"
+                value={from}
+                max={until || undefined}
+                onChange={(event) => setFrom(event.target.value)}
+              />
+            </label>
+            <label>
+              Đến ngày
+              <input
+                type="date"
+                name="until"
+                value={until}
+                min={from || undefined}
+                onChange={(event) => setUntil(event.target.value)}
+              />
+            </label>
+          </div>
+          <div className="search-bottom">
+            <span>
+              <Icon name="lock" size={15} />
+              Tôn trọng thông tin riêng của người nhặt
+            </span>
+            <button className="button" type="submit">
+              <Icon name="search" size={18} />
+              Tìm kiếm món đồ
+              <Icon name="arrow" size={17} />
+            </button>
+          </div>
+        </div>
+      </form>
+      <section className="benefits" aria-labelledby="benefits-title">
+        <div className="section-heading">
+          <p className="eyebrow">Tìm lại đồ, giữ trọn niềm tin</p>
+          <h2 id="benefits-title">An tâm trên từng bước kết nối.</h2>
+        </div>
+        <div className="benefit-grid">
+          {[
+            [
+              "shield",
+              "01",
+              "Bảo vệ thông tin riêng",
+              "Chỉ ảnh đã qua xử lý và được duyệt mới xuất hiện trên tin công khai.",
+            ],
+            [
+              "lock",
+              "02",
+              "Xác minh trước khi kết nối",
+              "Người giữ đối chiếu câu trả lời của bạn trước khi mở hội thoại trao trả.",
+            ],
+            [
+              "building",
+              "03",
+              "Có Findie Hub đồng hành",
+              "Tìm điểm tiếp nhận để bàn giao, bảo quản và nhận lại món đồ trực tiếp.",
+            ],
+          ].map(([icon, number, title, description]) => (
+            <article className="benefit-card" key={number}>
+              <div>
+                <span className={`benefit-icon benefit-${number}`}>
+                  <Icon
+                    name={icon as "shield" | "lock" | "building"}
+                    size={24}
+                  />
+                </span>
+                <span className="benefit-number">{number}</span>
+              </div>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+type SearchInput =
+  | { mode: "text"; text: string; filters: SearchFilters }
+  | { mode: "image"; file: File; filters: SearchFilters };
+
+export function Search() {
+  const query = new URLSearchParams(window.location.search);
+  const page = pageNumber(query.get("page"));
+  const [mode, setMode] = useState(
+    ["text", "image"].includes(query.get("mode") ?? "")
+      ? query.get("mode")!
+      : "basic",
+  );
+  const [from, setFrom] = useState(query.get("from") ?? "");
+  const [until, setUntil] = useState(query.get("until") ?? "");
+  const [request, setRequest] = useState<SearchInput | null>(() =>
+    query.get("mode") === "text" && query.get("q")?.trim()
+      ? {
+          mode: "text",
+          text: query.get("q")!.trim(),
+          filters: {
+            area: query.get("area")?.trim() || undefined,
+            from: query.get("from") || undefined,
+            until: query.get("until") || undefined,
+          },
+        }
+      : null,
+  );
+  const [suggestions, setSuggestions] = useState<SearchResponse | null>(null);
+  const [searchError, setSearchError] = useState<Error | null>(null);
+  const [searching, setSearching] = useState(Boolean(request));
+  const [attempt, setAttempt] = useState(0);
+  const filter = new URLSearchParams({ page: String(page), pageSize: "12" });
+  for (const key of ["q", "area", "from", "until"])
+    if (query.get(key)?.trim()) filter.set(key, query.get(key)!.trim());
+  const basic = useResource<Page<Item>>(request ? null : `/api/items?${filter}`);
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+    let active = true;
+    setSearching(true);
+    setSearchError(null);
+    setSuggestions(null);
+    const signal = AbortSignal.any([
+      controller.signal,
+      AbortSignal.timeout(45000),
+    ]);
+    const result =
+      request.mode === "image"
+        ? searchImage(request.file, request.filters, signal)
+        : searchText(request.text, request.filters, signal);
+    result
+      .then((value) => {
+        if (active) setSuggestions(value);
+      })
+      .catch((cause) => {
+        if (active)
+          setSearchError(
+            cause instanceof Error && !signal.aborted
+              ? cause
+              : new Error("Máy chủ phản hồi quá lâu. Vui lòng thử lại."),
+          );
+      })
+      .finally(() => {
+        if (active) setSearching(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [request, attempt]);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    if (mode !== "image") return;
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const file = form.get("image");
+    if (!(file instanceof File)) return;
+    setRequest({
+      mode: "image",
+      file,
+      filters: {
+        area: String(form.get("area") ?? "").trim() || undefined,
+        from: String(form.get("from") ?? "") || undefined,
+        until: String(form.get("until") ?? "") || undefined,
+      },
+    });
+  }
+  const items = request
+    ? suggestions?.items.map((hit) => hit.item)
+    : basic.data?.items;
+  const loading = request ? searching : basic.loading;
+  const error = request ? searchError : basic.error;
+  const retry = request ? () => setAttempt((value) => value + 1) : basic.reload;
+  const fallback = basicSearchUrl(
+    request?.filters ?? {
+      area: query.get("area") ?? undefined,
+      from: query.get("from") ?? undefined,
+      until: query.get("until") ?? undefined,
+    },
+  );
+  return (
+    <>
+      <PageHeader
+        eyebrow="Có thể món đồ của bạn đang ở đây"
+        title="Tìm đồ thất lạc"
+      >
+        Tìm gợi ý bằng mô tả hoặc ảnh món đồ, hoặc dùng bộ lọc cơ bản theo từ khóa,
+        khu vực và ngày nhặt được.
+      </PageHeader>
+      <div className="search-layout">
+        <aside className="panel filter-panel">
+          <div className="panel-title">
+            <h2>Bộ lọc tìm kiếm</h2>
+            <a className="text-button" href="/search">
+              Đặt lại
+            </a>
+          </div>
+          <form action="/search" onSubmit={submit}>
+            <label>
+              Cách tìm kiếm
+              <select
+                name="mode"
+                value={mode}
+                onChange={(event) => setMode(event.target.value)}
+              >
+                <option value="text">Gợi ý theo mô tả</option>
+                <option value="image">Gợi ý theo ảnh</option>
+                <option value="basic">Bộ lọc cơ bản</option>
+              </select>
+            </label>
+            {mode === "image" ? (
+              <label>
+                Ảnh món đồ
+                <input
+                  type="file"
+                  name="image"
+                  accept="image/jpeg,image/png,image/webp"
+                  required
+                />
+                <span className="field-hint">
+                  JPEG, PNG hoặc WebP, tối đa 10 MB. Ảnh chỉ dùng cho lượt tìm này.
+                </span>
+              </label>
+            ) : (
+              <label>
+                {mode === "basic" ? "Từ khóa" : "Mô tả món đồ"}
+                <input
+                  name="q"
+                  defaultValue={query.get("q") ?? ""}
+                  maxLength={mode === "basic" ? 200 : 2000}
+                  placeholder={mode === "basic" ? "Ví, chìa khóa, balô…" : "Ví da đen tại phòng E.205…"}
+                />
+                {mode === "text" && (
+                  <span className="field-hint">
+                    Có thể thêm vị trí cụ thể, như phòng E.205 hoặc sảnh hội trường
+                    A. Nhập Trường Đại học Sài Gòn ở bộ lọc khu vực.
+                  </span>
+                )}
+              </label>
+            )}
+            <label>
+              Khu vực
+              <input
+                name="area"
+                defaultValue={query.get("area") ?? ""}
+                maxLength={200}
+                placeholder="Ví dụ: Trường Đại học Sài Gòn"
+              />
+            </label>
+            <label>
+              Nhặt từ ngày
+              <input
+                type="date"
+                name="from"
+                value={from}
+                max={until || undefined}
+                onChange={(event) => setFrom(event.target.value)}
+              />
+            </label>
+            <label>
+              Đến ngày
+              <input
+                type="date"
+                name="until"
+                value={until}
+                min={from || undefined}
+                onChange={(event) => setUntil(event.target.value)}
+              />
+            </label>
+            <button className="button" type="submit" disabled={searching}>
+              <Icon name="search" size={17} />
+              {searching ? "Đang tìm kiếm…" : "Tìm kiếm"}
+            </button>
+          </form>
+          <div className="filter-legend">
+            <p className="eyebrow">Ba cách nhận lại đồ</p>
+            {Object.entries(custodyLabels).map(([key, label]) => (
+              <Badge key={key} value={key}>
+                {label}
+              </Badge>
+            ))}
+          </div>
+        </aside>
+        <section aria-label="Kết quả tìm kiếm" aria-busy={loading}>
+          <div className="results-heading">
+            <h2>
+              {request?.mode === "image"
+                ? "Gợi ý theo ảnh món đồ"
+                : query.get("q")
+                  ? `Kết quả cho “${query.get("q")}”`
+                  : "Món đồ đang tìm chủ"}
+            </h2>
+            {items && (
+              <span className="muted">
+                {items.length} {request ? "gợi ý" : "món trên trang này"}
+              </span>
+            )}
+          </div>
+          <ErrorNotice error={error} retry={retry} />
+          {request && error && (
+            <Notice tone="warning">
+              <strong>
+                {error instanceof ApiError && error.status === 503
+                  ? "Tìm kiếm gợi ý tạm thời chưa sẵn sàng."
+                  : "Chưa lấy được gợi ý tìm kiếm."}
+              </strong>
+              <p>Bạn vẫn có thể lọc món đồ theo khu vực và ngày nhặt được.</p>
+              <a className="text-button" href={fallback}>
+                Dùng bộ lọc cơ bản <Icon name="arrow" size={15} />
+              </a>
+            </Notice>
+          )}
+          {loading && <Loading />}
+          {suggestions && (
+            <Notice>
+              <p>
+                Thứ tự là gợi ý {suggestions.mode === "image" ? "theo ảnh" : "theo mô tả"},
+                không xác nhận quyền sở hữu.
+              </p>
+              {suggestions.partial && (
+                <p>Một số gợi ý không còn hợp lệ nên danh sách có thể chưa đầy đủ.</p>
+              )}
+              {suggestions.filtersRelaxed && (
+                <p>Dịch vụ đã mở rộng bộ lọc; gợi ý có thể nằm ngoài khu vực hoặc khoảng ngày đã chọn.</p>
+              )}
+              <a className="text-button" href={fallback}>
+                Lọc cơ bản theo khu vực và ngày
+              </a>
+            </Notice>
+          )}
+          {items && (
+            <>
+              {items.length ? (
+                <div className="item-grid">
+                  {items.map((item, index) => (
+                    <a
+                      className="item-card"
+                      key={item.id}
+                      href={`/items/${item.id}`}
+                    >
+                      <div className="item-card-image">
+                        <ItemPhoto item={item} />
+                        <Badge value={item.custody.kind}>
+                          {custodyLabels[item.custody.kind]}
+                        </Badge>
+                      </div>
+                      <div className="item-card-body">
+                        <span className="eyebrow">
+                          {suggestions && `Gợi ý ${suggestions.items[index].rank} · `}
+                          {formatDate(item.createdAt)}
+                        </span>
+                        <h3>{item.title}</h3>
+                        <p className="clamp-two">{item.publicDescription}</p>
+                        <span className="item-location">
+                          <Icon name="pin" size={16} />
+                          {item.foundArea}
+                        </span>
+                        <span className="item-card-action">
+                          Xem chi tiết
+                          <Icon name="arrow" size={17} />
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="Chưa thấy món đồ phù hợp" icon="search">
+                  <p>
+                    Thử rút gọn mô tả hoặc mở rộng khu vực và khoảng ngày nhặt được.
+                  </p>
+                  <a className="button button-secondary" href="/search">
+                    Xem tất cả món đồ
+                  </a>
+                </EmptyState>
+              )}
+              {!request && basic.data && (
+                <Pagination page={page} hasMore={basic.data.hasMore} />
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </>
+  );
+}
+
+export function ItemDetail({ id }: { id: string }) {
+  const resource = useResource<Item>(`/api/items/${id}`);
+  const [photo, setPhoto] = useState(0);
+  const item = resource.data;
+  const point = useResource<Point>(
+    item?.custody.kind === "point" && item.custody.pointId
+      ? `/api/reception-points/${item.custody.pointId}`
+      : null,
+  );
+  if (resource.loading) return <Loading />;
+  if (!item)
+    return <ErrorNotice error={resource.error} retry={resource.reload} />;
+  const custody = item.custody;
+  const address = custody.publicAddress ?? point.data?.publicAddress;
+  return (
+    <>
+      <div className="detail-topline">
+        <a className="text-button" href="/search">
+          <Icon name="back" size={16} />
+          Quay lại tìm kiếm
+        </a>
+        <Badge value={item.lifecycle} />
+      </div>
+      {custody.kind !== "person" && (
+        <Notice tone={custody.kind === "external" ? "warning" : "info"}>
+          <strong>
+            {custody.kind === "point"
+              ? "Món đồ đang được giữ tại Findie Hub."
+              : "Món đồ đang được giữ ngoài hệ thống Findie."}
+          </strong>
+          <p>
+            Vui lòng đến trực tiếp nơi giữ và đối chiếu thông tin để nhận đồ.
+          </p>
+        </Notice>
+      )}
+      <div className="detail-layout">
+        <div className="detail-main">
+          <section className="panel photo-panel">
+            <div className="photo-badge">
+              <Icon name="shield" size={15} />
+              Chỉ hiển thị ảnh đã được duyệt
+            </div>
+            <ItemPhoto item={item} large index={photo} />
+            {item.images.length > 1 && (
+              <div className="photo-thumbnails">
+                {item.images.map((image, index) => (
+                  <button
+                    type="button"
+                    key={image.id}
+                    onClick={() => setPhoto(index)}
+                    aria-label={`Xem ảnh ${index + 1}`}
+                    aria-pressed={photo === index}
+                  >
+                    <ItemPhoto item={item} index={index} />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="photo-caption">
+              <span>Mã: {item.id.slice(0, 8)}</span>
+              <span>Đăng ngày {formatDate(item.createdAt)}</span>
+            </div>
+          </section>
+          <section className="panel item-description">
+            <Badge value={custody.kind}>{custodyLabels[custody.kind]}</Badge>
+            <h1>{item.title}</h1>
+            <div className="item-facts">
+              <div>
+                <Icon name="pin" />
+                <div>
+                  <span>Địa điểm nhặt được</span>
+                  <p>{item.foundArea}</p>
+                </div>
+              </div>
+              <div>
+                <Icon name="clock" />
+                <div>
+                  <span>Thời gian nhặt được</span>
+                  <p>{foundTime(item)}</p>
+                </div>
+              </div>
+            </div>
+            <h2>Mô tả từ người nhặt</h2>
+            <p className="preserve-lines">{item.publicDescription}</p>
+            <Notice>
+              <strong>Giữ lại những chi tiết chỉ chủ sở hữu mới biết.</strong>
+              <p>
+                Thông tin riêng sẽ được đối chiếu trong yêu cầu nhận đồ hoặc
+                trực tiếp khi trao trả.
+              </p>
+            </Notice>
+          </section>
+        </div>
+        <aside className="detail-aside">
+          <section className={`panel custody-panel custody-${custody.kind}`}>
+            <span className="custody-icon">
+              <Icon
+                name={custody.kind === "person" ? "user" : "building"}
+                size={27}
+              />
+            </span>
+            <p className="eyebrow">{custodyLabels[custody.kind]}</p>
+            <h2>
+              {custody.displayName ??
+                custody.name ??
+                point.data?.name ??
+                "Người giữ món đồ"}
+            </h2>
+            {custody.kind === "person" ? (
+              <>
+                <p className="muted">
+                  Chat được mở sau khi người giữ chấp thuận yêu cầu nhận đồ.
+                </p>
+                <ol className="timeline">
+                  <li>
+                    <strong>Gửi yêu cầu nhận đồ</strong>
+                    <p>Trả lời các câu hỏi xác minh nếu có.</p>
+                  </li>
+                  <li>
+                    <strong>Chờ người giữ đối chiếu</strong>
+                    <p>Người giữ kiểm tra với món đồ thực tế.</p>
+                  </li>
+                  <li>
+                    <strong>Hẹn gặp để trao trả</strong>
+                    <p>Chọn địa điểm công cộng và an toàn.</p>
+                  </li>
+                </ol>
+                {item.lifecycle === "active" &&
+                  item.publicationState === "published" && (
+                    <a
+                      className="button button-wide"
+                      href={`/items/${id}/claim`}
+                    >
+                      <Icon name="lock" size={17} />
+                      Gửi yêu cầu nhận đồ
+                    </a>
+                  )}
+              </>
+            ) : (
+              <>
+                <ErrorNotice error={point.error} retry={point.reload} />
+                {address && (
+                  <p className="public-address">
+                    <Icon name="pin" />
+                    {address}
+                  </p>
+                )}
+                <p className="preserve-lines muted">
+                  {custody.instructions ??
+                    point.data?.directions ??
+                    "Mang theo giấy tờ và thông tin chứng minh quyền sở hữu để đối chiếu tại quầy."}
+                </p>
+                {address && (
+                  <a
+                    className="button button-wide"
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Icon name="pin" size={17} />
+                    Chỉ đường đến nơi giữ
+                  </a>
+                )}
+                <Notice tone="warning">
+                  Việc nhận đồ được xác minh trực tiếp tại quầy, không qua yêu
+                  cầu online.
+                </Notice>
+              </>
+            )}
+          </section>
+          <SafetyNote />
+          <a className="hub-callout" href="/hubs">
+            <Icon name="building" size={22} />
+            <div>
+              <strong>Mạng lưới Findie Hub</strong>
+              <p>Tìm điểm tiếp nhận trong cộng đồng</p>
+            </div>
+            <Icon name="arrow" size={17} />
+          </a>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+export function Points() {
+  const points = useResource<Point[]>("/api/reception-points");
+  return (
+    <>
+      <PageHeader
+        eyebrow="Một nơi an tâm để trao trả"
+        title="Mạng lưới Findie Hub"
+      >
+        Tra cứu địa chỉ điểm tiếp nhận đang hoạt động và hướng dẫn bàn giao trực
+        tiếp.
+      </PageHeader>
+      <ErrorNotice error={points.error} retry={points.reload} />
+      {points.loading && <Loading />}
+      {points.data &&
+        (points.data.length ? (
+          <div className="points-grid">
+            {points.data.map((point) => (
+              <article className="panel point-card" key={point.id}>
+                <span className="empty-icon">
+                  <Icon name="building" size={27} />
+                </span>
+                <h2>{point.name}</h2>
+                <p className="public-address">
+                  <Icon name="pin" size={17} />
+                  {point.publicAddress}
+                </p>
+                {point.directions && (
+                  <p className="muted preserve-lines">{point.directions}</p>
+                )}
+                <a
+                  className="button button-secondary"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(point.publicAddress)}`}
+                >
+                  Xem đường đi
+                  <Icon name="arrow" size={16} />
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Chưa có điểm tiếp nhận được công bố">
+            <p>Vui lòng quay lại sau để xem danh sách điểm đang hoạt động.</p>
+          </EmptyState>
+        ))}
+    </>
+  );
+}

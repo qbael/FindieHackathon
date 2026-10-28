@@ -72,7 +72,7 @@ with ThreadingHTTPServer(("127.0.0.1", 0), AiHandler) as ai, tempfile.TemporaryF
         code, status = get("/api/system/status")
         assert code == 200 and status == {
             "name": "Findie API", "stage": "scaffold", "database": "unavailable", "ai": "unavailable",
-            "features": {"business": False, "authentication": False, "storage": False},
+            "features": {"business": True, "authentication": False, "storage": False},
         }
         for path in ("/api/users/me", "/api/reception-points", "/api/reception-points/00000000-0000-0000-0000-000000000001"):
             assert get(path) == (401, None)

@@ -12,8 +12,23 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
+using System.Threading.RateLimiting;
+using Findie.Api.Infrastructure;
 
-var builder = WebApplication.CreateBuilder(args);
+var seedLocal = args.Contains("--seed-local", StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(seedLocal ? [] : args);
+
+if (seedLocal)
+{
+    if (!builder.Environment.IsDevelopment())
+        throw new InvalidOperationException("Local seeding is allowed only in Development.");
+    var seedConnection = builder.Configuration.GetConnectionString("Database");
+    if (string.IsNullOrWhiteSpace(seedConnection))
+        throw new InvalidOperationException("Set ConnectionStrings__Database before local seeding.");
+    await using var seedDb = new FindieDbContext(new DbContextOptionsBuilder<FindieDbContext>().UseNpgsql(seedConnection).Options);
+    Environment.ExitCode = await LocalSeed.RunAsync(seedDb, args, Console.Out);
+    return;
+}
 
 var connectionString = builder.Configuration.GetConnectionString("Database");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -114,6 +129,34 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReceptionPointRepository, ReceptionPointRepository>();
 builder.Services.AddScoped<IReceptionPointService, ReceptionPointService>();
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+builder.Services.AddScoped<IRecoveryRepository, RecoveryRepository>();
+builder.Services.AddScoped<RecoveryWorkflow>();
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IClaimService, ClaimService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IIntakeService, IntakeService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddSingleton<RabbitMqGateway>();
+builder.Services.AddSingleton<IAiGateway>(services => services.GetRequiredService<RabbitMqGateway>());
+builder.Services.AddHostedService(services => services.GetRequiredService<RabbitMqGateway>());
+builder.Services.AddSingleton<IProcessedStorage, ProcessedStorage>();
+builder.Services.AddScoped<RecoveryMaintenance>();
+builder.Services.AddScoped<IndexReceiptService>();
+if (!string.IsNullOrWhiteSpace(builder.Configuration["RabbitMq:Uri"]) || !string.IsNullOrWhiteSpace(builder.Configuration["Storage:Endpoint"]))
+    builder.Services.AddHostedService<RecoveryMaintenance>();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("business", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("images", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", timeout: TimeSpan.FromSeconds(5));
@@ -129,6 +172,7 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.Use(async (context, next) =>
 {
     if (context.User.Identity?.IsAuthenticated == true
@@ -189,7 +233,8 @@ app.MapGet("/api/system/status", async (HealthCheckService healthChecks, IHttpCl
         stage = "scaffold",
         database,
         ai,
-        features = new { business = false, authentication = googleConfigured, storage = false }
+        features = new { business = true, authentication = googleConfigured,
+            storage = app.Services.GetRequiredService<IProcessedStorage>().Configured }
     });
 });
 

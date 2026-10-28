@@ -23,7 +23,7 @@ Chỉ sửa tài liệu; không đổi SQL/runtime hoặc thực hiện di trú 
 
 Findie kết nối người mất đồ, người đang giữ đồ và các điểm tiếp nhận. Hiến chương này quy định
 các nguyên tắc cho sản phẩm khả dụng tối thiểu (MVP), dựa trên
-[đặc tả Findie](../../docs/DAC_TA_FINDIE.md).
+[đặc tả Findie](../../docs/product/DAC_TA_FINDIE.md).
 Kho dự án hiện chứa bản demo ý tưởng và tài liệu đặc tả, chưa có ứng dụng vận hành thực tế.
 Các biện pháp bảo đảm dưới đây được xác lập là bắt buộc từ lần ban hành đầu tiên; điều đó
 không có nghĩa chúng đã được triển khai. PHẢI (MUST) và KHÔNG ĐƯỢC (MUST NOT) biểu thị các
@@ -93,7 +93,7 @@ Python PHẢI tạo, kiểm tra, chuẩn hóa và lưu embedding vào database t
 thực hiện hybrid search. Baseline đề xuất kết hợp cosine pgvector với PostgreSQL full-text
 search bằng weighted RRF; KHÔNG ĐƯỢC cộng điểm khác thang đo hoặc tự suy diễn từ khóa OCR
 cho truy vấn chỉ có ảnh. Bảng cấu hình/mục tiêu độ chính xác theo trường hợp ở mục 5.3 của
-[kiến trúc hệ thống](../../docs/system-architecture.md) là nguồn chuẩn để hiệu chỉnh và đo;
+[kiến trúc hệ thống](../../docs/architecture/system-architecture.md) là nguồn chuẩn để hiệu chỉnh và đo;
 KHÔNG ĐƯỢC trình bày trọng số hoặc mục tiêu chưa đo như độ chính xác đã đạt.
 
 Bài đăng hợp lệ PHẢI được giữ lại khi AI lỗi, kèm trạng thái lập chỉ mục rõ ràng và cơ chế
@@ -143,7 +143,7 @@ triển khai và hiệu năng chưa đo PHẢI được ghi chú đúng thực t
 Các nền tảng đã chọn dưới đây được lấy từ đặc tả sản phẩm và yêu cầu sửa đổi của chủ dự án.
 Công nghệ bổ trợ vẫn là phương án đề xuất cho đến khi kế hoạch tính năng ghi nhận việc
 lựa chọn và các phiên bản tương thích.
-[Tài liệu kiến trúc hệ thống](../../docs/system-architecture.md) cụ thể hóa thiết kế đề xuất,
+[Tài liệu kiến trúc hệ thống](../../docs/architecture/system-architecture.md) cụ thể hóa thiết kế đề xuất,
 không tự biến thư viện hoặc mô hình đang cân nhắc thành yêu cầu bắt buộc của hiến chương.
 
 | Hạng mục | Nền tảng đã chọn | Phương án bổ trợ cần xác nhận khi lập kế hoạch |

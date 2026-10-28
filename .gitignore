@@ -15,4 +15,5 @@
 notebooks/colab/outputs/
 .cache/docs/
 .cache/db-backups/
+.cache/rabbitmq/
 *.log
