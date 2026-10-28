@@ -1,6 +1,6 @@
-# AI service: văn bản, xử lý ảnh và tìm ảnh qua Ollama
+# AI service: văn bản, xử lý ảnh và tìm ảnh qua gateway Colab
 
-Cập nhật 27/10/2026. Python nhận lệnh qua RabbitMQ, gọi Ollama, sở hữu database `findie_search` và trả ứng viên để .NET kiểm lại quyền/nguồn/phiên bản. FastAPI chỉ phục vụ health/status nội bộ. Web, API, worker, PostgreSQL và broker ở local; chỉ model inference chạy từ xa.
+Cập nhật 28/10/2026. Python nhận lệnh qua RabbitMQ, gọi gateway tương thích API Ollama, sở hữu database `findie_search` và trả ứng viên để .NET kiểm lại quyền/nguồn/phiên bản. FastAPI chỉ phục vụ health/status nội bộ. Web, API, worker, PostgreSQL và broker ở local; chỉ model inference chạy từ xa.
 
 ## Khởi tạo kho tìm kiếm và chạy local
 
@@ -16,14 +16,16 @@ Lệnh cài dependency theo lock, khởi động PostgreSQL/RabbitMQ loopback, m
 
 Upload [notebook 04](../../notebooks/colab/04_full_stack_ollama_ngrok.ipynb) vào [Colab](https://colab.research.google.com/), chọn GPU và chạy các cell từ trên xuống. Notebook cần `NGROK_AUTHTOKEN` của tài khoản ngrok và `FINDIE_OLLAMA_TOKEN` do bạn chọn (ASCII ngẫu nhiên tối thiểu 32 ký tự). Dùng Colab Secrets hoặc ô nhập ẩn; giữ token thứ hai để nhập lại trên local, không ghi vào cell/chat/git.
 
-Notebook cài Ollama release/checksum đã ghim, pull hai model:
+Notebook tải model embedding qua Transformers và cài Ollama release/checksum đã ghim cho model nhận diện vùng:
 
 | Model | Vai trò | Cấu hình full mode |
 | --- | --- | --- |
-| `embeddinggemma-2:440m` | Embedding văn bản và ảnh native | 768 chiều, instruction rỗng |
+| `Qwen/Qwen3-VL-Embedding-2B` | Embedding văn bản và ảnh native qua Transformers | 2048 chiều, FP16, SDPA, L2; instruction truy vấn rỗng |
 | `qwen3-vl:4b` | Gợi ý vùng nhạy cảm | JSON schema, temperature 0 |
 
-Đây là baseline chạy Ollama cho yêu cầu mới. Cấu hình cũ `qwen3-embedding:4b`/2048 vẫn chạy văn bản; không bật tìm ảnh cho model text-only. Không padding vector 768 lên 2048, không dùng caption/OCR thay embedding ảnh. Ollama hỗ trợ input ảnh dạng `{image: base64}` trong [EmbedRequest](https://github.com/ollama/ollama/blob/v0.40.11/api/types.go); [model đa phương thức](https://ollama.com/library/embeddinggemma-2:440m) cần có cả capability `embedding` và `vision`.
+Model/processor Qwen và mã inference official được ghim tại commit `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda`, cùng cách lấy token cuối không padding đã kiểm SHA-256 trong notebook 01. Gateway xử lý `/api/embed` bằng Transformers, nhận văn bản hoặc `{image: base64}` và giữ hợp đồng Ollama hiện có; `/api/generate` chuyển tới Ollama cho redaction. System instruction Qwen giống nhau cho hai loại input; `AI_EMBEDDING_QUERY_INSTRUCTION` để rỗng để local không thêm instruction khác. Xem [model card Qwen](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B/tree/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda).
+
+`AI_EMBEDDING_REVISION` là SHA-256 của manifest JSON chuẩn hóa gồm commit model/processor, hash mã inference đã kiểm, profile và phiên bản gói đã ghim. Đây là fingerprint cấu hình Qwen, không phải digest manifest Ollama. Gateway công bố cùng giá trị qua `/api/tags` để importer và hai service kiểm identity. `AI_REDACTION_REVISION` vẫn là digest manifest Ollama. Cấu hình cũ `qwen3-embedding:4b`/2048 vẫn chạy văn bản; không bật tìm ảnh cho model text-only, không dùng caption/OCR thay embedding ảnh.
 
 Với `AI_IMAGE_SEARCH_ENABLED=false`, vẫn có thể xử lý/duyệt ảnh nếu đã cấu hình model redaction. Worker kiểm đầy đủ manifest và mọi part ảnh, nhưng chỉ ghi vector text cùng watermark/hash gốc; tin có ảnh vẫn tìm được bằng mô tả. Khi bật tìm ảnh, chạy `make local-reindex` để bổ sung vector ảnh từ cùng snapshot.
 
@@ -51,7 +53,7 @@ Colab có quota/thời lượng và hạn chế proxy/web services, nhất là t
 | `AI_SEARCH_MIGRATION_DSN` | Role migration riêng cho bước DDL; không dùng cho worker |
 | `AI_RABBITMQ_URL` / `RabbitMq__Uri` | Hai tài khoản runtime broker tách biệt |
 | `OLLAMA_BASE_URL` / `OLLAMA_API_KEY` | HTTPS gateway ngrok và token riêng của phiên |
-| `AI_EMBEDDING_MODEL`, `AI_EMBEDDING_REVISION`, `AI_EMBEDDING_DIMENSIONS` | Model, full manifest SHA-256 và số chiều; import đồng bộ sang .NET |
+| `AI_EMBEDDING_MODEL`, `AI_EMBEDDING_REVISION`, `AI_EMBEDDING_DIMENSIONS` | Model, SHA-256 fingerprint cấu hình Qwen (hoặc manifest Ollama với model cũ) và số chiều; import đồng bộ sang .NET |
 | `AI_EMBEDDING_QUERY_INSTRUCTION` | Instruction truy vấn; full notebook để rỗng |
 | `AI_REDACTION_MODEL`, `AI_REDACTION_REVISION` | Model vision và digest; đồng bộ `Ai__RedactionModelId`/`Ai__RedactionRevision` |
 | `AI_IMAGE_SEARCH_ENABLED` | Bật sau khi xác nhận model embedding nhận ảnh |
@@ -95,6 +97,8 @@ Không trộn vector khác model/digest/chiều/profile. Khi đổi model: dừn
 ```sh
 make local-reindex
 ```
+
+Việc chuyển từ `embeddinggemma-2:440m`/768 sang Qwen/2048 cần chạy lại notebook 04 từ đầu và tải/import JSON mới, không chỉ sửa tên model trong `.env`. Số chiều trùng với model text-only cũ cũng không làm vector tương thích.
 
 Lệnh kiểm worker identity và chỉ phát lại outbox snapshot/tombstone hiện hành, giữ active leases và dữ liệu người dùng; không xóa watermark. Theo dõi trạng thái lập chỉ mục trước dùng kết quả. Nếu job đang có lease, chờ kết thúc/hết hạn rồi chạy lại khi cần. Baseline có cửa sổ bảo trì, không có chuyển model không gián đoạn.
 

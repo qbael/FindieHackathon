@@ -5,9 +5,17 @@ Không cần clone project, chạy Docker hoặc cài model lên máy phát tri�
 
 ## Phiên chạy đầy đủ qua ngrok
 
-[04_full_stack_ollama_ngrok.ipynb](../../notebooks/colab/04_full_stack_ollama_ngrok.ipynb) là notebook cho phiên local đầy đủ: Ollama embedding text/image native và vision; HTTPS ngrok chỉ expose gateway có Bearer token, không DB/broker. Cần ngrok account/authtoken, Colab GPU phù hợp và `FINDIE_OLLAMA_TOKEN` riêng. Chạy từng cell, tải JSON không chứa token rồi import bằng `python3 scripts/configure_ollama.py /path/findie-colab.json`; tiếp theo `make local-run`.
+[04_full_stack_ollama_ngrok.ipynb](../../notebooks/colab/04_full_stack_ollama_ngrok.ipynb) là notebook cho phiên local đầy đủ: `Qwen/Qwen3-VL-Embedding-2B` chạy bằng Transformers tạo embedding văn bản/ảnh 2048 chiều; `qwen3-vl:4b` chạy qua Ollama nhận diện vùng nhạy cảm. HTTPS ngrok chỉ expose gateway có Bearer token, không DB/broker. Cần ngrok account/authtoken, Colab GPU phù hợp và `FINDIE_OLLAMA_TOKEN` riêng. Chạy từng cell, tải JSON không chứa token rồi import bằng `python3 scripts/configure_ollama.py /path/findie-colab.json`; tiếp theo `make local-run`. Khi chuyển từ model cũ, chạy `make local-reindex` sau khi worker ready; không dùng lẫn vector của hai model.
+
+Gateway giữ hợp đồng API Ollama để ứng dụng local dùng adapter hiện có, nhưng embedding Qwen được xử lý trực tiếp trong tiến trình Transformers. Model/processor và mã inference official được ghim như notebook 01; cấu hình embedding dùng SHA-256 của manifest revision/mã/profile/gói, không phải digest manifest Ollama.
+
+Notebook 04 cài thư viện trước khi chạy Ollama/gateway. Nếu setup thay đổi phiên bản gói, chọn **Runtime → Restart session**, rồi chạy lại từ đầu; chạy lại cell trong cùng kernel sẽ bị chặn để tránh lỗi import như `GenerationMixin`. Cell nạp model kiểm import Transformers/Qwen trước khi tải trọng số và giữ traceback nguyên nhân gốc. Cảnh báo thiếu `HF_TOKEN` không chặn tải model Qwen công khai.
 
 [Hướng dẫn đầy đủ](ai-service.md#model-trên-colab-qua-ngrok) mô tả cấp quyền Hub, doctor, ảnh output-only, đổi model/reindex và giới hạn Colab. Notebook 04 khác các notebook 01–03 dưới đây: có kết nối từ ứng dụng local trong phiên tương tác, không có keepalive hoặc hosting thường trực.
+
+Cell mở gateway truyền authtoken qua cấu hình trong bộ nhớ và dùng domain mặc định do tài khoản ngrok cấp cho API endpoint v3. Chạy lại cell sẽ khởi động lại ngrok và đóng tunnel cũ; nếu URL đổi, tải/import lại JSON cấu hình ở local. Cách này tránh lỗi pyngrok `9.1.0` khi lệnh lưu token trả về `Authtoken already set`. Cell kiểm model/digest tại gateway loopback trước khi mở tunnel rồi kiểm HTTPS; lỗi từ ngrok hiển thị HTTP status và mã `ERR_NGROK_*`, không in body/credential. Chỉ mã endpoint chưa online `ERR_NGROK_3200` được kiểm lại tối đa 5 lần, mỗi lần cách 1 giây.
+
+Cell cài Ollama trong notebook 03/04 tự cài `zstd` nếu thiếu trên Colab/Ubuntu; installer cần công cụ này để giải nén `.tar.zst`. Nếu bản notebook cũ báo `CalledProcessError` khi chạy `install.sh`, mở lại notebook đã cập nhật và chạy từ cell cấu hình. Bản cập nhật đưa tối đa 8000 ký tự cuối của log installer vào thông báo lỗi để chẩn đoán. Giữ lệnh `sh` trong cell: installer tự xử lý quyền quản trị; thêm `sudo sh` có thể làm mất biến môi trường `OLLAMA_VERSION`.
 
 ## Ollama cho dịch vụ tìm kiếm văn bản
 

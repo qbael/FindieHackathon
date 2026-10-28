@@ -120,6 +120,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
+    options.SuppressReadingTokenFromFormBody = true;
     options.Cookie.SecurePolicy = cookieSecurity;
 });
 builder.Services.AddAuthorization(options => options.DefaultPolicy = new AuthorizationPolicyBuilder()

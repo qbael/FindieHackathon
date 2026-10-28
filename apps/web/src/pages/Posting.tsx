@@ -20,6 +20,7 @@ import {
   type ItemDraft,
 } from "../lib/itemForm";
 import { useAction, useResource } from "../hooks/hooks";
+import { ImagePreviews } from "../components/ImagePreviews";
 import {
   Badge,
   EmptyState,
@@ -206,6 +207,44 @@ function PostEditor({
                       placeholder="Ví dụ: Ví da đen khóa kéo vàng"
                     />
                   </label>
+                  {!item && (
+                    <div>
+                      <label className="upload-zone">
+                        <Icon name="upload" size={28} />
+                        <strong>Thêm ảnh món đồ</strong>
+                        <span>JPEG, PNG, WebP · tối đa 5 ảnh, 10 MB/ảnh</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          onChange={(event) => {
+                            const selected = Array.from(
+                              event.target.files ?? [],
+                            );
+                            try {
+                              validateImages(selected);
+                              setFiles(selected);
+                              action.setError(null);
+                            } catch (cause) {
+                              setFiles([]);
+                              event.target.value = "";
+                              action.setError(cause as Error);
+                            }
+                          }}
+                        />
+                        {files.length > 0 && (
+                          <span>
+                            {files.length} ảnh đã chọn · Chưa công khai
+                          </span>
+                        )}
+                      </label>
+                      <ImagePreviews files={files} />
+                      <p className="field-hint">
+                        Ảnh sẽ được xử lý sau khi lưu tin. Bạn cần duyệt bản ảnh
+                        đầu ra trước khi ảnh xuất hiện công khai.
+                      </p>
+                    </div>
+                  )}
                   <label>
                     Mô tả công khai <span className="required">*</span>
                     <textarea
@@ -302,43 +341,6 @@ function PostEditor({
                   )}
                   {draft.precision !== "unknown" && (
                     <p className="field-hint">Thời gian Việt Nam (UTC+7).</p>
-                  )}
-                  {!item && (
-                    <div>
-                      <label className="upload-zone">
-                        <Icon name="upload" size={28} />
-                        <strong>Thêm ảnh món đồ</strong>
-                        <span>JPEG, PNG, WebP · tối đa 5 ảnh, 10 MB/ảnh</span>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          multiple
-                          onChange={(event) => {
-                            const selected = Array.from(
-                              event.target.files ?? [],
-                            );
-                            try {
-                              validateImages(selected);
-                              setFiles(selected);
-                              action.setError(null);
-                            } catch (cause) {
-                              setFiles([]);
-                              event.target.value = "";
-                              action.setError(cause as Error);
-                            }
-                          }}
-                        />
-                        {files.length > 0 && (
-                          <span>
-                            {files.length} ảnh đã chọn · Chưa công khai
-                          </span>
-                        )}
-                      </label>
-                      <p className="field-hint">
-                        Ảnh sẽ được xử lý sau khi lưu tin. Bạn cần duyệt bản ảnh
-                        đầu ra trước khi ảnh xuất hiện công khai.
-                      </p>
-                    </div>
                   )}
                 </div>
               )}

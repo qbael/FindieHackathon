@@ -76,7 +76,7 @@ nhị phân, nonpersistent, không R2/job/outbox/vector query bền vững.
 
 Metadata: `schemaVersion,modelId,modelRevision,processingProfile,searchProfileId,
 searchProfileVersion:1,mode,area,from,until,limit,candidateLimit:200,deadlineAt`.
-Processing profile `text-v1|image-v1`; cấu hình text-only giữ `qwen3-embedding:4b`/2048. Notebook full mode chọn `embeddinggemma-2:440m`/768, nhận ảnh native qua Ollama. `modelId`, digest và số chiều phải đồng bộ hai service; không dùng model text cho ảnh.
+Processing profile `text-v1|image-v1`; cấu hình text-only giữ `qwen3-embedding:4b`/2048. Notebook full mode chọn `Qwen/Qwen3-VL-Embedding-2B`/2048, nhận ảnh native qua Transformers sau gateway tương thích Ollama. `modelRevision` là SHA-256 fingerprint của commit model/processor, mã inference, profile và gói đã ghim; không phải manifest Ollama. `modelId`, revision và số chiều phải đồng bộ hai service; không dùng model text cho ảnh.
 Text profile mặc định `text-description-v1`, image `image-only-v1`. Đây là baseline,
 chưa có benchmark/phân loại profile theo độ đặc thù query.
 

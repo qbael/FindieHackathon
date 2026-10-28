@@ -6,7 +6,7 @@ import SignIn from "./pages/SignIn";
 import Profile from "./pages/Profile";
 import { Intakes, IntakeDetail } from "./pages/Intakes";
 import { CustodyHistory, ReturnItem } from "./pages/Custody";
-import { Home, Search, ItemDetail, Points } from "./pages/Explore";
+import { Home, Search, ItemDetail, Points, type SearchInput } from "./pages/Explore";
 import { PostItem, ReviewImages } from "./pages/Posting";
 import {
   ClaimItem,
@@ -18,12 +18,23 @@ import {
 } from "./pages/Recovery";
 
 export default function App() {
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const [path, setPath] = useState(() => window.location.pathname.replace(/\/$/, "") || "/");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(path !== "/signin");
   const [error, setError] = useState<Error | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [imageSearch, setImageSearch] = useState<SearchInput | null>(null);
   const action = useAction();
+  useEffect(() => {
+    const navigate = () => {
+      const nextPath = window.location.pathname.replace(/\/$/, "") || "/";
+      if (nextPath === path) return;
+      setLoading(true);
+      setPath(nextPath);
+    };
+    window.addEventListener("popstate", navigate);
+    return () => window.removeEventListener("popstate", navigate);
+  }, [path]);
   useEffect(() => {
     if (path === "/signin") return;
     const controller = new AbortController();
@@ -104,8 +115,17 @@ export default function App() {
     return content();
   }
   let content: ReactNode;
-  if (path === "/") content = <Home />;
-  else if (path === "/search") content = protect(() => <Search />);
+  if (path === "/") content = <Home signedIn={Boolean(user)} onImageSearch={(input) => {
+    const query = new URLSearchParams({ mode: "image" });
+    if (input.text) query.set("q", input.text);
+    for (const [key, value] of Object.entries(input.filters))
+      if (value) query.set(key, value);
+    window.history.pushState(null, "", `/search?${query}`);
+    setImageSearch(input);
+    setLoading(true);
+    setPath("/search");
+  }} />;
+  else if (path === "/search") content = protect(() => <Search initialRequest={imageSearch} />);
   else if (path === "/post") content = protect(() => <PostItem />);
   else if (path === "/posts") content = protect(() => <MyPosts />);
   else if (path === "/requests")

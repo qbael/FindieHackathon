@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, mock, test } from "node:test";
 import { ApiError } from "./api.ts";
-import { basicSearchUrl, searchImage, searchText } from "./search.ts";
+import { basicSearchUrl, searchImage, searchImages, searchText, validateSearchImages } from "./search.ts";
 
 afterEach(() => mock.restoreAll());
 
@@ -53,6 +53,84 @@ test("image search sends raw bytes, MIME, CSRF and filters without mixing text",
   assert.equal(request.init!.method, "POST");
   assert.equal(request.init!.credentials, "same-origin");
   assert.deepEqual(request.init!.headers, { "X-CSRF-TOKEN": "csrf-image", "Content-Type": "image/png" });
+});
+
+test("multiple-image search sends three images, description, CSRF, filters and cancellation", async () => {
+  const files = [
+    new File(["jpeg"], "front.jpg", { type: "image/jpeg" }),
+    new File(["png"], "back.png", { type: "image/png" }),
+    new File(["webp"], "detail.webp", { type: "image/webp" }),
+  ];
+  const signal = new AbortController().signal;
+  const requests: { path: string; init?: RequestInit }[] = [];
+  mock.method(globalThis, "fetch", async (path: string, init?: RequestInit) => {
+    requests.push({ path, init });
+    return Response.json(path === "/api/auth/csrf" ? { token: "csrf-images" } : { ...response, mode: "combined" });
+  });
+  const result = await searchImages(files, "  ví đen  ", {
+    area: " Quận 1 ", from: "2026-10-01", until: "2026-10-24",
+  }, signal);
+  assert.equal(result.mode, "combined");
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].path, "/api/auth/csrf");
+  const { path, init } = requests[1];
+  const url = new URL(path, "https://findie.test");
+  assert.equal(url.pathname, "/api/search/images");
+  assert.deepEqual(Object.fromEntries(url.searchParams), {
+    limit: "10", area: "Quận 1", from: "2026-10-01", until: "2026-10-24",
+  });
+  assert.equal(init!.method, "POST");
+  assert.equal(init!.credentials, "same-origin");
+  assert.equal(init!.signal, signal);
+  assert.deepEqual(init!.headers, { "X-CSRF-TOKEN": "csrf-images" });
+  assert.ok(init!.body instanceof FormData);
+  assert.deepEqual(init!.body.getAll("images"), files);
+  assert.equal(init!.body.get("text"), "ví đen");
+});
+
+test("multiple-image search accepts an image without a description", async () => {
+  const file = new File(["png"], "query.png", { type: "image/png" });
+  let body: FormData | undefined;
+  mock.method(globalThis, "fetch", async (path: string, init?: RequestInit) => {
+    if (path === "/api/auth/csrf") return Response.json({ token: "csrf-images-only" });
+    assert.ok(init!.body instanceof FormData);
+    body = init!.body;
+    return Response.json({ ...response, mode: "image" });
+  });
+  assert.equal((await searchImages([file], "  ", {})).mode, "image");
+  assert.deepEqual(body!.getAll("images"), [file]);
+  assert.equal(body!.has("text"), false);
+});
+
+test("multiple-image search rejects invalid counts, text, MIME and size before network access", async () => {
+  const file = new File(["png"], "query.png", { type: "image/png" });
+  let calls = 0;
+  mock.method(globalThis, "fetch", async () => {
+    calls++;
+    throw new Error("must not send invalid input");
+  });
+  assert.doesNotThrow(() => validateSearchImages([]));
+  assert.doesNotThrow(() => validateSearchImages([file, file, file]));
+  assert.throws(() => validateSearchImages([file, file, file, file]), /tối đa 3 ảnh/);
+  await assert.rejects(searchImages([], "ví đen", {}), /ít nhất 1 ảnh/);
+  await assert.rejects(searchImages([file, file, file, file], "", {}), /tối đa 3 ảnh/);
+  await assert.rejects(searchImages([file], "x".repeat(2001), {}), /2000 ký tự/);
+  for (const invalid of [
+    new File(["<svg/>"], "unsafe.svg", { type: "image/svg+xml" }),
+    new File([], "empty.png", { type: "image/png" }),
+    new File([new Uint8Array(10 * 1024 * 1024 + 1)], "big.jpg", { type: "image/jpeg" }),
+  ]) await assert.rejects(searchImages([file, invalid], "", {}));
+  assert.equal(calls, 0);
+});
+
+test("multiple-image search preserves API failures", async () => {
+  mock.method(globalThis, "fetch", async (path: string) =>
+    path === "/api/auth/csrf"
+      ? Response.json({ token: "csrf-images-unavailable" })
+      : new Response(null, { status: 503 }),
+  );
+  const file = new File(["png"], "query.png", { type: "image/png" });
+  await assert.rejects(searchImages([file], "ví đen", {}), (error) => error instanceof ApiError && error.status === 503);
 });
 
 test("invalid text and private image input are rejected before network access", async () => {

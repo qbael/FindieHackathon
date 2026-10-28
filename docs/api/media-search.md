@@ -2,8 +2,9 @@
 
 Quy ước cookie, CSRF, lỗi và idempotency tại [API nghiệp vụ](recovery.md#quy-ước-chung).
 Ảnh/tìm kiếm có giới hạn 20 request nặng/phút/tài khoản, vượt trả **429**.
-Upload và truy vấn ảnh nhận **body nhị phân**, không `multipart/form-data`, base64,
-URL ảnh hoặc đường dẫn file từ client. .NET đọc trực tiếp stream vào RAM tối đa **10 MiB**,
+Upload và truy vấn một ảnh nhận **body nhị phân**; tìm nhiều ảnh dùng
+`multipart/form-data` tại `/api/search/images`. Không nhận base64,
+URL ảnh hoặc đường dẫn file từ client. .NET đọc trực tiếp stream vào RAM tối đa **10 MiB/ảnh**,
 không dùng `IFormFile` hoặc ghi tệp tạm. Python chịu trách nhiệm giải mã/kiểm ảnh thực.
 
 Phần .NET có adapter AMQP/R2; worker Python hỗ trợ text, che/chuẩn hóa ảnh và tìm ảnh native qua Ollama theo [hướng dẫn](../guides/ai-service.md). Cần cấu hình broker, private bucket và model/revision có capability phù hợp. Chưa có worker trả kết quả thì báo **503**,
@@ -144,7 +145,45 @@ curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' -H 'Content-Type: image/png' \
 
 Sai MIME **415**, quá byte **413**, body rỗng/bộ lọc sai **400**, dịch vụ **502/503** như
 tìm text. Ảnh query không lưu DB/R2/outbox hoặc lịch sử; input bị bỏ sau request.
-Không kết hợp text và image scores trong cùng truy vấn; client chọn một endpoint.
+Để tìm bằng nhiều ảnh kèm mô tả, dùng endpoint bên dưới.
+
+## POST /api/search/images — tìm bằng tối đa ba ảnh và mô tả
+
+Cookie + CSRF; body `multipart/form-data`, không yêu cầu Idempotency-Key.
+Query `area`, `from`, `until`, `limit` giống tìm text. Các phần form:
+
+- `images`: bắt buộc **1–3 file**, mỗi file JPEG/PNG/WebP, từ 1 byte đến **10 MiB**.
+- `text`: tối đa một trường UTF-8 tùy chọn, tối đa **2000 ký tự** sau trim;
+  bỏ trống/khoảng trắng tương đương không gửi mô tả.
+
+Tổng request tối đa 30 MiB cộng 64 KiB cho form/header; không nhận trường khác.
+.NET dùng `MultipartReader`, đọc stream vào RAM, không `IFormFile` hoặc tệp tạm.
+Kiểm xong toàn bộ ảnh, mô tả và bộ lọc mới gọi AI. Mỗi ảnh gửi riêng qua
+`search.hybrid.image`; mô tả có nội dung gửi qua `search.hybrid`. Hợp đồng AMQP hiện có
+không thay đổi. Thời gian xử lý AI chung tối đa **40 giây**; một nhánh lỗi thì cả
+request lỗi, không trả kết quả thành công thiếu nhánh.
+
+```sh
+curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' \
+  -F 'images=@front.jpg;type=image/jpeg' \
+  -F 'images=@back.png;type=image/png' \
+  -F 'images=@detail.webp;type=image/webp' \
+  -F 'text=Ví màu đen, khóa kéo vàng' \
+  'http://127.0.0.1:5080/api/search/images?area=Campus&limit=10'
+```
+
+Response **200** cùng `SearchResponse`: `mode:"image"` khi không có mô tả,
+`mode:"combined"` khi có mô tả; `searchProfileId` tương ứng `image-fusion-v1` hoặc
+`multimodal-fusion-v1`, `searchProfileVersion:1`. Hợp nhất thứ hạng bằng reciprocal
+rank fusion (mỗi nguồn đóng góp `1 / (60 + rank)`, rank bắt đầu từ 1), mỗi món chỉ
+đóng góp một lần trong mỗi nguồn; giữ tối đa `limit` món, đánh lại rank từ 1.
+Không trộn điểm similarity giữa model. Sau khi nhận đủ phản hồi AI, .NET kiểm lại
+publication/lifecycle, source/version/hash, document version và bộ lọc như endpoint cũ.
+`partial`, `filtersRelaxed`, `fallbackUrl` giữ nguyên ý nghĩa.
+
+Thiếu ảnh, quá ba ảnh, ảnh rỗng, text/form/bộ lọc sai **400**; sai MIME **415**;
+quá byte **413**; phản hồi AI sai **502**; AI/broker/timeout **503**. Ảnh query
+không lưu DB/R2/outbox/lịch sử; mọi buffer ảnh bị xóa cả khi thành công, lỗi hoặc hủy.
 
 ## Cấu hình cần thiết
 

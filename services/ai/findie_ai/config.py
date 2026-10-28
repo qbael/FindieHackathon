@@ -49,7 +49,7 @@ class Settings:
         if not 1 <= self.dimensions <= 16000:
             raise ValueError("AI_EMBEDDING_DIMENSIONS must be between 1 and 16000.")
         if self.revision and not re.fullmatch(r"(?:sha256:)?[a-f0-9]{64}", self.revision):
-            raise ValueError("AI_EMBEDDING_REVISION must pin the Ollama manifest SHA-256.")
+            raise ValueError("AI_EMBEDDING_REVISION must pin the model fingerprint SHA-256.")
         if self.redaction_revision and not re.fullmatch(r"(?:sha256:)?[a-f0-9]{64}", self.redaction_revision):
             raise ValueError("AI_REDACTION_REVISION must pin the Ollama manifest SHA-256.")
         if (not self.model_id or not self.search_profile or not self.image_search_profile

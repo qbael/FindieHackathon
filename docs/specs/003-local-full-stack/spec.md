@@ -4,6 +4,8 @@
 **Status**: Approved for implementation by the owner's chat request
 **Input**: Hoàn thiện những phần thiếu; ứng dụng chạy local, các model chạy trên Google Colab qua Ollama và ngrok. Chủ dự án chưa có notebook hoặc endpoint.
 
+**Cập nhật 28/10/2026**: Chủ dự án chọn `Qwen/Qwen3-VL-Embedding-2B` chạy bằng Transformers cho embedding văn bản/ảnh; gateway giữ hợp đồng Ollama cho local, model nhận diện vùng tiếp tục qua Ollama.
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Khởi động môi trường thật (P1)
@@ -20,7 +22,7 @@ Acceptance: PII được che, ảnh không PII vẫn được encode bỏ metada
 
 ### User Story 3 - Model từ xa trong phiên demo (P1)
 
-Người phát triển mở notebook mới, chạy Ollama với model text/image và model vision, mở endpoint ngrok có xác thực, lấy cấu hình model về local và kiểm tra kết nối.
+Người phát triển mở notebook mới, chạy Qwen text/image bằng Transformers và model vision bằng Ollama, mở endpoint ngrok có xác thực, lấy cấu hình model về local và kiểm tra kết nối.
 
 Acceptance: request thiếu/sai token bị từ chối, không mở API quản lý model; model revision/số chiều được kiểm tra; notebook có cell dừng tunnel; token không nằm trong output đã lưu hoặc git.
 

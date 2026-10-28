@@ -1,9 +1,13 @@
 import importlib.util
+from contextlib import redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from io import StringIO
 import json
 from pathlib import Path
 import threading
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -16,6 +20,213 @@ TOKEN = "a" * 48
 
 
 class GatewayTests(unittest.TestCase):
+    def test_check_gateway_verifies_models_and_reports_private_ngrok_errors(self):
+        revisions = {"embedding": "a" * 64, "redaction": "b" * 64}
+        catalog = {"models": [{"name": name, "digest": "sha256:" + digest}
+                               for name, digest in revisions.items()]}
+        status = 200
+        payload = json.dumps(catalog).encode()
+        error_code = None
+        recover_after = 0
+        requests = []
+
+        class Endpoint(BaseHTTPRequestHandler):
+            def log_message(self, *_args):
+                pass
+
+            def do_GET(self):
+                requests.append((self.path, self.headers.get("Authorization"),
+                                 self.headers.get("ngrok-skip-browser-warning")))
+                if len(requests) <= recover_after:
+                    self.send_response(404)
+                    self.send_header("ngrok-error-code", "ERR_NGROK_3200")
+                    self.end_headers()
+                    return
+                self.send_response(status)
+                if error_code:
+                    self.send_header("ngrok-error-code", error_code)
+                self.end_headers()
+                self.wfile.write(payload)
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Endpoint)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        base_url = f"http://127.0.0.1:{server.server_port}"
+        try:
+            self.assertEqual(module.check_gateway(base_url, TOKEN, revisions), catalog)
+            self.assertEqual(requests, [("/api/tags", "Bearer " + TOKEN, "1")])
+            catalog["models"][0]["digest"] = "c" * 64
+            payload = json.dumps(catalog).encode()
+            with self.assertRaises(RuntimeError):
+                module.check_gateway(base_url, TOKEN, revisions)
+            catalog["models"][0]["digest"] = "a" * 64
+            payload = json.dumps(catalog).encode()
+            requests.clear()
+            recover_after = 2
+            with patch.object(module.time, "sleep") as sleep:
+                self.assertEqual(module.check_gateway(base_url, TOKEN, revisions), catalog)
+                self.assertEqual(sleep.call_count, 2)
+            self.assertEqual(len(requests), 3)
+            recover_after = 0
+            status = 404
+            for error_code in ("ERR_NGROK_3200", None):
+                with self.subTest(error_code=error_code):
+                    payload = ("ERR_NGROK_3200 private upstream output " + TOKEN).encode()
+                    requests.clear()
+                    with patch.object(module.time, "sleep") as sleep, self.assertRaises(RuntimeError) as error:
+                        module.check_gateway(base_url, TOKEN, revisions)
+                    self.assertEqual(len(requests), 5)
+                    self.assertEqual(sleep.call_count, 4)
+                    message = str(error.exception)
+                    self.assertIn("404", message)
+                    self.assertIn("ERR_NGROK_3200", message)
+                    self.assertNotIn(TOKEN, message)
+                    self.assertNotIn("private upstream output", message)
+            for status, error_code in ((404, None), (502, "ERR_NGROK_3200")):
+                with self.subTest(status=status, error_code=error_code):
+                    payload = ("private upstream output " + TOKEN).encode()
+                    requests.clear()
+                    with patch.object(module.time, "sleep") as sleep, self.assertRaises(RuntimeError):
+                        module.check_gateway(base_url, TOKEN, revisions)
+                    self.assertEqual(len(requests), 1)
+                    sleep.assert_not_called()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_check_gateway_does_not_follow_redirect_with_bearer_token(self):
+        requests = []
+
+        class Endpoint(BaseHTTPRequestHandler):
+            def log_message(self, *_args):
+                pass
+
+            def do_GET(self):
+                requests.append((self.path, self.headers.get("Authorization")))
+                self.send_response(302 if self.path == "/api/tags" else 200)
+                self.send_header("Location", f"http://127.0.0.1:{self.server.server_port}/redirect-target")
+                self.end_headers()
+                self.wfile.write(b'{"models": []}')
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Endpoint)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with self.assertRaisesRegex(RuntimeError, "302"):
+                module.check_gateway(f"http://127.0.0.1:{server.server_port}", TOKEN,
+                                     {"embedding": "a" * 64})
+            self.assertEqual(requests, [("/api/tags", "Bearer " + TOKEN)])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_qwen_runtime_identity_dispatch_limits_and_private_errors(self):
+        model = "Qwen/Qwen3-VL-Embedding-2B"
+        vector = [1.0] + [0.0] * 2047
+        embedding = SimpleNamespace(model_id=model, digest="b" * 64, dimensions=2048,
+                                    embed=Mock(return_value=vector))
+        calls = []
+
+        class Upstream(BaseHTTPRequestHandler):
+            def log_message(self, *_args):
+                pass
+
+            def do_GET(self):
+                calls.append(self.path)
+                body = json.dumps({"models": [{"name": model, "digest": "wrong"},
+                                               {"name": "redaction", "digest": "a" * 64},
+                                               {"name": "private"}]}).encode()
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_POST(self):
+                calls.append((self.path, json.loads(self.rfile.read(int(self.headers["Content-Length"])))))
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"model":"redaction","done":true}')
+
+        upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+        proxy = module.gateway(TOKEN, [model, "redaction"], address=("127.0.0.1", 0),
+                               upstream=f"http://127.0.0.1:{upstream.server_port}", embedding=embedding)
+        servers = [upstream, proxy]
+        threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
+        for thread in threads:
+            thread.start()
+        release = threading.Event()
+        try:
+            def request(path, payload=None, token=TOKEN, headers=None):
+                data = None if payload is None else json.dumps(payload).encode()
+                req = Request(f"http://127.0.0.1:{proxy.server_port}" + path, data=data,
+                              headers={"Authorization": "Bearer " + token, "Content-Type": "application/json",
+                                       **(headers or {})})
+                try:
+                    with urlopen(req, timeout=3) as response:
+                        return response.status, json.load(response)
+                except HTTPError as error:
+                    with error:
+                        return error.code, json.load(error)
+
+            payload = {"model": model, "input": "search"}
+            self.assertEqual(request("/api/embed", payload, token="bad")[0], 401)
+            self.assertEqual(request("/api/embed", payload,
+                                     headers={"Content-Length": str(module.MAX_REQUEST + 1)})[0], 413)
+            self.assertEqual(request("/api/generate", payload)[0], 400)
+            self.assertEqual(request("/api/embed", {**payload, "stream": True})[0], 400)
+            for dimensions in (768, True, 2048.0, "2048"):
+                self.assertEqual(request("/api/embed", {**payload, "dimensions": dimensions})[0], 400)
+            for truncate in (True, None, 0):
+                self.assertEqual(request("/api/embed", {**payload, "truncate": truncate})[0], 400)
+            embedding.embed.assert_not_called()
+            self.assertEqual(calls, [])
+            status, catalog = request("/api/tags")
+            self.assertEqual(status, 200)
+            self.assertEqual(catalog["models"], [{"name": "redaction", "digest": "a" * 64},
+                                                {"name": model, "digest": "sha256:" + embedding.digest}])
+            self.assertEqual(request("/api/show", {"model": model}),
+                             (200, {"capabilities": ["embedding", "vision"]}))
+            for value in ("search", {"image": "native-image-base64"}):
+                self.assertEqual(request("/api/embed", {**payload, "input": value, "dimensions": 2048,
+                                                        "truncate": False}),
+                                 (200, {"model": model, "embeddings": [vector]}))
+                embedding.embed.assert_called_with(value)
+            for error, status in ((ValueError("secret input"), 400),
+                                  (RuntimeError("secret runtime"), 502), (MemoryError("secret OOM"), 502)):
+                embedding.embed.side_effect = error
+                result = request("/api/embed", payload)
+                self.assertEqual(result[0], status)
+                self.assertNotIn("secret", json.dumps(result[1]))
+            self.assertEqual(calls, ["/api/tags"])
+
+            entered = threading.Event()
+
+            def blocking_embed(_value):
+                entered.set()
+                self.assertTrue(release.wait(3))
+                return vector
+
+            embedding.embed.side_effect = blocking_embed
+            result = []
+            worker = threading.Thread(target=lambda: result.append(request("/api/embed", payload)))
+            worker.start()
+            self.assertTrue(entered.wait(2))
+            self.assertEqual(request("/api/embed", payload)[0], 429)
+            self.assertEqual(request("/api/generate", {"model": "redaction"})[0], 429)
+            release.set()
+            worker.join(timeout=3)
+            self.assertEqual(result[0][0], 200)
+            self.assertEqual(request("/api/generate", {"model": "redaction"})[0], 200)
+            self.assertEqual(calls[-1], ("/api/generate", {"model": "redaction"}))
+        finally:
+            release.set()
+            for server in servers:
+                server.shutdown()
+                server.server_close()
+            for thread in threads:
+                thread.join(timeout=2)
+
     def test_auth_allowlist_limits_and_private_errors(self):
         calls = []
 
@@ -77,14 +288,68 @@ class GatewayTests(unittest.TestCase):
 
     def test_notebook_proxy_matches_tested_source_and_has_no_saved_outputs(self):
         notebook = json.loads((ROOT / "notebooks/colab/04_full_stack_ollama_ngrok.ipynb").read_text())
-        source = next("".join(c["source"]) for c in notebook["cells"]
-                      if "gateway-source" in c["metadata"].get("tags", []))
-        self.assertEqual(source, (ROOT / "scripts/ollama_gateway.py").read_text())
+        for tag, filename in (("gateway-source", "ollama_gateway.py"), ("qwen-source", "qwen_embedding.py")):
+            source = next("".join(c["source"]) for c in notebook["cells"]
+                          if tag in c["metadata"].get("tags", []))
+            self.assertEqual(source, (ROOT / "scripts" / filename).read_text())
         for i, cell in enumerate(notebook["cells"]):
             if cell["cell_type"] == "code":
                 self.assertEqual(cell["outputs"], [])
                 self.assertIsNone(cell["execution_count"])
                 compile("".join(cell["source"]), f"cell{i}", "exec")
+
+    def test_notebook_gateway_start_reuses_current_token_on_rerun(self):
+        notebook = json.loads((ROOT / "notebooks/colab/04_full_stack_ollama_ngrok.ipynb").read_text())
+        source = next("".join(c["source"]) for c in notebook["cells"]
+                      if "gateway-start" in c["metadata"].get("tags", []))
+        config = SimpleNamespace(auth_token=None)
+        events = []
+        public_url = "https://example.ngrok.app"
+
+        def connect(**_kwargs):
+            events.append(("connect", config.auth_token))
+            return SimpleNamespace(public_url=public_url)
+
+        ngrok = Mock()
+        ngrok.kill.side_effect = lambda: events.append(("kill", config.auth_token))
+        ngrok.connect.side_effect = connect
+        conf = SimpleNamespace(get_default=lambda: config)
+        servers = [Mock(), Mock(), Mock()]
+        check_gateway = Mock(return_value={"models": [{}, {}]})
+        revisions = {"embedding": "b" * 64, "redaction": "c" * 64}
+        namespace = {
+            "gateway": Mock(side_effect=servers),
+            "threading": SimpleNamespace(Thread=Mock()),
+            "FINDIE_OLLAMA_TOKEN": TOKEN,
+            "EMBEDDING_MODEL": "embedding",
+            "REDACTION_MODEL": "redaction",
+            "qwen_embedding": object(),
+            "check_gateway": check_gateway,
+            "revisions": revisions,
+        }
+        output = StringIO()
+        tokens = ("ngrok-secret-first", "ngrok-secret-second")
+        with patch.dict("sys.modules", {"pyngrok": SimpleNamespace(conf=conf, ngrok=ngrok)}), redirect_stdout(output):
+            for token in tokens:
+                namespace["NGROK_AUTHTOKEN"] = token
+                exec(source, namespace)
+            self.assertEqual(events, [("kill", None), ("connect", tokens[0]),
+                                      ("kill", tokens[0]), ("connect", tokens[1])])
+            servers[0].shutdown.assert_called_once_with()
+            servers[0].server_close.assert_called_once_with()
+            ngrok.set_auth_token.assert_not_called()
+            self.assertEqual(check_gateway.call_count, 4)
+            for local, remote in zip(check_gateway.call_args_list[::2], check_gateway.call_args_list[1::2]):
+                self.assertEqual(local.args, ("http://127.0.0.1:11435", TOKEN, revisions))
+                self.assertEqual(remote.args, (public_url, TOKEN, revisions))
+            ngrok.connect.assert_called_with(addr="http://127.0.0.1:11435", proto="http", inspect=False)
+            public_url = "http://example.ngrok.app"
+            with self.assertRaisesRegex(RuntimeError, "HTTPS"):
+                exec(source, namespace)
+            self.assertEqual(check_gateway.call_count, 5)
+            self.assertEqual(check_gateway.call_args.args, ("http://127.0.0.1:11435", TOKEN, revisions))
+        for token in (*tokens, TOKEN):
+            self.assertNotIn(token, output.getvalue())
 
 
 if __name__ == "__main__":

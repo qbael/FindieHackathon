@@ -148,6 +148,7 @@ static class ImageSearchChecks
         var putCount = storage.Puts;
         results = await Binary(seeker, "/api/search/image", original, "image/png", 200);
         Check(results.GetProperty("items").GetArrayLength() == 1 && storage.Puts == putCount, "image search never writes query images to R2");
+        await CheckMultipartSearch();
         var reading = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         storage.OnRead = async () => { reading.SetResult(); await releaseRead.Task; };
@@ -179,6 +180,104 @@ static class ImageSearchChecks
         await CheckOutbox(maintenance);
         Console.WriteLine($"PASS: {checks} image/search/outbox checks (output-only storage, review, stale results, bounded retry and cleanup)");
 
+        async Task CheckMultipartSearch()
+        {
+            using var validation = await User("multipart-validation");
+            var inputs = new[] { original, original.Concat(new byte[] { 1 }).ToArray(), original.Concat(new byte[] { 2 }).ToArray() };
+            var callsBeforeValidation = ai.Calls;
+            var csrf = validation.DefaultRequestHeaders.GetValues("X-CSRF-TOKEN").Single();
+            validation.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+            await Multipart(validation, "/api/search/images", [new byte[100000]], null, 400);
+            validation.DefaultRequestHeaders.Add("X-CSRF-TOKEN", csrf);
+            await Multipart(validation, "/api/search/images", [], null, 400);
+            await Multipart(validation, "/api/search/images", [original, original, original, original], null, 400);
+            await Multipart(validation, "/api/search/images", [original, original], null, 415, "application/octet-stream");
+            await Multipart(validation, "/api/search/images", [original, []], null, 400);
+            await Multipart(validation, "/api/search/images", [original, new byte[BoundedImage.MaxBytes + 1]], null, 413);
+            await Multipart(validation, "/api/search/images", [original], new string('x', 2001), 400);
+            await Multipart(validation, "/api/search/images", [original], new string('x', 8001), 400);
+            await Multipart(validation, "/api/search/images?from=2026-02-01&until=2026-01-01", [original], null, 400);
+            await Multipart(validation, "/api/search/images?until=9999-12-31", [original], null, 400);
+            await Multipart(validation, "/api/search/images?limit=11", [original], null, 400);
+            await Binary(validation, "/api/search/images", original, "image/png", 415);
+            using (var malformed = new HttpRequestMessage(HttpMethod.Post, "/api/search/images") { Content = new StringContent("bad multipart") })
+            {
+                malformed.Content.Headers.ContentType = new MediaTypeHeaderValue("multipart/form-data") { Parameters = { new NameValueHeaderValue("boundary", "missing") } };
+                await Response(validation, malformed, 400);
+            }
+            Check(ai.Calls == callsBeforeValidation, "all multipart images, text and filters are validated before any AI call");
+
+            using var browser = await User("multipart-seeker");
+            var buffers = new List<byte[]>();
+            var imageQueries = 0;
+            var textQueries = 0;
+            item = await Get(owner, $"/api/items/{secondId}");
+            await Send(owner, HttpMethod.Put, $"/api/items/{secondId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
+            var secondText = await Candidate(secondId, false);
+            var firstText = await Candidate(itemId, false);
+            ai.Handler = command =>
+            {
+                Check(!command.Persistent && command.Metadata.GetProperty("area").GetString() == "Campus"
+                    && command.Metadata.GetProperty("from").GetString() == "2026-01-01"
+                    && command.Metadata.GetProperty("until").GetString() == "2026-01-01", "each search input receives identical filters through transient AI transport");
+                if (command.Kind == "search.hybrid.image")
+                {
+                    Check(command.Body.SequenceEqual(inputs[imageQueries++]) && command.ContentType == "image/png", "all three query images reach the image search worker");
+                    buffers.Add(command.Body);
+                    return SearchReply(command, [imageCandidate, imageCandidate]);
+                }
+                using var body = JsonDocument.Parse(command.Body);
+                Check(command.Kind == "search.hybrid" && body.RootElement.GetProperty("text").GetString() == "ví màu đen", "description contributes its own text search ranking");
+                textQueries++;
+                return SearchReply(command, [secondText, firstText]);
+            };
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+            var objects = await db.StoredObjects.CountAsync();
+            var outbox = await db.IndexOutbox.CountAsync();
+            var combined = await Multipart(browser, "/api/search/images?area=Campus&from=2026-01-01&until=2026-01-01&limit=2", inputs, "  ví màu đen  ", 200);
+            Check(imageQueries == 3 && textQueries == 1 && combined.GetProperty("mode").GetString() == "combined"
+                && combined.GetProperty("searchProfileId").GetString() == "multimodal-fusion-v1", "three images plus description return the combined search contract");
+            Check(combined.GetProperty("items").GetArrayLength() == 2
+                && combined.GetProperty("items")[0].GetProperty("item").GetProperty("id").GetGuid() == itemId
+                && combined.GetProperty("items")[1].GetProperty("rank").GetInt32() == 2,
+                "fusion combines all rankings, deduplicates items and honors result limit");
+            Check(buffers.All(value => value.All(part => part == 0)) && storage.Puts == putCount
+                && await db.StoredObjects.CountAsync() == objects && await db.IndexOutbox.CountAsync() == outbox,
+                "multipart raw image buffers are cleared and query input creates no storage or outbox records");
+            ai.Handler = command => SearchReply(command, [imageCandidate]);
+            var imageOnly = await Multipart(browser, "/api/search/images?limit=1", [original], "  ", 200);
+            Check(imageOnly.GetProperty("mode").GetString() == "image" && imageOnly.GetProperty("searchProfileId").GetString() == "image-fusion-v1"
+                && imageOnly.GetProperty("items").GetArrayLength() == 1, "optional blank description supports image-only multipart search");
+            var filtered = await Multipart(browser, "/api/search/images?area=Other", [original], null, 200);
+            Check(filtered.GetProperty("items").GetArrayLength() == 0 && filtered.GetProperty("partial").GetBoolean()
+                && !filtered.GetProperty("filtersRelaxed").GetBoolean(), "multipart image search rechecks area filters without relaxation");
+            filtered = await Multipart(browser, "/api/search/images?from=2026-01-02", [original], null, 200);
+            Check(filtered.GetProperty("items").GetArrayLength() == 0, "multipart image search rechecks date filters");
+            var failedBuffers = new List<byte[]>();
+            ai.Handler = command =>
+            {
+                failedBuffers.Add(command.Body);
+                return failedBuffers.Count == 1 ? SearchReply(command, [imageCandidate]) : throw new ApiException(503, "Second image worker unavailable.");
+            };
+            await Multipart(browser, "/api/search/images", inputs, "wallet", 503);
+            Check(failedBuffers.Count == 2 && failedBuffers.All(value => value.All(part => part == 0)), "upstream failure fails the whole search and clears every dispatched raw image");
+            ai.Handler = command => Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), "{\"candidates\":[{}]}"u8.ToArray()));
+            await Multipart(browser, "/api/search/images", [original], null, 502);
+            ai.Handler = async command =>
+            {
+                if (command.Kind == "search.hybrid.image") return await SearchReply(command, [imageCandidate]);
+                var live = await Get(owner, $"/api/items/{itemId}");
+                await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = live.GetProperty("rowVersion").GetInt64(), state = "hidden" }, 200);
+                return await SearchReply(command, [firstText]);
+            };
+            var stale = await Multipart(browser, "/api/search/images", [original], "wallet", 200);
+            Check(stale.GetProperty("items").GetArrayLength() == 0 && stale.GetProperty("partial").GetBoolean(), "fusion rechecks publication after all AI replies rather than leaking an earlier valid item");
+            item = await Get(owner, $"/api/items/{itemId}");
+            await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
+            imageCandidate = await Candidate(itemId, true);
+            ai.Handler = command => SearchReply(command, [imageCandidate]);
+        }
         async Task CheckOutbox(RecoveryMaintenance worker)
         {
             using var scope = factory.Services.CreateScope();
@@ -302,6 +401,19 @@ static class ImageSearchChecks
         using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new ByteArrayContent(bytes) };
         request.Content.Headers.ContentType = new MediaTypeHeaderValue(mime);
         request.Headers.Add("Idempotency-Key", (key ?? Guid.NewGuid()).ToString());
+        return await Response(client, request, expected);
+    }
+    static async Task<JsonElement> Multipart(HttpClient client, string path, byte[][] images, string? text, int expected, string mime = "image/png")
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new MultipartFormDataContent() };
+        var form = (MultipartFormDataContent)request.Content;
+        foreach (var image in images)
+        {
+            var content = new ByteArrayContent(image);
+            content.Headers.ContentType = new MediaTypeHeaderValue(mime);
+            form.Add(content, "images", "query.png");
+        }
+        if (text is not null) form.Add(new StringContent(text), "text");
         return await Response(client, request, expected);
     }
     static async Task<JsonElement> Response(HttpClient client, HttpRequestMessage request, int expected)

@@ -10,9 +10,10 @@ import {
   type Point,
 } from "../lib/api";
 import { useResource } from "../hooks/hooks";
+import { SearchImages } from "../components/SearchImages";
 import {
   basicSearchUrl,
-  searchImage,
+  searchImages,
   searchText,
   type SearchFilters,
   type SearchResponse,
@@ -30,21 +31,16 @@ import {
   SafetyNote,
 } from "../components/ui";
 
-export function Home() {
+export function Home({ signedIn, onImageSearch }: {
+  signedIn: boolean;
+  onImageSearch: (input: SearchInput) => void;
+}) {
   const [query, setQuery] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [from, setFrom] = useState("");
   const [until, setUntil] = useState("");
   return (
     <>
-      <div className="trust-banner">
-        <span>
-          <Icon name="shield" />
-          <span>Cùng cộng đồng tìm lại những điều thân thuộc.</span>
-        </span>
-        <span className="trust-banner-note">
-          An tâm tìm kiếm · An toàn trao trả
-        </span>
-      </div>
       <section className="hero" aria-labelledby="home-title">
         <span className="eyebrow hero-eyebrow">
           <span className="status-dot" />
@@ -60,13 +56,32 @@ export function Home() {
           Cùng Findie kết nối với người đang giữ món đồ của bạn.
         </p>
       </section>
-      <form className="search-card" action="/search" method="get">
+      <form className="search-card" action="/search" method="get" onSubmit={(event) => {
+        if (!files.length) return;
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        onImageSearch({ text: query.trim(), files, filters: {
+          area: String(form.get("area") ?? "").trim() || undefined,
+          from: from || undefined,
+          until: until || undefined,
+        } });
+      }}>
+        <input type="hidden" name="mode" value={query.trim() ? "text" : "basic"} />
         <div className="search-card-heading">
           <Icon name="search" />
           <h2>Tìm đồ thất lạc</h2>
           <span>Từ những chi tiết bạn còn nhớ</span>
         </div>
         <div className="search-card-body">
+          {signedIn ? <SearchImages files={files} onChange={setFiles} /> : (
+            <div className="search-images">
+              <a className="upload-zone" href="/signin?returnUrl=%2F">
+                <Icon name="upload" size={24} />
+                <strong>Đăng nhập để thêm ảnh tìm kiếm</strong>
+                <span>Tối đa 3 ảnh · Có thể kết hợp với mô tả</span>
+              </a>
+            </div>
+          )}
           <div className="field-label">
             <label htmlFor="home-query">Đặc điểm món đồ</label>
             <span className="field-hint">Màu sắc, hình dáng, phụ kiện…</span>
@@ -75,13 +90,13 @@ export function Home() {
             <textarea
               id="home-query"
               name="q"
-              maxLength={200}
+              maxLength={2000}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Ví dụ: Ví da màu đen, khóa kéo vàng, có một móc khóa nhỏ…"
               rows={3}
             />
-            <span className="character-count">{query.length}/200</span>
+            <span className="character-count">{query.length}/2000</span>
           </div>
           <div className="suggestions">
             <span>Thử tìm</span>
@@ -133,10 +148,6 @@ export function Home() {
             </label>
           </div>
           <div className="search-bottom">
-            <span>
-              <Icon name="lock" size={15} />
-              Tôn trọng thông tin riêng của người nhặt
-            </span>
             <button className="button" type="submit">
               <Icon name="search" size={18} />
               Tìm kiếm món đồ
@@ -191,33 +202,31 @@ export function Home() {
   );
 }
 
-type SearchInput =
-  | { mode: "text"; text: string; filters: SearchFilters }
-  | { mode: "image"; file: File; filters: SearchFilters };
+export type SearchInput = { text: string; files: readonly File[]; filters: SearchFilters };
 
-export function Search() {
+export function Search({ initialRequest }: { initialRequest?: SearchInput | null }) {
   const query = new URLSearchParams(window.location.search);
   const page = pageNumber(query.get("page"));
   const [mode, setMode] = useState(
-    ["text", "image"].includes(query.get("mode") ?? "")
-      ? query.get("mode")!
-      : "basic",
+    query.get("mode") === "basic" ? "basic" : "text",
   );
+  const [files, setFiles] = useState<readonly File[]>(initialRequest?.files ?? []);
   const [from, setFrom] = useState(query.get("from") ?? "");
   const [until, setUntil] = useState(query.get("until") ?? "");
-  const [request, setRequest] = useState<SearchInput | null>(() =>
-    query.get("mode") === "text" && query.get("q")?.trim()
+  const [request, setRequest] = useState<SearchInput | null>(() => initialRequest ?? (
+    query.get("mode") !== "basic" && query.get("q")?.trim()
       ? {
-          mode: "text",
           text: query.get("q")!.trim(),
+          files: [],
           filters: {
             area: query.get("area")?.trim() || undefined,
             from: query.get("from") || undefined,
             until: query.get("until") || undefined,
           },
         }
-      : null,
+      : null),
   );
+  const [formError, setFormError] = useState<Error | null>(null);
   const [suggestions, setSuggestions] = useState<SearchResponse | null>(null);
   const [searchError, setSearchError] = useState<Error | null>(null);
   const [searching, setSearching] = useState(Boolean(request));
@@ -238,8 +247,8 @@ export function Search() {
       AbortSignal.timeout(45000),
     ]);
     const result =
-      request.mode === "image"
-        ? searchImage(request.file, request.filters, signal)
+      request.files.length
+        ? searchImages(request.files, request.text, request.filters, signal)
         : searchText(request.text, request.filters, signal);
     result
       .then((value) => {
@@ -262,14 +271,18 @@ export function Search() {
     };
   }, [request, attempt]);
   function submit(event: FormEvent<HTMLFormElement>) {
-    if (mode !== "image") return;
+    if (mode === "basic") return;
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const file = form.get("image");
-    if (!(file instanceof File)) return;
+    const text = String(form.get("q") ?? "").trim();
+    if (!text && !files.length) {
+      setFormError(new Error("Hãy nhập mô tả hoặc chọn từ 1 đến 3 ảnh để tìm kiếm."));
+      return;
+    }
+    setFormError(null);
     setRequest({
-      mode: "image",
-      file,
+      text,
+      files,
       filters: {
         area: String(form.get("area") ?? "").trim() || undefined,
         from: String(form.get("from") ?? "") || undefined,
@@ -296,7 +309,7 @@ export function Search() {
         eyebrow="Có thể món đồ của bạn đang ở đây"
         title="Tìm đồ thất lạc"
       >
-        Tìm gợi ý bằng mô tả hoặc ảnh món đồ, hoặc dùng bộ lọc cơ bản theo từ khóa,
+        Tìm bằng mô tả, tối đa 3 ảnh hoặc kết hợp cả hai; dùng bộ lọc theo
         khu vực và ngày nhặt được.
       </PageHeader>
       <div className="search-layout">
@@ -315,41 +328,27 @@ export function Search() {
                 value={mode}
                 onChange={(event) => setMode(event.target.value)}
               >
-                <option value="text">Gợi ý theo mô tả</option>
-                <option value="image">Gợi ý theo ảnh</option>
+                <option value="text">Gợi ý theo mô tả / ảnh</option>
                 <option value="basic">Bộ lọc cơ bản</option>
               </select>
             </label>
-            {mode === "image" ? (
-              <label>
-                Ảnh món đồ
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/jpeg,image/png,image/webp"
-                  required
-                />
+            <ErrorNotice error={formError} />
+            {mode !== "basic" && <SearchImages files={files} onChange={setFiles} />}
+            <label>
+              {mode === "basic" ? "Từ khóa" : "Mô tả món đồ"}
+              <input
+                name="q"
+                defaultValue={initialRequest?.text ?? query.get("q") ?? ""}
+                maxLength={mode === "basic" ? 200 : 2000}
+                placeholder={mode === "basic" ? "Ví, chìa khóa, balô…" : "Ví da đen tại phòng E.205…"}
+              />
+              {mode === "text" && (
                 <span className="field-hint">
-                  JPEG, PNG hoặc WebP, tối đa 10 MB. Ảnh chỉ dùng cho lượt tìm này.
+                  Có thể thêm vị trí cụ thể, như phòng E.205 hoặc sảnh hội trường
+                  A. Nhập Trường Đại học Sài Gòn ở bộ lọc khu vực.
                 </span>
-              </label>
-            ) : (
-              <label>
-                {mode === "basic" ? "Từ khóa" : "Mô tả món đồ"}
-                <input
-                  name="q"
-                  defaultValue={query.get("q") ?? ""}
-                  maxLength={mode === "basic" ? 200 : 2000}
-                  placeholder={mode === "basic" ? "Ví, chìa khóa, balô…" : "Ví da đen tại phòng E.205…"}
-                />
-                {mode === "text" && (
-                  <span className="field-hint">
-                    Có thể thêm vị trí cụ thể, như phòng E.205 hoặc sảnh hội trường
-                    A. Nhập Trường Đại học Sài Gòn ở bộ lọc khu vực.
-                  </span>
-                )}
-              </label>
-            )}
+              )}
+            </label>
             <label>
               Khu vực
               <input
@@ -396,10 +395,10 @@ export function Search() {
         <section aria-label="Kết quả tìm kiếm" aria-busy={loading}>
           <div className="results-heading">
             <h2>
-              {request?.mode === "image"
-                ? "Gợi ý theo ảnh món đồ"
-                : query.get("q")
-                  ? `Kết quả cho “${query.get("q")}”`
+              {request?.files.length
+                ? request.text ? "Gợi ý theo ảnh và mô tả" : "Gợi ý theo ảnh món đồ"
+                : request?.text || query.get("q")
+                  ? `Kết quả cho “${request?.text || query.get("q")}”`
                   : "Món đồ đang tìm chủ"}
             </h2>
             {items && (
@@ -426,7 +425,7 @@ export function Search() {
           {suggestions && (
             <Notice>
               <p>
-                Thứ tự là gợi ý {suggestions.mode === "image" ? "theo ảnh" : "theo mô tả"},
+                Thứ tự là gợi ý {suggestions.mode === "combined" ? "theo ảnh và mô tả" : suggestions.mode === "image" ? "theo ảnh" : "theo mô tả"},
                 không xác nhận quyền sở hữu.
               </p>
               {suggestions.partial && (

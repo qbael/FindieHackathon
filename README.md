@@ -1,47 +1,39 @@
 # Findie
 
-Findie là nền tảng tìm và trao trả đồ thất lạc, gồm giao diện React, API .NET, PostgreSQL và dịch vụ Python tìm kiếm bằng AI. README này hướng dẫn cài đặt và chạy **môi trường phát triển local từ đầu**.
+Findie là nền tảng tìm và trao trả đồ thất lạc. Hướng dẫn này đưa bạn từ mã nguồn mới clone đến **chạy đầy đủ các service**, đăng nhập Google, đăng tin có ảnh, tìm kiếm AI, yêu cầu nhận đồ, nhắn tin và bàn giao tại Hub trong môi trường phát triển local.
 
-Luồng cơ bản dùng PostgreSQL và Google OAuth để đăng nhập, đăng tin, tìm đồ, gửi yêu cầu nhận đồ và trao đổi tin nhắn. Docker Compose cung cấp PostgreSQL và RabbitMQ; worker Python hỗ trợ text, che ảnh và tìm ảnh bằng embedding đa phương thức. Model có thể chạy trên Ollama từ xa qua HTTPS có token.
+## Toàn bộ hệ thống sẽ chạy ở đâu?
 
-## Chạy đầy đủ ở local với model Colab/ngrok
-
-1. Cài các công cụ ở mục 1, giữ Google OAuth và R2 private trong `.env`, rồi chạy `make local-setup`. Lệnh tạo hai database/role riêng, migrate, broker và Hub demo; chạy lại giữ dữ liệu/credential.
-2. Upload [notebook 04](notebooks/colab/04_full_stack_ollama_ngrok.ipynb) vào Colab GPU, chạy từng cell với token ngrok của bạn và một `FINDIE_OLLAMA_TOKEN` riêng tối thiểu 32 ký tự. Notebook kiểm text/image/vision trước khi mở gateway có Bearer token; tải `findie-colab.json` về máy.
-3. Import cấu hình và chạy:
-
-   ```sh
-   python3 scripts/configure_ollama.py /duong-dan/findie-colab.json
-   make local-run
-   ```
-
-   Lệnh import hỏi cùng `FINDIE_OLLAMA_TOKEN` đã nhập trên Colab; không đưa token vào chat/git. `local-run` kiểm worker/model trước khi chạy API và web. Mở **http://127.0.0.1:5173** và đăng nhập Google.
-4. Trong terminal khác, cấp quyền thử luồng Hub cho tài khoản vừa đăng nhập và kiểm toàn hệ thống:
-
-   ```sh
-   make local-seed STAFF_EMAIL=dia-chi-google-cua-ban
-   make local-doctor
-   ```
-
-5. Đăng ảnh → kiểm bản đã che → duyệt ảnh → công khai tin → tìm bằng mô tả/ảnh. Dùng tài khoản Google thứ hai cho luồng yêu cầu/chat/trao trả. Khi đổi model trên database có tin cũ, chạy `make local-reindex` sau khi worker ready. Đổi URL ngrok thì import lại JSON và khởi động lại `local-run`.
-
-`Ctrl+C` dừng web/API/worker của phiên; `make local-stop` dừng database/broker, giữ volume. Google/R2 thật và phiên Colab/ngrok cần tài khoản/credential của bạn; doctor phân biệt đã cấu hình với đã kiểm chứng. Notebook không có keepalive, Colab không phải hosting thường trực. Chi tiết và giới hạn gói Colab trong [hướng dẫn AI](docs/guides/ai-service.md).
-
-## 1. Cài công cụ cần thiết
-
-Các lệnh bên dưới dùng shell Linux/macOS. Với Windows, chạy trong WSL2 và bật tích hợp Docker cho bản phân phối WSL đang dùng; cài các công cụ dòng lệnh trong cùng môi trường đó.
-
-| Công cụ | Yêu cầu của project | Cài đặt |
+| Thành phần | Nơi chạy / địa chỉ mặc định | Vai trò |
 | --- | --- | --- |
-| Git | Để lấy mã nguồn | [Tải Git](https://git-scm.com/downloads/) |
-| Docker và Docker Compose | Có lệnh `docker compose`; Docker daemon đang chạy | [Cài Docker](https://docs.docker.com/get-started/get-docker/) |
-| Node.js và npm | **Node.js 24.x**, theo `.nvmrc` và `apps/web/package.json` | [Tải Node.js](https://nodejs.org/en/download) |
-| .NET SDK | **10.0**, chọn bản SDK; `global.json` cho phép feature band mới trong dòng 10.0 | [Tải .NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) |
-| Python | **3.12**, theo `services/ai/.python-version`; cần có lệnh `python3` | [Tải Python](https://www.python.org/downloads/) |
-| uv | Quản lý môi trường và package Python | [Cài uv](https://docs.astral.sh/uv/getting-started/installation/) |
-| Make và curl | Chạy các lệnh trong `Makefile` và kiểm tra HTTP | Cài qua trình quản lý gói của hệ điều hành |
+| Web React + Vite | Máy local — [http://127.0.0.1:5173](http://127.0.0.1:5173) | Giao diện; proxy `/api` sang API .NET |
+| API .NET | Máy local — `http://127.0.0.1:5080` | Đăng nhập, nghiệp vụ, phân quyền, xử lý yêu cầu ảnh |
+| Python AI worker + FastAPI | Máy local — `http://127.0.0.1:8000` | Nhận job qua RabbitMQ, xử lý ảnh, lập chỉ mục và tìm kiếm |
+| PostgreSQL 17 + pgvector | Docker — `127.0.0.1:5432` | Database nghiệp vụ `findie` và database tìm kiếm `findie_search` |
+| RabbitMQ | Docker — AMQP `127.0.0.1:5672`; [trang quản trị cổng 15672](http://127.0.0.1:15672) | Chuyển job và kết quả giữa .NET/Python |
+| Model embedding và vision | GPU Colab, qua gateway HTTPS ngrok có token | Tạo vector văn bản/ảnh và nhận diện vùng cần che |
+| Cloudflare R2 | Bucket private trên tài khoản Cloudflare của bạn | Lưu ảnh đầu ra đã xử lý |
+| Google OAuth | Google Cloud project của bạn | Đăng nhập ứng dụng |
 
-Kiểm tra trong terminal trước khi tiếp tục:
+**Docker Compose chỉ chạy PostgreSQL và RabbitMQ.** `make local-run` chạy worker, API và web; model AI cần có phiên GPU riêng đang hoạt động. Máy local không cần cài Ollama hoặc có GPU khi dùng notebook 04.
+
+Thứ tự thực hiện: **cài công cụ → tạo `.env` → cấu hình Google/R2 → `make local-setup` → chạy notebook 04 → import cấu hình → `make local-run` → đăng nhập/cấp quyền Hub → kiểm tra hệ thống**.
+
+## 1. Chuẩn bị công cụ và tài khoản
+
+Các lệnh dưới đây dùng shell Linux/macOS. Trên Windows, dùng WSL2, bật Docker integration cho bản phân phối WSL đó và cài các công cụ dòng lệnh trong cùng môi trường WSL.
+
+| Công cụ | Phiên bản / yêu cầu | Hướng dẫn cài |
+| --- | --- | --- |
+| Git | Để clone repository | [Git](https://git-scm.com/downloads/) |
+| Docker và Docker Compose | Docker daemon đang chạy; hỗ trợ `docker compose up --wait` | [Docker](https://docs.docker.com/get-started/get-docker/) |
+| Node.js và npm | **Node.js 24.x**, theo `.nvmrc` và `apps/web/package.json` | [Node.js](https://nodejs.org/en/download) |
+| .NET SDK | **10.0**, tối thiểu `10.0.100`; `global.json` cho phép feature band mới trong dòng 10.0 | [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) |
+| Python | **3.12** theo `services/ai/.python-version`; có lệnh `python3` trên PATH | [Python](https://www.python.org/downloads/) |
+| uv | Quản lý Python và dependency của AI service | [uv](https://docs.astral.sh/uv/getting-started/installation/) |
+| Make và curl | Có lệnh `make`, `curl` | Cài qua trình quản lý gói của hệ điều hành |
+
+Kiểm tra trước khi tiếp tục:
 
 ```sh
 git --version
@@ -57,116 +49,173 @@ make --version
 curl --version
 ```
 
-Nếu uv chưa có Python 3.12, chạy `uv python install 3.12`. Lệnh này chuẩn bị interpreter cho dịch vụ AI; vẫn cần lệnh `python3` trên PATH để chạy các script của Makefile. Lần setup đầu cần mạng để tải dependency và Docker image. Chưa cần cài Ollama hoặc tải model để chạy luồng cơ bản.
+Nếu uv chưa có Python 3.12, chạy `uv python install 3.12`. Vẫn cần `python3` trên PATH để chạy các script trong Makefile. Lần đầu cần kết nối Internet để tải package, Docker image và model.
 
-## 2. Lấy mã nguồn và cài dependency
+Chuẩn bị thêm:
+
+- Google Cloud project và OAuth client; dùng **hai tài khoản Google** nếu muốn thử đầy đủ luồng người nhặt/người nhận.
+- Tài khoản Cloudflare đã bật R2, một bucket private và credential S3 cho bucket đó.
+- Tài khoản ngrok và authtoken; phiên Colab GPU phù hợp để chạy notebook 04.
+
+Colab có giới hạn tài nguyên và hạn chế đối với dịch vụ/proxy; dùng môi trường cho phép mục đích này theo [FAQ của Colab](https://research.google.com/colaboratory/faq.html). Nếu không phù hợp, dùng notebook trên Jupyter GPU bạn kiểm soát theo [hướng dẫn AI](docs/guides/ai-service.md#model-trên-colab-qua-ngrok). Phiên Colab/ngrok cần được duy trì trong lúc dùng AI.
+
+## 2. Lấy mã nguồn và tạo cấu hình local
 
 ```sh
 git clone https://github.com/qbael/FindieHackathon.git
 cd FindieHackathon
 ```
 
-Nếu đã có mã nguồn, mở terminal tại thư mục chứa `Makefile` và `compose.yaml`. **Tất cả lệnh bên dưới chạy từ thư mục gốc này**, kể cả khi mở terminal mới.
+Nếu đã có mã nguồn, mở terminal tại thư mục chứa `Makefile` và `compose.yaml`. **Tất cả lệnh local trong README chạy từ thư mục gốc này**, kể cả khi mở terminal mới.
 
-Nếu đã cài nvm, có thể chọn đúng Node.js bằng:
+Nếu dùng nvm, chọn đúng Node.js:
 
 ```sh
 nvm install
 nvm use
 ```
 
-Khởi tạo project:
+Tạo `.env` và cấu hình RabbitMQ:
 
 ```sh
-make setup
+make env
 ```
 
-Lệnh này tạo `.env` với mật khẩu database, RabbitMQ và token nội bộ ngẫu nhiên; sinh cấu hình broker local, cài dependency Python bằng uv, restore package .NET và công cụ `dotnet-ef`, rồi cài dependency frontend bằng `npm ci`. Các package được lấy theo lockfile của project. Chỉ cần tạo cấu hình mà không cài dependency thì chạy `make env`.
+Lệnh tự sinh mật khẩu PostgreSQL/RabbitMQ và token nội bộ ngẫu nhiên, đồng thời tạo `.cache/rabbitmq/definitions.json`. Chạy lại chỉ bổ sung biến còn thiếu và giữ giá trị đã có. **Không cần chép `.env.example` sang `.env`** vì file mẫu chứa placeholder chưa dùng để chạy được.
 
-Chạy lại `make setup` sẽ bổ sung biến cấu hình còn thiếu và giữ bí mật đã có. Không cần chép `.env.example` thành `.env`: file mẫu chứa placeholder, chưa phải cấu hình dùng để chạy. Giữ `.env` ở máy local; file này đã được bỏ qua bởi Git.
+Giữ `.env` ở local; file đã được bỏ qua bởi Git. Chỉ source `.env` do bạn kiểm soát vì các script nạp file này như cấu hình shell. Khi sửa các bước tiếp theo, thay giá trị của biến có sẵn, tránh thêm nhiều dòng gán trùng nhau.
 
-## 3. Cấu hình đăng nhập Google
+## 3. Cấu hình Google OAuth và R2
 
-Ứng dụng **chỉ đăng nhập bằng Google**, không có tài khoản/mật khẩu demo. Có thể mở trang chủ khi chưa cấu hình OAuth, nhưng các màn hình nghiệp vụ yêu cầu đăng nhập.
+Cần hoàn tất cả hai phần trước khi dùng `make local-run`; lệnh này yêu cầu cấu hình cho toàn bộ tính năng.
 
-1. Tạo hoặc chọn project trong Google Cloud, cấu hình màn hình chấp thuận OAuth; thêm tài khoản dùng thử nếu ứng dụng ở chế độ Testing.
-2. Tạo OAuth client loại **Web application**, theo [hướng dẫn Google](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred).
-3. Thêm **Authorized redirect URI** chính xác như sau:
+### 3.1. Google OAuth
+
+Ứng dụng chỉ đăng nhập bằng Google, không có tài khoản/mật khẩu demo.
+
+1. Tạo/chọn project trong Google Cloud và cấu hình màn hình chấp thuận OAuth. Nếu ứng dụng ở chế độ Testing, thêm các tài khoản Google dùng để thử vào danh sách test users.
+2. Tạo OAuth client loại **Web application** theo [hướng dẫn Google](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred).
+3. Đăng ký **Authorized redirect URI** chính xác:
 
    ```text
    http://127.0.0.1:5173/api/auth/google/signin
    ```
 
-4. Mở `.env`, sửa hai dòng có sẵn bằng thông tin client vừa tạo:
+4. Điền Client ID và Client Secret vào `.env`:
 
    ```dotenv
    Authentication__Google__ClientId='YOUR_CLIENT_ID.apps.googleusercontent.com'
    Authentication__Google__ClientSecret='YOUR_CLIENT_SECRET'
    ```
 
-Mở ứng dụng bằng `http://127.0.0.1:5173` trong suốt quá trình đăng nhập. Nếu dùng `localhost`, phải đăng ký thêm URI tương ứng và dùng host đó nhất quán. Callback đi qua cổng **5173** của Vite; không đổi sang cổng 5080 của API cho phiên bắt đầu từ frontend.
+Luôn mở web bằng `http://127.0.0.1:5173` khi làm theo hướng dẫn. Callback đi qua Vite ở cổng **5173**; không thay bằng cổng API 5080. Nếu dùng `localhost`, phải đăng ký URI tương ứng và dùng host đó nhất quán.
 
-Client secret chỉ nằm trong `.env` phía server, không đặt vào biến `VITE_*`. Sau mỗi lần sửa cấu hình OAuth, khởi động lại `make api`.
+### 3.2. Cloudflare R2 private
 
-## 4. Khởi tạo database
+1. Tạo bucket dành cho môi trường local, ví dụ `findie-local`. Giữ bucket **private**, không bật Public Development URL hoặc gắn domain public; xem [cấu hình truy cập public của R2](https://developers.cloudflare.com/r2/buckets/public-buckets/).
+2. Tạo R2 API token với quyền **Object Read & Write**, giới hạn vào bucket đó. Lưu **Access Key ID** và **Secret Access Key** theo [hướng dẫn R2](https://developers.cloudflare.com/r2/api/tokens/).
+3. Điền đủ bốn biến trong `.env`, dùng S3 API endpoint của bucket:
 
-Đảm bảo Docker đang chạy, sau đó:
+   ```dotenv
+   Storage__Endpoint='https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com'
+   Storage__Bucket='findie-local'
+   Storage__AccessKeyId='YOUR_ACCESS_KEY_ID'
+   Storage__SecretAccessKey='YOUR_SECRET_ACCESS_KEY'
+   ```
+
+Endpoint trên dành cho bucket mặc định; bucket có jurisdiction riêng phải dùng endpoint tương ứng trong tài liệu R2. Endpoint phải là HTTPS, không phải URL public của một ảnh. API thực hiện đọc/ghi/xóa object phía server; trình duyệt nhận ảnh qua API, không cần public bucket để hiển thị ảnh.
+
+Google/R2 credential chỉ đặt ở phía backend, không đưa vào biến `VITE_*`, notebook hoặc Git. Nếu chỉ điền một phần cấu hình R2, API sẽ từ chối khởi động.
+
+## 4. Cài dependency và khởi tạo toàn bộ hạ tầng
+
+Đảm bảo `docker info` chạy thành công, sau đó:
 
 ```sh
-make db-up
-make rabbitmq-up
-make db-migrate
+make local-setup
 docker compose ps
 ```
 
-- `make db-up` khởi động PostgreSQL 17 có pgvector và chờ database sẵn sàng; mặc định dùng cổng `127.0.0.1:5432`.
-- `make db-migrate` áp dụng EF migrations cho database nghiệp vụ `findie`, tạo 22 bảng ứng dụng, bảng lịch sử migration và role runtime `findie_app`. API không tự chạy migration khi khởi động.
-- `make rabbitmq-up` sinh cấu hình và chạy RabbitMQ 4.3.2 với volume bền vững, healthcheck và các queue chỉ mục/kết quả được nạp sẵn. AMQP mặc định ở `127.0.0.1:5672`; giao diện quản trị tại [http://127.0.0.1:15672](http://127.0.0.1:15672), đăng nhập bằng `RABBITMQ_ADMIN_USER` và `RABBITMQ_ADMIN_PASSWORD` trong `.env`.
-- Compose chạy PostgreSQL và RabbitMQ. API, frontend và dịch vụ Python chạy bằng các lệnh ở bước tiếp theo.
+`make local-setup` đã bao gồm `make setup` và thực hiện:
 
-Database mới chưa có bài đăng hoặc tài khoản mẫu. `make local-setup` tạo Hub demo; sau khi đăng nhập Google lần đầu, dùng `make local-seed STAFF_EMAIL=...` để cấp quyền tại Hub demo. CLI chỉ chạy trong Development, không có public admin API.
+1. Bổ sung cấu hình còn thiếu; cài Python package bằng `uv sync --locked`, restore .NET/package và `dotnet-ef`, cài web bằng `npm ci` theo lockfile.
+2. Khởi động PostgreSQL/pgvector và RabbitMQ, chờ healthcheck, nạp các user/quyền/queue của broker.
+3. Migrate database nghiệp vụ `findie` bằng EF Core, chuẩn bị role runtime `findie_app`.
+4. Tạo database tìm kiếm `findie_search` và role runtime `findie_search_app` riêng, migrate schema và cấp quyền DML. Điền các DSN tìm kiếm và `RabbitMq__Uri` local còn trống trong `.env`.
+5. Tạo **Findie Demo Hub**. Chưa tạo tài khoản hoặc cấp quyền nhân viên; thực hiện sau khi đăng nhập Google ở bước 7.
 
-Với database bootstrap cũ, migration chỉ tự chuyển khi cả 16 bảng cũ đều rỗng. Nếu đã có dữ liệu, script dừng để giữ nguyên dữ liệu; cần kế hoạch chuyển đổi riêng. Không nhập `docs/database/database-schema.sql` để thay thế EF migrations vì đó là snapshot cũ.
+Kết quả: hai container ở trạng thái chạy/healthy; script kết thúc với thông báo `Local infrastructure ready`. Bước này chưa khởi chạy web/API/worker và chưa tải model AI.
 
-## 5. Chạy các dịch vụ
+Chạy lại không reset dữ liệu hoặc thay credential đã có trong `.env`. Nếu dùng database bootstrap cũ có dữ liệu, migration có thể dừng để bảo toàn dữ liệu; cần kế hoạch chuyển đổi riêng. Không nhập `docs/database/database-schema.sql` thay cho EF migrations. DSN tùy chỉnh được giữ nguyên và `local-setup` sẽ dừng nếu chúng không trỏ đúng database/role local mà script quản lý.
 
-Mở **ba terminal** tại thư mục gốc project và giữ chúng chạy:
+## 5. Chạy model AI trên Colab và mở gateway ngrok
 
-**Terminal 1 — dịch vụ Python:**
+Dùng **[04_full_stack_ollama_ngrok.ipynb](notebooks/colab/04_full_stack_ollama_ngrok.ipynb)**. Notebook 01–03 là thử nghiệm riêng, không thay thế notebook 04 cho luồng đầy đủ.
+
+1. Mở [Google Colab](https://colab.research.google.com/), chọn **File → Upload notebook** và upload notebook 04 từ repository.
+2. Chọn **Runtime → Change runtime type → GPU** (ví dụ T4), kết nối runtime rồi chạy từng cell từ trên xuống.
+3. Nếu cell cài dependency yêu cầu **Runtime → Restart session**, làm đúng yêu cầu rồi chạy lại từ cell đầu. Chạy lại cell trong kernel cũ chưa thay thế được bước restart.
+4. Cung cấp hai secret qua Colab Secrets hoặc ô nhập ẩn của notebook:
+
+   | Secret | Lấy từ đâu / dùng để làm gì |
+   | --- | --- |
+   | `NGROK_AUTHTOKEN` | Authtoken trong tài khoản ngrok, dùng để mở tunnel |
+   | `FINDIE_OLLAMA_TOKEN` | Token riêng do bạn tạo, tối thiểu **32 ký tự ASCII không có khoảng trắng**, dùng xác thực gateway |
+
+   Lưu `FINDIE_OLLAMA_TOKEN` để nhập lại trên máy local ở bước 6. Hai token này khác nhau và khác `AI_SERVICE_TOKEN` tự sinh trong `.env`. Không cần đưa credential Google/R2/database hay `AI_SERVICE_TOKEN` lên Colab. `HF_TOKEN` là tùy chọn cho model Qwen công khai.
+5. Chờ notebook tải và kiểm hai model:
+
+   | Model | Vai trò |
+   | --- | --- |
+   | `Qwen/Qwen3-VL-Embedding-2B` qua Transformers | Embedding văn bản và ảnh native, 2048 chiều |
+   | `qwen3-vl:4b` qua Ollama | Gợi ý vùng nhạy cảm để worker local che ảnh |
+
+6. Chỉ tiếp tục khi các cell kiểm embedding text/ảnh, JSON vision và gateway HTTPS hoàn tất. Chạy cell **Tải cấu hình về local** để tải `findie-colab.json` về máy.
+7. Giữ runtime đang kết nối trong suốt phiên sử dụng. JSON không chứa token; gateway ngrok yêu cầu Bearer token và chỉ mở các endpoint model cần thiết.
+
+Không tự đổi tên model trong `.env` để bật tìm ảnh: model mặc định `qwen3-embedding:4b` trong file mẫu chỉ hỗ trợ văn bản. JSON của notebook 04 chứa đúng model, revision, số chiều và cấu hình bật tìm ảnh. Chi tiết fingerprint Qwen, GPU và xử lý lỗi ở [hướng dẫn AI service](docs/guides/ai-service.md) và [Colab](docs/guides/colab.md).
+
+## 6. Import model và khởi chạy web/API/worker
+
+Tại máy local, thay đường dẫn bằng file vừa tải:
 
 ```sh
-make ai
+python3 scripts/configure_ollama.py "$HOME/Downloads/findie-colab.json"
 ```
 
-**Terminal 2 — API .NET:**
+Khi được hỏi, nhập **cùng `FINDIE_OLLAMA_TOKEN` đã dùng trên Colab**, không nhập authtoken ngrok. Lệnh kiểm gateway/token/revision trước khi cập nhật `.env`, đồng bộ cấu hình .NET/Python và lưu token vào `OLLAMA_API_KEY`. Credential Google/R2/database được giữ nguyên.
+
+Khởi chạy toàn bộ ứng dụng trong **terminal 1** và giữ terminal mở:
 
 ```sh
-make api
+make local-run
 ```
 
-**Terminal 3 — giao diện React:**
+Lệnh kiểm cấu hình đầy đủ và cổng 5173/5080/8000, bật lại database/broker nếu cần, build API, rồi:
 
-```sh
-make web
-```
+1. Chạy worker Python, chờ model/phụ thuộc sẵn sàng với đủ ba capability: tìm văn bản, tìm ảnh và che ảnh.
+2. Chạy API .NET, chờ kết nối database sẵn sàng.
+3. Chạy web Vite, kiểm đường proxy web → API và trạng thái AI.
 
-| Thành phần | Địa chỉ mặc định |
-| --- | --- |
-| Giao diện | [http://127.0.0.1:5173](http://127.0.0.1:5173) |
-| Đăng nhập | [http://127.0.0.1:5173/signin](http://127.0.0.1:5173/signin) |
-| API .NET | `http://127.0.0.1:5080` |
-| FastAPI nội bộ | `http://127.0.0.1:8000` |
-| PostgreSQL | `127.0.0.1:5432` |
-| RabbitMQ AMQP | `127.0.0.1:5672` |
-| RabbitMQ Management | [http://127.0.0.1:15672](http://127.0.0.1:15672) |
+Khi thấy `Findie ready: http://127.0.0.1:5173`, mở **[ứng dụng Findie](http://127.0.0.1:5173)**. Không cần kích hoạt virtualenv hoặc source `.env` thủ công để chạy các lệnh `make`.
 
-Vite chuyển các request `/api` sang .NET. Trình duyệt không gọi PostgreSQL hoặc Python trực tiếp. Các lệnh `make api` và `make ai` tự nạp `.env`; không cần kích hoạt virtualenv thủ công.
+Nếu cần xem log riêng khi phát triển, sau khi đã cấu hình xong có thể chạy **thay cho `make local-run`** bằng ba terminal: `make ai`, `make api`, `make web` theo thứ tự đó. Các lệnh riêng không có bước chờ/kiểm đủ service như `local-run`. Chỉ chạy **một** worker Python; không chạy đồng thời hai cách hoặc tăng số Uvicorn workers.
 
-Để thử luồng cơ bản, đăng nhập Google, vào **Đăng tin nhặt được**, tạo tin văn bản không đính kèm ảnh và chọn tự giữ đồ. Lưu rồi bấm **Công khai tin** ở màn hình tiếp theo để người khác thấy bài đăng. Dùng tài khoản Google thứ hai trong cửa sổ ẩn danh hoặc profile trình duyệt khác để gửi yêu cầu nhận đồ; quay lại tài khoản người giữ, chấp nhận yêu cầu rồi thử nhắn tin. Luồng Hub cần dữ liệu điểm tiếp nhận và quyền nhân viên được cấu hình thêm.
+## 7. Đăng nhập, cấp quyền Hub và xác nhận service
 
-### Kiểm tra đã chạy thành công
+1. Đăng nhập Google tại [http://127.0.0.1:5173/signin](http://127.0.0.1:5173/signin) để tạo tài khoản thật trong database local.
+2. Mở **terminal 2** tại thư mục gốc; thay email ví dụ bằng tài khoản vừa đăng nhập:
 
-Trong một terminal khác:
+   ```sh
+   make local-seed STAFF_EMAIL='your-google-email@gmail.com'
+   make local-doctor
+   ```
+
+`local-seed` chỉ chạy trong Development, cấp quyền nhận/trả tại Demo Hub cho tài khoản Google đã tồn tại; không tạo tài khoản giả. Nếu chưa đăng nhập trước, lệnh báo không tìm thấy tài khoản hợp lệ.
+
+`local-doctor` cần toàn bộ kiểm tra **PASS**: cấu hình, schema hai database, nhân viên Hub, queue có consumer, AI/model identity và API. Google/R2 chỉ được kiểm ở mức **đã cấu hình**; xác minh credential bằng đăng nhập/upload thật ở bước 8.
+
+Kiểm tra thêm các endpoint:
 
 ```sh
 curl -i http://127.0.0.1:5080/health/live
@@ -175,138 +224,129 @@ curl -i http://127.0.0.1:8000/health/live
 curl -sS http://127.0.0.1:5173/api/system/status
 ```
 
-Ba lệnh đầu cần trả HTTP 200 khi tiến trình và kết nối database đã hoạt động. `/health/ready` của .NET chỉ kiểm kết nối database, không xác nhận đã migrate đủ bảng. Lệnh cuối kiểm tra cả đường proxy frontend → API; với OAuth đã cấu hình và chưa bật AI/R2, kết quả có dạng:
+Ba lệnh đầu cần HTTP 200. Lệnh cuối cần `database: "ready"`, `ai: "ready"`, `features.authentication: true` và `features.storage: true`. Endpoint status vẫn trả HTTP 200 khi phụ thuộc lỗi, nên cần đọc nội dung. `/health/ready` của .NET chỉ kiểm kết nối database, không thay thế kiểm schema của doctor.
 
-```json
-{
-  "name": "Findie API",
-  "stage": "scaffold",
-  "database": "ready",
-  "ai": "unavailable",
-  "features": {
-    "business": true,
-    "authentication": true,
-    "storage": false
-  }
-}
-```
-
-`ai: "unavailable"` là trạng thái dự kiến khi chưa cấu hình worker. FastAPI chạy được không đồng nghĩa model đã sẵn sàng. `authentication: true` chỉ xác nhận đã điền cấu hình OAuth; vẫn phải thử đăng nhập để xác nhận client hợp lệ. Endpoint `/api/system/status` trả HTTP 200 cả khi phụ thuộc lỗi, nên cần đọc các trường trạng thái.
-
-## 6. Bật tìm kiếm AI và cấu hình ảnh (tùy chọn)
-
-Để bật gợi ý theo mô tả, thực hiện lần lượt theo [hướng dẫn AI service](docs/guides/ai-service.md#khởi-tạo-kho-tìm-kiếm-và-chạy-local):
-
-1. Tạo database `findie_search` và role `findie_search_app` riêng trong PostgreSQL, đặt mật khẩu theo `SEARCH_POSTGRES_PASSWORD` của `.env`.
-2. Điền `AI_SEARCH_MIGRATION_DSN` bằng tài khoản migration, chạy `make ai-migrate`, cấp quyền DML cho role runtime và điền `AI_SEARCH_DSN` bằng role đó. `make db-migrate` không tạo kho tìm kiếm này.
-3. Chạy `make rabbitmq-up` nếu broker chưa chạy. Cấu hình local tự nạp [định nghĩa queue](docs/api/rabbitmq-definitions.json), tạo tài khoản quản trị và hai tài khoản runtime riêng cho .NET/Python. Python đã có `AI_RABBITMQ_URL` local; giữ `RabbitMq__Uri` trống cho đến khi worker sẵn sàng để job chỉ mục chưa bị retry khi thiếu AI. URI tùy chỉnh vẫn được giữ. Xem [cấu hình RabbitMQ](docs/guides/development.md#rabbitmq-docker).
-4. Khởi chạy Ollama, tải model được chọn trong `AI_EMBEDDING_MODEL` (mặc định `qwen3-embedding:4b`), lấy digest đầy đủ từ `/api/tags` và điền `AI_EMBEDDING_REVISION`. `OLLAMA_BASE_URL` mặc định là `http://127.0.0.1:11434`.
-5. Giữ model, revision, số chiều và search profile khớp giữa `AI_*` của Python và `Ai__*` của .NET. `.env` mới đã có các dòng nội suy; `.env` cũ cần kiểm tra vì setup không ghi đè giá trị đã tồn tại.
-6. Khởi động lại `make ai`. Chỉ chạy một tiến trình Python; kiểm tra readiness bên dưới trước khi bật kết nối broker của API.
+Kiểm trạng thái model bằng token nội bộ trong một subshell:
 
 ```sh
-set -a
-. ./.env
-set +a
-curl -i -H "X-Service-Token: ${AI_SERVICE_TOKEN}" http://127.0.0.1:8000/health/ready
+(
+  set -a
+  . ./.env
+  set +a
+  curl -sS -H "X-Service-Token: ${AI_SERVICE_TOKEN}" http://127.0.0.1:8000/v1/status
+)
 ```
 
-HTTP 200 nghĩa là worker kiểm tra được broker, kho tìm kiếm và Ollama. HTTP 503 với `configuration_required` nghĩa là thiếu cấu hình bật worker; `dependency_unavailable` nghĩa là phụ thuộc chưa sẵn sàng. Chỉ source `.env` do bạn kiểm soát.
+Kết quả cần `inferenceReady: true` và `capabilities.textSearch`, `imageSearch`, `imageRedaction` đều `true`. `/health/ready` và `/v1/status` của Python yêu cầu header `X-Service-Token`; `/health/live` chỉ xác nhận tiến trình còn chạy.
 
-Sau khi readiness trả HTTP 200, sửa dòng `RabbitMq__Uri` trong `.env` như sau, đặt sau các biến `RABBITMQ_*`, rồi khởi động lại `make api`:
+Đăng nhập [RabbitMQ Management](http://127.0.0.1:15672) bằng `RABBITMQ_ADMIN_USER` / `RABBITMQ_ADMIN_PASSWORD` trong `.env` để xem queue và consumer. Khi đổi cổng trong `.env`, dùng địa chỉ tương ứng.
 
-```dotenv
-RabbitMq__Uri=amqp://${RABBITMQ_API_USER}:${RABBITMQ_API_PASSWORD}@127.0.0.1:${RABBITMQ_PORT}/%2F
-```
+## 8. Thử đầy đủ luồng nghiệp vụ
 
-Cloudflare R2 dùng các biến `Storage__Endpoint`, `Storage__Bucket`, `Storage__AccessKeyId`, `Storage__SecretAccessKey` để lưu ảnh đầu ra đã xử lý trong bucket riêng tư. Upload ảnh cần thêm model vision/revision; tìm ảnh cần model embedding có vision capability và `AI_IMAGE_SEARCH_ENABLED=true`. Notebook 04 và lệnh import cấu hình đồng bộ hai service. Chỉ output được duyệt mới công khai/lập chỉ mục; ảnh gốc chỉ giữ tạm trong RAM/transport. Xem [API ảnh và tìm kiếm](docs/api/media-search.md).
+Dùng ảnh demo không nhạy cảm cho lần thử đầu. Các bước này xác minh cả OAuth, R2 và model thật:
 
-Notebook 01–03 là thử nghiệm độc lập; notebook 04 chuẩn bị model remote cho phiên chạy đầy đủ local. Xem [hướng dẫn Colab](docs/guides/colab.md).
+1. **Người nhặt (tài khoản A):** tạo tin nhặt được, điền tên món đồ, mô tả công khai và khu vực nhặt được; thời gian có thể chọn **Không nhớ chính xác**. Chọn **Tôi đang tự giữ**, đính kèm ảnh JPEG/PNG/WebP (tối đa 5 ảnh, 10 MiB/ảnh), rồi bấm **Lưu tin & kiểm tra ảnh**.
+2. **Ảnh:** chờ xử lý, xem kỹ bản đã che, tích đủ ba xác nhận cho từng ảnh và bấm **Duyệt ảnh công khai**, rồi **Công khai tin**. Kiểm bucket R2 chỉ có output đã xử lý và vẫn private. Ảnh gốc không được lưu lên R2; nội dung gửi inference đi qua gateway Colab/ngrok của bạn.
+3. **Tìm kiếm:** tìm tin vừa công khai bằng mô tả và bằng ảnh, thử thêm bộ lọc. Chờ job lập chỉ mục hoàn tất nếu kết quả chưa xuất hiện ngay; giữ tin công khai để thử yêu cầu nhận đồ ở bước tiếp theo.
+4. **Người nhận (tài khoản B):** đăng nhập bằng profile trình duyệt khác hoặc cửa sổ ẩn danh, mở tin và **Gửi yêu cầu nhận đồ**. Tài khoản A vào **Yêu cầu trao trả**, xác nhận đã đối chiếu và **Chấp thuận & mở hội thoại**. Hai bên thử nhắn tin; sau khi bàn giao, tài khoản A bấm **Xác nhận đã trao trả** trong hội thoại.
+5. **Hub:** tạo tin khác, chọn **Đề nghị gửi vào Findie Hub** và **Findie Demo Hub**. Tài khoản đã cấp quyền mở **Theo dõi tiếp nhận**, xác nhận đã nhận đồ thực tế rồi **Xác nhận đã tiếp nhận**. Sau đó vào **Đồ đang quản lý → Xác nhận trao trả**, điền ghi chú xác minh và xác nhận bàn giao; xem lại lịch sử. Luồng Hub xác minh tại quầy. Nếu người gửi cũng là nhân viên, mở phần **Dành cho nhân viên điểm tiếp nhận** để xử lý yêu cầu.
 
-## 7. Dừng, chạy lại và kiểm thử
+Database mới không có tin mẫu hoặc tài khoản demo. AI có thể bỏ sót vùng nhạy cảm; luôn xem lại output trước khi duyệt. Chi tiết API/giới hạn ảnh ở [API ảnh và tìm kiếm](docs/api/media-search.md).
 
-Dừng ba tiến trình bằng `Ctrl+C` trong từng terminal, rồi dừng database:
+## 9. Dừng, chạy lại và cập nhật cấu hình
+
+### Dừng phiên
+
+Trong terminal chạy `make local-run`, nhấn **Ctrl+C** để dừng web/API/worker do phiên đó tạo. Nếu chạy từng service riêng, nhấn Ctrl+C trong từng terminal. Sau đó:
 
 ```sh
-make db-down
+make local-stop
 ```
 
-Lệnh này dừng cả PostgreSQL và RabbitMQ, giữ các volume dữ liệu. Chỉ dừng broker thì chạy `make rabbitmq-down`. **Không thêm `-v` vào `docker compose down` nếu muốn giữ dữ liệu.** Đổi mật khẩu quản trị trong `.env` cũng không tự đổi mật khẩu của database đã tồn tại.
+Lệnh dừng PostgreSQL và RabbitMQ, **giữ volume dữ liệu**. Khi kết thúc phiên GPU, dùng **Runtime → Disconnect and delete runtime** trên Colab để dừng model/gateway. Không dùng `docker compose down -v` nếu cần giữ dữ liệu.
 
-Những lần chạy sau:
+### Chạy lại những lần sau
+
+1. Khởi động Docker và phiên model Colab/ngrok.
+2. Nếu gateway đổi URL, tải JSON mới từ notebook và import lại:
+
+   ```sh
+   python3 scripts/configure_ollama.py "$HOME/Downloads/findie-colab.json"
+   ```
+
+3. Chạy `make local-run`, sau đó kiểm `make local-doctor` trong terminal khác. Database/broker tự được bật lại; tài khoản, quyền Hub và dữ liệu đã có được giữ nguyên.
+
+Sau khi pull thay đổi dependency, migration hoặc cấu hình mẫu, chạy lại `make local-setup` trước `make local-run`. Nếu chỉ thay OAuth/R2, dừng ứng dụng rồi chạy lại để nạp `.env` mới.
+
+### Đổi model hoặc dùng database đã có tin cũ
+
+Dừng ứng dụng, chạy notebook với cấu hình mới, tải/import JSON và chạy lại `make local-run`. Sau khi worker sẵn sàng, trong terminal khác:
 
 ```sh
-make db-up
-make rabbitmq-up
-make db-migrate
+make local-reindex
 ```
 
-Sau đó mở lại ba terminal chạy `make ai`, `make api`, `make web`. Chạy lại `make setup` khi dependency hoặc các biến môi trường mẫu thay đổi.
+Lệnh phát lại snapshot/tombstone hiện hành để lập chỉ mục, không xóa dữ liệu người dùng. Chờ lập chỉ mục trước khi kiểm kết quả; job có lease đang chạy được giữ và có thể cần chạy lại sau khi lease kết thúc. Cần reindex khi model/revision/số chiều/profile thay đổi hoặc bật tìm ảnh cho dữ liệu cũ; chỉ đổi URL ngrok với cùng cấu hình model thì không cần. Không dùng lẫn vector từ các model khác nhau dù cùng số chiều.
 
-Các lệnh kiểm thử sẵn có, chạy sau `make setup`:
-
-| Lệnh | Phạm vi |
-| --- | --- |
-| `make check` | Test bootstrap/notebook, Python, build/smoke API, test và build frontend; không cần model AI thật |
-| `make api-integration` hoặc `make db-check` | Kiểm migration và API với PostgreSQL/RabbitMQ tạm; cần Docker |
-| `make ai-integration` | Kiểm worker và kho tìm kiếm với PostgreSQL/RabbitMQ tạm; Ollama được giả lập; cần Docker |
-
-Hai bộ test tích hợp tự tạo và dọn container, không ghi vào database local của project. Chúng không thay thế kiểm tra Google OAuth, Ollama hoặc R2 thật. Một số test kho tìm kiếm trong `make check` được bỏ qua nếu thiếu database test; dùng `make ai-integration` để chạy nhóm này.
-
-## 8. Lỗi thường gặp
+## 10. Lỗi thường gặp
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
-| `make`, `uv`, `dotnet`, `python3` hoặc `npm`: command not found | Cài công cụ ở bước 1, kiểm tra PATH và mở lại terminal. Trên WSL, kiểm tra công cụ có trong môi trường WSL đang dùng. |
-| npm báo sai phiên bản Node hoặc không tìm thấy .NET SDK | Dùng Node 24.x và .NET SDK 10.0; kiểm tra lại `.nvmrc` và `global.json`. |
-| Không kết nối được Docker | Mở Docker Desktop/daemon, kiểm tra `docker info`; trên WSL kiểm tra Docker integration. |
-| Cổng 5432 bị chiếm | Đổi `POSTGRES_PORT` trong `.env` (ví dụ `5433`), chạy lại `make db-up` và khởi động lại API; DSN tìm kiếm tự điền cũng phải dùng cổng mới. |
-| Cổng 5080, 5173 hoặc 8000 bị chiếm | Dừng tiến trình cũ đang dùng cổng rồi chạy lại. Vite dùng `strictPort`, không tự chuyển sang cổng khác. |
-| Cổng 5672 hoặc 15672 bị chiếm | Đổi `RABBITMQ_PORT` hoặc `RABBITMQ_MANAGEMENT_PORT` trong `.env`, chạy lại `make rabbitmq-up` và khởi động lại API/Python. |
-| Compose báo thiếu `.cache/rabbitmq/definitions.json` | Chạy `make env` trước `docker compose up`; `make rabbitmq-up` tự làm bước này. |
-| API báo thiếu connection string/token hoặc DB chưa có bảng | Chạy `make setup`, `make db-up`, `make db-migrate`, rồi khởi động bằng `make api` để nạp `.env`. |
-| Database báo sai mật khẩu dù đã sửa `.env` | Kiểm tra credential của volume hiện có; sửa file env không đổi mật khẩu PostgreSQL đã khởi tạo. Không xóa volume để thử nếu có dữ liệu cần giữ. |
-| Đăng nhập Google bị vô hiệu hóa | Điền đủ hai biến OAuth và khởi động lại API. |
-| Google báo `redirect_uri_mismatch` | Kiểm tra đúng scheme, host, port và path callback ở bước 3; không trộn `localhost` với `127.0.0.1`. |
-| API nghiệp vụ trả 401 | Đăng nhập từ giao diện cổng 5173; request curl riêng không tự có cookie của trình duyệt. |
-| AI báo unavailable/503 hoặc readiness trả 401 | Hoàn tất bước 6; readiness Python cần header `X-Service-Token`. Có thể tiếp tục dùng bộ lọc database khi AI chưa sẵn sàng. |
-| Danh sách bài đăng hoặc Hub trống | Database mới không có dữ liệu seed. Tạo bài đăng bằng tài khoản Google; Hub cần dữ liệu và quyền nhân viên riêng. |
+| Thiếu `make`, `uv`, `dotnet`, `python3`, `npm` | Cài công cụ bước 1, kiểm PATH; trên WSL cài trong cùng bản phân phối đang dùng. |
+| Node/SDK không đúng phiên bản | Chọn Node 24.x và .NET SDK 10.0; kiểm `.nvmrc` / `global.json`. |
+| Docker không kết nối được | Mở Docker Desktop/daemon và kiểm `docker info`; kiểm Docker integration trên WSL. |
+| Compose thiếu `.cache/rabbitmq/definitions.json` | Chạy `make env` hoặc `make local-setup` trước khi khởi động broker. |
+| `Full local configuration missing` | Hoàn tất Google/R2, chạy `make local-setup` và import JSON **notebook 04**; xem tên biến/nhóm bị thiếu trong lỗi. |
+| Cổng 5173/5080/8000 đã được dùng | Dừng phiên web/API/worker cũ trước khi chạy lại; Vite không tự đổi cổng. |
+| Cổng PostgreSQL hoặc RabbitMQ bị chiếm | Trước setup lần đầu, đổi `POSTGRES_PORT`, `RABBITMQ_PORT`, `RABBITMQ_MANAGEMENT_PORT` trong `.env`. Nếu đã setup, cập nhật cả DSN/URI đã được lưu bằng cổng cũ; `local-setup` không ghi đè chúng. |
+| Sai mật khẩu PostgreSQL sau khi sửa `.env` | Credential trong volume hiện có không tự đổi theo file env. Khôi phục cấu hình đúng hoặc đổi mật khẩu bằng quyền quản trị; không xóa volume có dữ liệu để thử. |
+| Google báo `redirect_uri_mismatch` | Kiểm đúng callback bước 3.1 và không trộn `localhost` với `127.0.0.1`; dùng cổng 5173. |
+| Không đăng nhập được tài khoản thử | Kiểm OAuth client/secret, consent/test users; khởi động lại API sau khi sửa `.env`. |
+| Colab lỗi import Transformers/`GenerationMixin` | Restart session sau cài dependency, chạy lại notebook từ đầu; xem [hướng dẫn Colab](docs/guides/colab.md). |
+| Colab thiếu GPU hoặc hết bộ nhớ | Dùng runtime GPU phù hợp, dọn phiên cũ rồi chạy lại; hai model phải nạp và qua kiểm inference trước khi import. |
+| Import không xác minh được gateway/token/revision | Giữ notebook/gateway đang chạy, dùng JSON mới nhất và đúng `FINDIE_OLLAMA_TOKEN`; không dùng `NGROK_AUTHTOKEN`. `.env` được giữ nguyên nếu xác minh thất bại. |
+| `local-run` chờ worker rồi dừng, AI báo unavailable | Kiểm log Python, runtime Colab/ngrok, schema tìm kiếm và broker; chạy doctor. Model phải đủ cả ba capability. |
+| `/v1/status` hoặc readiness Python trả 401 | Thêm `X-Service-Token` bằng `AI_SERVICE_TOKEN` local, không dùng token ngrok/gateway. |
+| Upload ảnh lỗi hoặc R2 trả lỗi | Kiểm đủ bốn biến R2, endpoint/bucket, credential và quyền đọc/ghi/xóa; `storage: true` chỉ xác nhận cấu hình. |
+| Doctor báo thiếu Demo Hub staff | Đăng nhập Google trước rồi chạy `make local-seed STAFF_EMAIL='email-da-dang-nhap'`. |
+| Tin không xuất hiện trong tìm kiếm | Kiểm đã công khai/duyệt ảnh, queue có consumer và trạng thái lập chỉ mục; khi đổi model chạy `make local-reindex`. |
+| API nghiệp vụ trả 401 khi dùng curl | Đăng nhập qua web; curl riêng không tự có cookie phiên trình duyệt. |
 
-Xem log trực tiếp trong terminal API/Python/web; với PostgreSQL dùng `docker compose logs --tail=100 db`.
+Xem log web/API/worker trong terminal đang chạy. Log hạ tầng:
+
+```sh
+docker compose logs --tail=100 db rabbitmq
+```
+
+## 11. Các lệnh kiểm thử
+
+Chạy sau khi đã cài dependency bằng `make setup` hoặc `make local-setup`:
+
+| Lệnh | Phạm vi |
+| --- | --- |
+| `make check` | Test bootstrap/notebook, Python, build/smoke API, test và build web; không cần model thật |
+| `make api-integration` hoặc `make db-check` | Migration/API với PostgreSQL/RabbitMQ tạm; cần Docker |
+| `make ai-integration` | Worker/kho tìm kiếm với PostgreSQL/RabbitMQ tạm và model giả lập; cần Docker |
+
+Các bộ integration tạo/dọn container riêng, không ghi vào database local của project. Một số test kho tìm kiếm trong `make check` được bỏ qua nếu thiếu database test; dùng `make ai-integration` để chạy nhóm này. Các test không thay thế bước kiểm OAuth, R2 và inference GPU thật ở bước 8.
 
 ## Cấu trúc và tài liệu
 
 ```text
-apps/
-  web/src/                  React + TypeScript + Vite + Tailwind
-    App.tsx, main.tsx        Điểm vào ứng dụng và điều hướng
-    pages/                  Các màn hình nghiệp vụ
-    components/             Thành phần giao diện dùng chung
-    hooks/                  React hooks dùng chung
-    lib/                    API, xác thực, xử lý dữ liệu và test tương ứng
-    styles/                 CSS toàn cục
-    assets/                 Font và hình ảnh
-  api/                      .NET 10 + EF Core + Identity
-    Controllers/, Services/, Repositories/, Models/, Contracts/
-    Data/, Infrastructure/, Security/
-    tests/integration/      Bộ kiểm thử tích hợp API
-services/ai/                FastAPI và worker tìm kiếm văn bản qua Ollama
-scripts/                    Khởi tạo .env, migration database và công cụ tài liệu
-tests/                      Kiểm thử bootstrap và notebook
-notebooks/colab/            Ba notebook thử nghiệm AI độc lập
-docs/
-  product/, architecture/   Đặc tả sản phẩm và kiến trúc hệ thống
-  database/, api/           Thiết kế dữ liệu, SQL, ERD và hợp đồng API
-  guides/                   Hướng dẫn phát triển, AI service và Colab
-  design/, specs/           Thiết kế giao diện và hồ sơ triển khai
-  assets/, demo/            Hình minh họa và tư liệu demo
-compose.yaml                PostgreSQL 17 + pgvector và RabbitMQ
-Makefile                    Các lệnh setup, chạy dịch vụ và kiểm thử
-Findie.sln                  Solution API .NET và kiểm thử tích hợp
+apps/web/                   React + TypeScript + Vite + Tailwind
+apps/api/                   .NET 10 + EF Core + Identity; kiểm thử tích hợp API
+services/ai/                FastAPI, worker RabbitMQ, xử lý ảnh và tìm kiếm
+scripts/                    Setup, chạy/dừng, doctor, migration, import model, reindex
+notebooks/colab/            Notebook 01–03 thử nghiệm; notebook 04 cho full stack
+tests/                      Kiểm thử bootstrap, gateway và notebook
+docs/                       Sản phẩm, kiến trúc, database, API và hướng dẫn
+compose.yaml                PostgreSQL/pgvector + RabbitMQ
+Makefile                    Các lệnh vận hành và kiểm thử
+Findie.sln                  Solution .NET
 ```
 
-- [Mục lục tài liệu](docs/README.md) và [hướng dẫn phát triển chi tiết](docs/guides/development.md).
-- [API .NET](docs/api/README.md) và [kiểm thử API](docs/api/testing.md).
-- [AI service với Ollama](docs/guides/ai-service.md) và [notebook Colab](docs/guides/colab.md).
+- [Mục lục tài liệu](docs/README.md) và [hướng dẫn phát triển](docs/guides/development.md).
+- [API .NET](docs/api/README.md), [kiểm thử API](docs/api/testing.md), [API ảnh/tìm kiếm](docs/api/media-search.md).
+- [AI service](docs/guides/ai-service.md) và [hướng dẫn Colab](docs/guides/colab.md).
 - [Kiến trúc hệ thống](docs/architecture/system-architecture.md) và [thiết kế database](docs/database/database-design.md).
-- [Đặc tả sản phẩm](docs/product/DAC_TA_FINDIE.md) và [thiết kế giao diện Stitch](docs/design/stitch/README.md).
+- [Đặc tả sản phẩm](docs/product/DAC_TA_FINDIE.md) và [thiết kế giao diện](docs/design/stitch/README.md).

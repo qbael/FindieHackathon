@@ -162,8 +162,8 @@ var implemented = factory.Services.GetRequiredService<EndpointDataSource>().Endp
         && typeof(RecoveryController).IsAssignableFrom(action.ControllerTypeInfo))
     .SelectMany(endpoint => endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.Select(method =>
         method + " " + NormalizeRoute(endpoint.RoutePattern.RawText!))).ToHashSet();
-Check(implemented.Count == 27 && documented.SetEquals(implemented), "every new recovery/media/search endpoint has dedicated API documentation");
-Console.WriteLine("PASS: all 27 business/media/search endpoints have matching per-endpoint documentation");
+Check(implemented.Count == 28 && documented.SetEquals(implemented), "every new recovery/media/search endpoint has dedicated API documentation");
+Console.WriteLine("PASS: all 28 business/media/search endpoints have matching per-endpoint documentation");
 Console.WriteLine("PASS: migrations, EF relationships, Google OAuth, Identity, cookie/CSRF, profile validation, DTOs, point lookup, SQL invariants and concurrency");
 
 HttpClient NewClient() => factory.CreateClient(new WebApplicationFactoryClientOptions

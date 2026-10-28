@@ -2,7 +2,7 @@
 
 **Phiên bản:** 1.4.0 · **Ngày:** 2026-10-23 · **Trạng thái:** Thiết kế đích MVP; Python lưu embedding và thực hiện hybrid search, .NET xử lý nghiệp vụ, giao tiếp RabbitMQ; R2 chỉ lưu ảnh đầu ra, không lưu gốc; chưa triển khai đầy đủ
 
-Cập nhật runtime 27/10/2026: đã có API nghiệp vụ, AMQP/R2/outbox và worker text/ảnh; Python normalize/che ảnh, index full manifest/parts và tìm ảnh native. Notebook 04 dùng Ollama/ngrok với embeddinggemma-2:440m/768 và qwen3-vl:4b. Các model/chiều trong thiết kế bên dưới là baseline trước Ollama; cấu hình thực thi hiện tại ở [AI service](../guides/ai-service.md), [spec local](../specs/003-local-full-stack/spec.md) và [hợp đồng AMQP](../api/amqp.md). Model/Google/R2 thật và chất lượng chưa được coi là đã nghiệm thu chỉ từ test stub.
+Cập nhật runtime 28/10/2026: đã có API nghiệp vụ, AMQP/R2/outbox và worker text/ảnh; Python normalize/che ảnh, index full manifest/parts và tìm ảnh native. Notebook 04 dùng `Qwen/Qwen3-VL-Embedding-2B`/2048 qua Transformers và `qwen3-vl:4b` qua Ollama, sau gateway ngrok có hợp đồng API Ollama. Các model/chiều trong thiết kế bên dưới là baseline ban đầu; cấu hình thực thi hiện tại ở [AI service](../guides/ai-service.md), [spec local](../specs/003-local-full-stack/spec.md) và [hợp đồng AMQP](../api/amqp.md). Model/Google/R2 thật và chất lượng chưa được coi là đã nghiệm thu chỉ từ test stub.
 [Hiến chương dự án](../../.specify/memory/constitution.md) xác định các nguyên tắc bắt buộc;
 [đặc tả sản phẩm](../product/DAC_TA_FINDIE.md) cung cấp phạm vi,
 BR01–BR06 và các tình huống nghiệm thu. Đặc tả phân biệt hành vi đã thể hiện trong demo

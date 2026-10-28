@@ -1,23 +1,161 @@
-"""CPU checks of the standalone Ollama notebook; no model download or network."""
+"""CPU checks of Ollama notebooks; no model download or network."""
 
+import hashlib
+import io
 import json
 import math
 from pathlib import Path
+import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, call, patch
 
 
 NOTEBOOK = Path(__file__).resolve().parents[1] / "notebooks/colab/03_ollama_search.ipynb"
+INSTALL_NOTEBOOKS = (NOTEBOOK, NOTEBOOK.with_name("04_full_stack_ollama_ngrok.ipynb"))
 
 
-def tagged_source(tag):
-    notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+def tagged_source(tag, path=NOTEBOOK):
+    notebook = json.loads(path.read_text(encoding="utf-8"))
     return next("".join(cell["source"]) for cell in notebook["cells"]
                 if tag in cell["metadata"].get("tags", []))
 
 
 class OllamaNotebookTests(unittest.TestCase):
+    def test_qwen_dependency_install_requires_restart_before_loading(self):
+        notebook = INSTALL_NOTEBOOKS[1]
+        scope = {}
+        exec(tagged_source("qwen-source", notebook), scope)
+        versions = scope["PACKAGE_PINS"] | {"torch": "2.8.0", "torchvision": "0.23.0", "torchaudio": "2.8.0"}
+        versions["transformers"] = "5.0.0"
+        source = tagged_source("qwen-setup", notebook)
+
+        def install(*_args, **kwargs):
+            self.assertTrue(kwargs["check"])
+            versions.update(scope["PACKAGE_PINS"])
+
+        with patch.object(scope["sys"], "version_info", (3, 13, 0)), \
+                patch.object(scope["metadata"], "version", side_effect=versions.__getitem__), \
+                patch("subprocess.run", side_effect=install) as run:
+            for _attempt in range(2):
+                with self.assertRaisesRegex(RuntimeError, "Restart session"):
+                    exec(source, scope)
+            run.assert_called_once()
+            self.assertTrue(scope["_qwen_restart_required"])
+            with self.assertRaisesRegex(RuntimeError, "Restart session"):
+                exec(tagged_source("qwen-load", notebook), scope)
+            scope.pop("_qwen_restart_required")
+            exec(source, scope)
+            run.assert_called_once()
+
+    def test_full_stack_reuses_loaded_qwen_and_rejects_changed_profile(self):
+        notebook = INSTALL_NOTEBOOKS[1]
+        scope = {}
+        exec(tagged_source("qwen-source", notebook), scope)
+        loaded = SimpleNamespace(model_id=scope["MODEL_ID"], digest=scope["MODEL_DIGEST"], dimensions=2048)
+        loader = Mock(return_value=loaded)
+        scope.update(QwenEmbedding=loader, EMBEDDING_MODEL=loaded.model_id, revisions={})
+        source = tagged_source("qwen-load", notebook)
+        source = source[source.index('if "qwen_embedding" not in globals():'):]
+        exec(source, scope)
+        exec(source, scope)
+        loader.assert_called_once_with()
+        self.assertEqual(scope["revisions"][loaded.model_id], scope["MODEL_DIGEST"])
+        scope["MODEL_DIGEST"] = "0" * 64
+        with self.assertRaisesRegex(RuntimeError, "không khớp"):
+            exec(source, scope)
+
+    def test_full_stack_exports_qwen_identity_without_credentials(self):
+        notebook = INSTALL_NOTEBOOKS[1]
+        runtime = {}
+        exec(tagged_source("qwen-source", notebook), runtime)
+        with tempfile.TemporaryDirectory() as directory:
+            scope = {
+                "json": json, "WORK": Path(directory),
+                "tunnel": SimpleNamespace(public_url="https://example.ngrok.app"),
+                "EMBEDDING_MODEL": runtime["MODEL_ID"], "DIMENSIONS": runtime["DIMENSIONS"],
+                "REDACTION_MODEL": "qwen3-vl:4b",
+                "revisions": {runtime["MODEL_ID"]: runtime["MODEL_DIGEST"], "qwen3-vl:4b": "b" * 64},
+                "NGROK_AUTHTOKEN": "private-ngrok-token", "FINDIE_OLLAMA_TOKEN": "private-gateway-token",
+            }
+            files = Mock()
+            with patch.dict("sys.modules", {"google.colab": SimpleNamespace(files=files)}):
+                exec(tagged_source("export", notebook), scope)
+            output = (Path(directory) / "findie-colab.json").read_text()
+            config = json.loads(output)
+            self.assertEqual(config["AI_EMBEDDING_MODEL"], "Qwen/Qwen3-VL-Embedding-2B")
+            self.assertEqual(config["AI_EMBEDDING_REVISION"], runtime["MODEL_DIGEST"])
+            self.assertEqual(config["AI_EMBEDDING_DIMENSIONS"], 2048)
+            self.assertEqual(config["AI_EMBEDDING_QUERY_INSTRUCTION"], "")
+            self.assertNotIn(scope["NGROK_AUTHTOKEN"], output)
+            self.assertNotIn(scope["FINDIE_OLLAMA_TOKEN"], output)
+            files.download.assert_called_once_with(str(Path(directory) / "findie-colab.json"))
+
+    def installation(self, notebook, directory):
+        installer = b"pinned installer"
+        scope = {
+            "hashlib": hashlib, "shutil": Mock(), "subprocess": Mock(),
+            "os": Mock(), "urllib": Mock(), "WORK": Path(directory),
+            "OLLAMA_VERSION": "test-version",
+            "INSTALLER_SHA256": hashlib.sha256(installer).hexdigest(),
+        }
+        scope["subprocess"].CalledProcessError = subprocess.CalledProcessError
+        scope["subprocess"].PIPE = subprocess.PIPE
+        scope["subprocess"].STDOUT = subprocess.STDOUT
+        scope["os"].environ = {"PATH": "/usr/bin"}
+        scope["urllib"].request.urlopen.return_value = io.BytesIO(installer)
+        source = tagged_source("install", notebook).split("\nsubprocess.run([sys.executable", 1)[0]
+        return source, scope
+
+    def test_installer_provisions_missing_zstd_and_preserves_version(self):
+        for notebook in INSTALL_NOTEBOOKS:
+            for uid in (0, 1000):
+                for has_zstd in (False, True):
+                    with self.subTest(notebook=notebook.name, uid=uid, zstd=has_zstd), tempfile.TemporaryDirectory() as directory:
+                        source, scope = self.installation(notebook, directory)
+                        scope["os"].geteuid.return_value = uid
+                        scope["shutil"].which.side_effect = lambda name: name != "zstd" or has_zstd
+                        exec(source, scope)
+                        expected = [call(["nvidia-smi"], check=True)]
+                        if not has_zstd:
+                            apt = ["apt-get"] if uid == 0 else ["sudo", "apt-get"]
+                            expected += [call([*apt, "update"], check=True),
+                                         call([*apt, "install", "-y", "zstd"], check=True)]
+                        expected.append(call(["sh", str(Path(directory) / "install.sh")],
+                                             env=scope["ollama_env"], check=True,
+                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True))
+                        self.assertEqual(scope["subprocess"].run.call_args_list, expected)
+                        self.assertEqual(scope["ollama_env"]["OLLAMA_VERSION"], "test-version")
+
+    def test_installation_stops_on_checksum_or_package_failure(self):
+        for notebook in INSTALL_NOTEBOOKS:
+            for failure in ("checksum", "package"):
+                with self.subTest(notebook=notebook.name, failure=failure), tempfile.TemporaryDirectory() as directory:
+                    source, scope = self.installation(notebook, directory)
+                    scope["os"].geteuid.return_value = 0
+                    scope["shutil"].which.side_effect = lambda name: name != "zstd"
+                    if failure == "checksum":
+                        scope["INSTALLER_SHA256"] = "0" * 64
+                        error = RuntimeError
+                    else:
+                        scope["subprocess"].run.side_effect = [None, subprocess.CalledProcessError(1, ["apt-get", "update"])]
+                        error = subprocess.CalledProcessError
+                    with self.assertRaises(error):
+                        exec(source, scope)
+                    self.assertFalse((Path(directory) / "install.sh").exists())
+                    self.assertNotIn("ollama_env", scope)
+
+    def test_installer_failure_exposes_captured_output(self):
+        for notebook in INSTALL_NOTEBOOKS:
+            with self.subTest(notebook=notebook.name), tempfile.TemporaryDirectory() as directory:
+                source, scope = self.installation(notebook, directory)
+                scope["shutil"].which.return_value = "/usr/bin/tool"
+                scope["subprocess"].run.side_effect = [None, subprocess.CalledProcessError(
+                    1, ["sh", "install.sh"], output="ERROR: This version requires zstd for extraction.")]
+                with self.assertRaisesRegex(RuntimeError, "requires zstd"):
+                    exec(source, scope)
+
     def helpers(self, api=None):
         scope = {"math": math, "MODEL": "test-model:1", "DIMENSIONS": 2,
                  "ollama_api": api, "QUERY_INSTRUCTION": "test instruction"}

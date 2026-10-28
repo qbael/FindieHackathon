@@ -16,8 +16,8 @@ spec.loader.exec_module(module)
 
 class ConfigTests(unittest.TestCase):
     def config(self):
-        return {"OLLAMA_BASE_URL": "https://example.ngrok-free.app", "AI_EMBEDDING_MODEL": "embeddinggemma-2:440m",
-                "AI_EMBEDDING_REVISION": "a" * 64, "AI_EMBEDDING_DIMENSIONS": 768,
+        return {"OLLAMA_BASE_URL": "https://example.ngrok-free.app", "AI_EMBEDDING_MODEL": "Qwen/Qwen3-VL-Embedding-2B",
+                "AI_EMBEDDING_REVISION": "a" * 64, "AI_EMBEDDING_DIMENSIONS": 2048,
                 "AI_EMBEDDING_QUERY_INSTRUCTION": "", "AI_REDACTION_MODEL": "qwen3-vl:4b",
                 "AI_REDACTION_REVISION": "b" * 64, "AI_IMAGE_SEARCH_ENABLED": True,
                 "AI_IMAGE_SEARCH_PROFILE": "image-only-v1"}
@@ -40,12 +40,21 @@ class ConfigTests(unittest.TestCase):
             module.write_env(path, values)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertIn("GOOGLE_SECRET='keep me'", path.read_text())
-            result = subprocess.run(["bash", "-c", 'set -a; . "$1"; python3 -c \'import os,json; print(json.dumps({k:os.environ[k] for k in ["GOOGLE_SECRET","OLLAMA_API_KEY","Ai__EmbeddingRevision"]}))\'', "bash", str(path)],
+            read_env = f"import os,json; print(json.dumps({{k:os.environ[k] for k in {['GOOGLE_SECRET', *values]!r}}}))"
+            result = subprocess.run(["bash", "-c", 'set -a; . "$1"; python3 -c "$2"', "bash", str(path), read_env],
                                     capture_output=True, text=True, check=True)
             parsed = json.loads(result.stdout)
             self.assertEqual(parsed["OLLAMA_API_KEY"], token)
             self.assertEqual(parsed["GOOGLE_SECRET"], "keep me")
-            self.assertEqual(parsed["Ai__EmbeddingRevision"], "a" * 64)
+            for python_field, api_field, expected in (
+                    ("AI_EMBEDDING_MODEL", "Ai__EmbeddingModelId", "Qwen/Qwen3-VL-Embedding-2B"),
+                    ("AI_EMBEDDING_REVISION", "Ai__EmbeddingRevision", "a" * 64),
+                    ("AI_EMBEDDING_DIMENSIONS", "Ai__EmbeddingDimensions", "2048"),
+                    ("AI_REDACTION_MODEL", "Ai__RedactionModelId", "qwen3-vl:4b"),
+                    ("AI_REDACTION_REVISION", "Ai__RedactionRevision", "b" * 64)):
+                self.assertEqual(parsed[python_field], expected)
+                self.assertEqual(parsed[api_field], expected)
+            self.assertEqual(parsed["AI_EMBEDDING_QUERY_INSTRUCTION"], "")
             self.assertEqual(values["AI_TEXT_SEARCH_PROFILE"], values["Ai__TextSearchProfile"])
             self.assertNotIn("custom-profile", path.read_text())
 

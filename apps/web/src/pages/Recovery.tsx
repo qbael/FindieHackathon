@@ -442,10 +442,25 @@ export function MyPosts() {
       >
         Quản lý thông tin, duyệt ảnh và kết nối người đang tìm lại món đồ.
       </PageHeader>
-      <nav className="inline-actions" aria-label="Phạm vi bài đăng">
-        <a className="button button-secondary" href="/posts" aria-current={!managed ? "page" : undefined}>Bài đăng của tôi</a>
-        <a className="button button-secondary" href="/posts?scope=managed" aria-current={managed ? "page" : undefined}>Đồ đang quản lý</a>
-        <a className="text-button" href="/intakes">Theo dõi tiếp nhận<Icon name="arrow" size={16} /></a>
+      <nav className="posts-nav" aria-label="Điều hướng bài đăng">
+        <a
+          className="button button-secondary"
+          href="/posts"
+          aria-current={!managed ? "page" : undefined}
+        >
+          Bài đăng của tôi
+        </a>
+        <a
+          className="button button-secondary"
+          href="/posts?scope=managed"
+          aria-current={managed ? "page" : undefined}
+        >
+          Đồ đang quản lý
+        </a>
+        <a className="button button-secondary" href="/intakes">
+          Theo dõi tiếp nhận
+          <Icon name="arrow" size={16} />
+        </a>
       </nav>
       {managed && <Notice>Thao tác tại Hub cần quyền tiếp nhận hoặc trao trả tương ứng được cấp cho tài khoản của bạn.</Notice>}
       <div className="posts-layout">
