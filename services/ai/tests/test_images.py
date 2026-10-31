@@ -5,7 +5,7 @@ import struct
 import zlib
 
 import numpy as np
-from PIL import Image, PngImagePlugin
+from PIL import Image, ImageDraw, PngImagePlugin
 import pytest
 
 from findie_ai.images import MAX_BYTES, Regions, normalize, redact
@@ -19,13 +19,18 @@ def encoded(format="PNG", *, size=(80, 60), **options):
 
 
 class Detector:
-    def __init__(self, regions):
+    def __init__(self, regions, refined=()):
         self.regions = regions
+        self.refined = refined
         self.input = None
+        self.calls = []
 
-    async def detect_regions(self, image):
+    async def detect_regions(self, image, *, address_only=False):
         self.input = image
-        return self.regions
+        self.calls.append((image, address_only))
+        if address_only and isinstance(self.refined, Exception):
+            raise self.refined
+        return self.refined if address_only else self.regions
 
 
 def test_redaction_masks_real_pixels_and_returns_matching_clean_metadata():
@@ -38,10 +43,112 @@ def test_redaction_masks_real_pixels_and_returns_matching_clean_metadata():
         assert (pixels[0, 0] == 255).all()
         assert image.size == (80, 60) and not image.getexif() and not image.info
     assert detector.input == body
+    assert len(detector.calls) == 1
     assert metadata == {"contentType": "image/png", "sha256": sha256(output).hexdigest(),
                         "byteSize": len(output), "width": 80, "height": 60,
-                        "sensitiveRegions": [{"label": "phone", "bbox": [250.0, 250.0, 750.0, 750.0]}]}
+                        "sensitiveRegions": [{"label": "phone", "bbox": [250, 250, 750, 750]}]}
     assert output != body
+
+
+def test_selected_fields_leave_other_comparison_details_visible():
+    detector = Detector([
+        {"label": "face", "bbox": [50, 250, 250, 750]},
+        {"label": "identity_number", "bbox": [400, 300, 800, 375]},
+        {"label": "phone", "bbox": [400, 500, 800, 575]},
+        {"label": "qr_code", "bbox": [850, 100, 950, 250]},
+    ])
+    output, metadata = asyncio.run(redact(detector, encoded(size=(400, 240)), "image/png"))
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[72:90, 160:320] == 0).all()
+        assert (pixels[120:138, 160:320] == 0).all()
+        assert (pixels[60:180, 20:100] == 0).all()
+        assert (pixels[24:60, 340:380] == 0).all()
+        assert (pixels[100:110, 160:320] == 255).all()
+        assert (pixels[72:90, 120:150] == 255).all()
+        assert (pixels[72:90, 154:158] == 255).all()
+        assert (pixels[72:90, 158:160] == 0).all()
+        assert (pixels[:15] == 255).all()
+    assert len(metadata["sensitiveRegions"]) == 4
+
+
+def test_address_refinement_uses_original_crop_and_maps_outward_to_full_image():
+    buffer = BytesIO()
+    with Image.new("RGB", (200, 100), (80, 120, 160)) as original:
+        original.save(buffer, format="PNG")
+    initial = {"label": "address", "bbox": [400, 600, 800, 800]}
+    detector = Detector([initial], [{"label": "address", "bbox": [101, 99, 901, 899]}])
+    output, metadata = asyncio.run(redact(detector, buffer.getvalue(), "image/png"))
+    assert [address_only for _, address_only in detector.calls] == [False, True]
+    with Image.open(BytesIO(detector.calls[1][0])) as crop:
+        assert crop.size == (160, 60)
+        assert (np.array(crop) == [80, 120, 160]).all()
+    assert metadata["sensitiveRegions"] == [initial, {"label": "address", "bbox": [280, 459, 921, 940]}]
+    with Image.open(BytesIO(output)) as image:
+        assert image.getpixel((100, 50)) == (0, 0, 0)
+        assert image.getpixel((81, 78)) == (0, 0, 0)
+        assert image.getpixel((100, 30)) == (80, 120, 160)
+
+
+@pytest.mark.parametrize("box,size,crop_size,mapped", [
+    ([0, 0, 200, 200], (80, 60), (24, 24), [0, 0, 300, 400]),
+    ([800, 0, 1000, 200], (80, 60), (24, 24), [700, 0, 1000, 400]),
+    ([0, 800, 200, 1000], (80, 60), (24, 24), [0, 600, 300, 1000]),
+    ([800, 800, 1000, 1000], (80, 60), (24, 24), [700, 600, 1000, 1000]),
+    ([500, 500, 501, 501], (1, 1), (1, 1), [0, 0, 1000, 1000]),
+])
+def test_address_crop_clamps_edges_and_keeps_at_least_one_pixel(box, size, crop_size, mapped):
+    detector = Detector([{"label": "address", "bbox": box}],
+                        [{"label": "address", "bbox": [0, 0, 1000, 1000]}])
+    _, metadata = asyncio.run(redact(detector, encoded(size=size), "image/png"))
+    with Image.open(BytesIO(detector.calls[1][0])) as crop:
+        assert crop.size == crop_size
+    assert metadata["sensitiveRegions"][-1] == {"label": "address", "bbox": mapped}
+
+
+def test_address_refinement_deduplicates_exact_boxes_and_keeps_the_total_bounded():
+    address = {"label": "address", "bbox": [0, 0, 1000, 1000]}
+    detector = Detector([address], [address, address])
+    _, metadata = asyncio.run(redact(detector, encoded(), "image/png"))
+    assert metadata["sensitiveRegions"] == [address]
+    faces = [{"label": "face", "bbox": [index * 10, 0, index * 10 + 1, 1]} for index in range(31)]
+    detector = Detector(faces + [{"label": "address", "bbox": [0, 250, 1000, 750]}], [address])
+    with pytest.raises(ValueError):
+        asyncio.run(redact(detector, encoded(), "image/png"))
+
+
+@pytest.mark.parametrize("refined,error", [
+    (RuntimeError("refinement_unavailable"), RuntimeError),
+    ([{"label": "face", "bbox": [0, 0, 100, 100]}], ValueError),
+    ([{"label": "address", "bbox": [0, 0, 100.5, 100]}], ValueError),
+])
+def test_address_refinement_errors_do_not_return_partially_masked_output(refined, error):
+    detector = Detector([{"label": "address", "bbox": [250, 250, 750, 750]}], refined)
+    with pytest.raises(error):
+        asyncio.run(redact(detector, encoded(), "image/png"))
+
+
+@pytest.mark.parametrize("label", ["qr_code", "barcode"])
+def test_codes_cover_truncated_edges_without_covering_nearby_text(label):
+    buffer = BytesIO()
+    with Image.new("RGB", (1200, 1000), "white") as source:
+        draw = ImageDraw.Draw(source)
+        for x in range(90, 308, 6):
+            draw.rectangle((x, 566, x + 2, 638), fill="black")
+        draw.text((90, 641), "NGUYEN VAN THU 01/01/2000", fill="black")
+        original = np.array(source)
+        source.save(buffer, format="PNG")
+    detector = Detector([
+        {"label": label, "bbox": [75, 560, 258, 635]},
+        {"label": "phone", "bbox": [400, 560, 600, 635]},
+    ])
+    output, _ = asyncio.run(redact(detector, buffer.getvalue(), "image/png"))
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[637:640, 90:308] == 0).all()
+        assert (original[643:665, 90:400] != 255).any()
+        np.testing.assert_array_equal(pixels[643:665, 90:400], original[643:665, 90:400])
+        assert (pixels[637:640, 480:720] == 255).all()
 
 
 def test_no_pii_still_reencodes_strips_metadata_and_applies_exif_orientation():
@@ -116,7 +223,13 @@ def test_pixel_axis_limits_are_rejected_before_decode():
     {"label": "face", "bbox": [0, 20, 100, 20]},
     {"label": "face", "bbox": [False, 0, 100, 100]},
     {"label": "face", "bbox": ["0", 0, 100, 100]},
+    {"label": "face", "bbox": [0, 0, 100.5, 100]},
     {"label": "unknown", "bbox": [0, 0, 100, 100]},
+    {"label": "identity_document", "bbox": [0, 0, 1000, 1000]},
+    {"label": "payment_card", "bbox": [0, 0, 1000, 1000]},
+    {"label": "personal_text", "bbox": [0, 0, 100, 100]},
+    {"label": "name", "bbox": [0, 0, 100, 100]},
+    {"label": "birth_date", "bbox": [0, 0, 100, 100]},
     {"label": "face", "bbox": [0, 0, 100, 100], "text": "private input"},
 ])
 def test_untrusted_regions_fail_closed(region):

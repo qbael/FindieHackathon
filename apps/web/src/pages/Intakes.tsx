@@ -56,7 +56,7 @@ export function Intakes({ user }: { user: UserProfile }) {
                 <p className="muted">
                   <Icon name="building" size={17} /> {points.data?.find((point) => point.id === intake.targetPointId)?.name ?? `Điểm #${intake.targetPointId.slice(0, 8)}`}
                 </p>
-                {intake.stale && <Notice tone="warning">Nơi giữ hoặc trạng thái món đồ đã thay đổi. Đề nghị này chỉ dùng để tra cứu.</Notice>}
+                {intake.stale && <Notice tone="warning">Nơi giữ hoặc trạng thái món đồ đã thay đổi, hoặc bài đăng đã bị xóa. Đề nghị này chỉ dùng để tra cứu.</Notice>}
                 {intake.decisionNote && <p className="preserve-lines">{intake.decisionNote}</p>}
                 <div className="card-actions">
                   <a className="button button-secondary" href={`/intakes/${intake.id}`}>
@@ -142,7 +142,7 @@ export function IntakeDetail({ id, user }: { id: string; user: UserProfile }) {
           {item.loading && <Loading />}
           {item.data ? <ItemSummary item={item.data} /> : <a className="text-button" href={`/items/${data.itemId}`}>Món đồ #{data.itemId.slice(0, 8)} <Icon name="arrow" size={16} /></a>}
           {item.error instanceof ApiError && item.error.status === 404 ? (
-            <Notice>Nội dung món đồ chưa được chia sẻ. Hãy đối chiếu món đồ thực tế và mã đề nghị tại quầy.</Notice>
+            <Notice>Nội dung món đồ không còn khả dụng hoặc chưa được chia sẻ. Chỉ đối chiếu món đồ thực tế và mã đề nghị tại quầy khi đề nghị còn hiệu lực.</Notice>
           ) : <ErrorNotice error={item.error} retry={refresh} />}
           <a className="text-button" href="/intakes"><Icon name="back" size={16} /> Tất cả đề nghị</a>
         </aside>
@@ -154,7 +154,7 @@ export function IntakeDetail({ id, user }: { id: string; user: UserProfile }) {
             {point.data.directions && <p className="preserve-lines">{point.data.directions}</p>}
           </>}
           <ErrorNotice error={point.error} retry={point.reload} />
-          {data.stale && <Notice tone="warning">Nơi giữ hoặc trạng thái món đồ đã thay đổi. Không thể xử lý đề nghị này.</Notice>}
+          {data.stale && <Notice tone="warning">Nơi giữ hoặc trạng thái món đồ đã thay đổi, hoặc bài đăng đã bị xóa. Không thể xử lý đề nghị này.</Notice>}
           {data.decisionNote && <Notice tone={data.status === "rejected" ? "warning" : "info"}>
             <strong>Ghi chú từ điểm tiếp nhận</strong><p className="preserve-lines">{data.decisionNote}</p>
           </Notice>}

@@ -11,26 +11,26 @@ namespace Findie.Api.Services;
 
 public interface ISearchService
 {
-    Task<SearchResponse> TextAsync(SearchRequest request, CancellationToken ct);
-    Task<SearchResponse> ImageAsync(ImageSearchFilter filter, string? mime, Stream stream, long? length, CancellationToken ct);
-    Task<SearchResponse> ImagesAsync(ImageSearchFilter filter, string? contentType, Stream stream, long? length, CancellationToken ct);
+    Task<SearchResponse> TextAsync(Guid actor, SearchRequest request, CancellationToken ct);
+    Task<SearchResponse> ImageAsync(Guid actor, ImageSearchFilter filter, string? mime, Stream stream, long? length, CancellationToken ct);
+    Task<SearchResponse> ImagesAsync(Guid actor, ImageSearchFilter filter, string? contentType, Stream stream, long? length, CancellationToken ct);
 }
 
-public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai, IConfiguration configuration) : ISearchService
+public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai, IConfiguration configuration, RecoveryWorkflow workflow) : ISearchService
 {
-    public Task<SearchResponse> TextAsync(SearchRequest request, CancellationToken ct)
+    public Task<SearchResponse> TextAsync(Guid actor, SearchRequest request, CancellationToken ct)
     {
         var text = RecoveryWorkflow.Text(request.Text, 2000, "Search text");
-        return SearchAsync("text", text, request.Area, request.From, request.Until, request.Limit, [], "application/json", ct);
+        return SearchAsync(actor, "text", text, request.Area, request.From, request.Until, request.Limit, [], "application/json", ct);
     }
-    public async Task<SearchResponse> ImageAsync(ImageSearchFilter filter, string? mime, Stream stream, long? length, CancellationToken ct)
+    public async Task<SearchResponse> ImageAsync(Guid actor, ImageSearchFilter filter, string? mime, Stream stream, long? length, CancellationToken ct)
     {
         if (!BoundedImage.Mime(mime)) throw new ApiException(415, "Use a JPEG, PNG or WebP binary body.");
         var bytes = await BoundedImage.ReadAsync(stream, length, ct);
-        try { return await SearchAsync("image", null, filter.Area, filter.From, filter.Until, filter.Limit, bytes, mime!, ct); }
+        try { return await SearchAsync(actor, "image", null, filter.Area, filter.From, filter.Until, filter.Limit, bytes, mime!, ct); }
         finally { Array.Clear(bytes); }
     }
-    public async Task<SearchResponse> ImagesAsync(ImageSearchFilter filter, string? contentType, Stream stream, long? length, CancellationToken ct)
+    public async Task<SearchResponse> ImagesAsync(Guid actor, ImageSearchFilter filter, string? contentType, Stream stream, long? length, CancellationToken ct)
     {
         ValidateFilters(filter.Area, filter.From, filter.Until, filter.Limit);
         if (length > 3 * BoundedImage.MaxBytes + 65536) throw new ApiException(413, "Search upload exceeds 30 MiB plus form headers.");
@@ -94,7 +94,7 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
                 if (text is not null)
                     rankings.Add(await QueryAsync("text", text, filter.Area, filter.From, filter.Until, filter.Limit,
                         [], "application/json", timeout.Token));
-                return await ResultsAsync(rankings, text is null ? "image" : "combined",
+                return await ResultsAsync(actor, rankings, text is null ? "image" : "combined",
                     text is null ? "image-fusion-v1" : "multimodal-fusion-v1", filter.Area, filter.From, filter.Until, filter.Limit, timeout.Token);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -102,9 +102,9 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
         }
         finally { foreach (var image in images) Array.Clear(image.Bytes); }
     }
-    async Task<SearchResponse> SearchAsync(string mode, string? text, string? area, DateOnly? from, DateOnly? until,
+    async Task<SearchResponse> SearchAsync(Guid actor, string mode, string? text, string? area, DateOnly? from, DateOnly? until,
         int limit, byte[] bytes, string mime, CancellationToken ct) =>
-        await ResultsAsync([await QueryAsync(mode, text, area, from, until, limit, bytes, mime, ct)], mode,
+        await ResultsAsync(actor, [await QueryAsync(mode, text, area, from, until, limit, bytes, mime, ct)], mode,
             AiProtocol.Setting(configuration, mode == "text" ? "TextSearchProfile" : "ImageSearchProfile"), area, from, until, limit, ct);
 
     async Task<IReadOnlyList<SearchCandidate>> QueryAsync(string mode, string? text, string? area, DateOnly? from, DateOnly? until,
@@ -143,7 +143,7 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
         catch (Exception error) when (AiProtocol.Malformed(error)) { throw new ApiException(502, "AI returned an invalid search response; use GET /api/items for basic filters."); }
         finally { if (mode == "text") Array.Clear(body); }
     }
-    async Task<SearchResponse> ResultsAsync(IReadOnlyList<IReadOnlyList<SearchCandidate>> rankings, string mode, string profile,
+    async Task<SearchResponse> ResultsAsync(Guid actor, IReadOnlyList<IReadOnlyList<SearchCandidate>> rankings, string mode, string profile,
         string? area, DateOnly? from, DateOnly? until, int limit, CancellationToken ct)
     {
         area = RecoveryWorkflow.Optional(area);
@@ -171,8 +171,9 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
                 if (rankings.Count == 1 && scores.Count == limit) break;
             }
         }
-        var hits = scores.Values.OrderByDescending(value => value.Score).Take(limit)
-            .Select((value, index) => new SearchHit(index + 1, RecoveryWorkflow.Response(value.Item))).ToList();
+        var hits = new List<SearchHit>();
+        foreach (var value in scores.Values.OrderByDescending(value => value.Score).Take(limit))
+            hits.Add(new SearchHit(hits.Count + 1, await workflow.ResponseAsync(value.Item, actor, ct)));
         return new SearchResponse(hits, mode, profile, 1, removed && hits.Count < limit, false, "/api/items");
     }
     static void ValidateFilters(string? area, DateOnly? from, DateOnly? until, int limit)

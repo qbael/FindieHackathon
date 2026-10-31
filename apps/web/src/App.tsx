@@ -213,12 +213,13 @@ export default function App() {
             <a
               className="hub-link"
               href="/hubs"
+              aria-label="Findie Hub"
               aria-current={active === "hubs" ? "page" : undefined}
             >
               <Icon name="building" size={18} />
               <span>Findie Hub</span>
             </a>
-            <a href="/post" className="button button-small">
+            <a href="/post" className="button button-small" aria-label="Đăng tin">
               <Icon name="plus" size={17} />
               <span>Đăng tin</span>
             </a>

@@ -47,7 +47,7 @@ function LinkedItem({ id }: { id: string }) {
 export function ClaimItem({ id }: { id: string }) {
   const item = useResource<Item>(`/api/items/${id}`);
   const questions = useResource<QuestionSet>(
-    `/api/items/${id}/verification-questions`,
+    item.data?.canClaim ? `/api/items/${id}/verification-questions` : null,
   );
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const action = useAction();
@@ -62,7 +62,20 @@ export function ClaimItem({ id }: { id: string }) {
         }}
       />
     );
-  if (!item.data || !questions.data) return null;
+  if (!item.data) return null;
+  if (!item.data.canClaim)
+    return (
+      <EmptyState title="Không thể gửi yêu cầu nhận đồ" icon="document">
+        <p>
+          Chỉ có thể yêu cầu nhận món đồ do người khác đăng và giữ, đang được
+          công khai và chưa trao trả.
+        </p>
+        <a className="button" href={`/items/${id}`}>
+          Xem lại món đồ
+        </a>
+      </EmptyState>
+    );
+  if (!questions.data) return null;
   return (
     <>
       <PageHeader
@@ -198,8 +211,8 @@ export function Requests({ user }: { user: UserProfile }) {
                   <LinkedItem id={claim.itemId} />
                   {claim.stale ? (
                     <Notice tone="warning">
-                      Nơi giữ hoặc trạng thái món đồ đã thay đổi. Yêu cầu này
-                      chỉ dùng để tra cứu.
+                      Nơi giữ hoặc trạng thái món đồ đã thay đổi, hoặc bài đăng
+                      đã bị xóa. Yêu cầu này chỉ dùng để tra cứu.
                     </Notice>
                   ) : (
                     <ol className="progress-track">
@@ -310,8 +323,8 @@ export function ClaimDetail({ id, user }: { id: string; user: UserProfile }) {
           </div>
           {data.stale && (
             <Notice tone="warning">
-              Món đồ đã đổi nơi giữ hoặc đã được trao trả. Không thể tiếp tục
-              xét duyệt yêu cầu này.
+              Món đồ đã đổi nơi giữ, đã được trao trả hoặc bài đăng đã bị xóa.
+              Không thể tiếp tục xét duyệt yêu cầu này.
             </Notice>
           )}
           {data.answers.length ? (
@@ -428,6 +441,28 @@ export function MyPosts() {
     );
     if (result) items.reload();
   }
+  async function deletePost(item: Item) {
+    if (
+      !window.confirm(
+        `Xóa bài đăng “${item.title}”?\n\nKhông thể khôi phục bài đăng sau khi xóa. Lịch sử yêu cầu nhận đồ, hội thoại và bàn giao vẫn được lưu giữ.`,
+      )
+    )
+      return;
+    const deleted = await action.run(async () => {
+      await write<void>(
+        `/api/items/${item.id}`,
+        { rowVersion: item.rowVersion },
+        "DELETE",
+      );
+      return true;
+    });
+    if (deleted) {
+      if (page > 1 && items.data?.items.length === 1) {
+        query.set("page", String(page - 1));
+        window.location.assign(`${window.location.pathname}?${query}`);
+      } else items.reload();
+    }
+  }
   return (
     <>
       <PageHeader
@@ -527,7 +562,9 @@ export function MyPosts() {
                                 href={`/items/${item.id}/review`}
                               >
                                 <Icon name="eye" size={16} />
-                                Duyệt ảnh
+                                {item.images.length
+                                  ? "Duyệt ảnh"
+                                  : "Thêm & duyệt ảnh"}
                               </a>
                               {item.custody.kind === "person" && (
                                 <>
@@ -555,18 +592,31 @@ export function MyPosts() {
                                 className="text-button"
                                 href={`/items/${item.id}/transfer`}
                               >Chuyển vào Hub</a>}
-                              <button
-                                className="text-button"
-                                type="button"
-                                disabled={action.busy}
-                                onClick={() => void publication(item)}
-                              >
-                                {item.publicationState === "published"
-                                  ? "Ẩn tin"
-                                  : "Công khai tin"}
-                              </button>
+                              {(item.publicationState === "published" ||
+                                item.images.length > 0) && (
+                                <button
+                                  className="text-button"
+                                  type="button"
+                                  disabled={action.busy}
+                                  onClick={() => void publication(item)}
+                                >
+                                  {item.publicationState === "published"
+                                    ? "Ẩn tin"
+                                    : "Công khai tin"}
+                                </button>
+                              )}
                             </>
                           )}
+                        {item.canDelete && (
+                          <button
+                            className="text-button danger-text"
+                            type="button"
+                            disabled={action.busy}
+                            onClick={() => void deletePost(item)}
+                          >
+                            Xóa bài đăng
+                          </button>
+                        )}
                         <a className="text-button" href={`/items/${item.id}`}>
                           Xem chi tiết
                           <Icon name="arrow" size={15} />
@@ -976,8 +1026,8 @@ function MessageThread({
       </div>
       {!chat.canSend && (
         <Notice>
-          Món đồ đã đổi nơi giữ hoặc đã trao trả. Bạn có thể đọc lại lịch sử hội
-          thoại.
+          Món đồ đã đổi nơi giữ, đã trao trả hoặc bài đăng đã bị xóa. Bạn có thể
+          đọc lại lịch sử hội thoại.
         </Notice>
       )}
       <form className="message-composer" onSubmit={(event) => void send(event)}>

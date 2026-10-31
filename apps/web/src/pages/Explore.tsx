@@ -234,7 +234,8 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
   const filter = new URLSearchParams({ page: String(page), pageSize: "12" });
   for (const key of ["q", "area", "from", "until"])
     if (query.get(key)?.trim()) filter.set(key, query.get(key)!.trim());
-  const basic = useResource<Page<Item>>(request ? null : `/api/items?${filter}`);
+  const hasBasicFilters = ["q", "area", "from", "until"].some((key) => filter.has(key));
+  const basic = useResource<Page<Item>>(request || !hasBasicFilters ? null : `/api/items?${filter}`);
   useEffect(() => {
     if (!request) return;
     const controller = new AbortController();
@@ -399,7 +400,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 ? request.text ? "Gợi ý theo ảnh và mô tả" : "Gợi ý theo ảnh món đồ"
                 : request?.text || query.get("q")
                   ? `Kết quả cho “${request?.text || query.get("q")}”`
-                  : "Món đồ đang tìm chủ"}
+                  : "Kết quả tìm kiếm"}
             </h2>
             {items && (
               <span className="muted">
@@ -407,6 +408,11 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
               </span>
             )}
           </div>
+          {!request && !hasBasicFilters && (
+            <EmptyState title="Nhập thông tin món đồ cần tìm" icon="search">
+              <p>Thêm mô tả, ảnh, khu vực hoặc khoảng ngày để bắt đầu tìm kiếm.</p>
+            </EmptyState>
+          )}
           <ErrorNotice error={error} retry={retry} />
           {request && error && (
             <Notice tone="warning">
@@ -415,10 +421,12 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                   ? "Tìm kiếm gợi ý tạm thời chưa sẵn sàng."
                   : "Chưa lấy được gợi ý tìm kiếm."}
               </strong>
-              <p>Bạn vẫn có thể lọc món đồ theo khu vực và ngày nhặt được.</p>
-              <a className="text-button" href={fallback}>
-                Dùng bộ lọc cơ bản <Icon name="arrow" size={15} />
-              </a>
+              <p>Hãy thử lại hoặc điều chỉnh mô tả, ảnh và bộ lọc tìm kiếm.</p>
+              {fallback && (
+                <a className="text-button" href={fallback}>
+                  Dùng bộ lọc cơ bản <Icon name="arrow" size={15} />
+                </a>
+              )}
             </Notice>
           )}
           {loading && <Loading />}
@@ -434,9 +442,11 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
               {suggestions.filtersRelaxed && (
                 <p>Dịch vụ đã mở rộng bộ lọc; gợi ý có thể nằm ngoài khu vực hoặc khoảng ngày đã chọn.</p>
               )}
-              <a className="text-button" href={fallback}>
-                Lọc cơ bản theo khu vực và ngày
-              </a>
+              {suggestions.items.length > 0 && fallback && (
+                <a className="text-button" href={fallback}>
+                  Lọc cơ bản theo khu vực và ngày
+                </a>
+              )}
             </Notice>
           )}
           {items && (
@@ -479,9 +489,6 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                   <p>
                     Thử rút gọn mô tả hoặc mở rộng khu vực và khoảng ngày nhặt được.
                   </p>
-                  <a className="button button-secondary" href="/search">
-                    Xem tất cả món đồ
-                  </a>
                 </EmptyState>
               )}
               {!request && basic.data && (
@@ -622,16 +629,15 @@ export function ItemDetail({ id }: { id: string }) {
                     <p>Chọn địa điểm công cộng và an toàn.</p>
                   </li>
                 </ol>
-                {item.lifecycle === "active" &&
-                  item.publicationState === "published" && (
-                    <a
-                      className="button button-wide"
-                      href={`/items/${id}/claim`}
-                    >
-                      <Icon name="lock" size={17} />
-                      Gửi yêu cầu nhận đồ
-                    </a>
-                  )}
+                {item.canClaim && (
+                  <a
+                    className="button button-wide"
+                    href={`/items/${id}/claim`}
+                  >
+                    <Icon name="lock" size={17} />
+                    Gửi yêu cầu nhận đồ
+                  </a>
+                )}
               </>
             ) : (
               <>

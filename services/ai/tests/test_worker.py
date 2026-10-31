@@ -13,7 +13,7 @@ import pytest
 from PIL import Image
 
 from findie_ai.config import Settings
-from findie_ai.contracts import Query, Snapshot
+from findie_ai.contracts import Query, RedactMetadata, SearchMetadata, Snapshot
 from findie_ai.worker import Worker
 
 
@@ -33,6 +33,22 @@ def query_metadata(**extra):
     return metadata(processingProfile='text-v1', searchProfileId=SETTINGS.search_profile,
                     searchProfileVersion=1, mode='text', area=None, **{'from': None}, until=None,
                     limit=10, candidateLimit=200) | extra
+
+
+def test_redaction_accepts_five_minute_deadlines_and_rejects_expired_or_excessive_ones():
+    value = metadata(modelId=SETTINGS.redaction_model, modelRevision='b' * 64,
+                     imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
+                     sourceSha256='a' * 64, processingProfile='redact-v3')
+    deadline = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    assert 299 < RedactMetadata.model_validate(value | {'deadlineAt': deadline}).remaining() <= 300
+    with pytest.raises(ValueError, match='processingProfile'):
+        RedactMetadata.model_validate(value | {'processingProfile': 'redact-v2'})
+    with pytest.raises(ValueError, match='deadline_too_long'):
+        SearchMetadata.model_validate(query_metadata(deadlineAt=deadline)).remaining()
+    for seconds, error, message in ((306, ValueError, 'deadline_too_long'), (-1, TimeoutError, 'deadline_expired')):
+        deadline = (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
+        with pytest.raises(error, match=message):
+            RedactMetadata.model_validate(value | {'deadlineAt': deadline}).remaining()
 
 
 def snapshot():
@@ -367,7 +383,7 @@ def test_image_query_keeps_raw_bytes_out_of_storage_and_redaction_returns_only_o
             worker.store.upsert.assert_not_awaited()
             message = Message("image.redact", metadata(modelId=settings.redaction_model,
                 modelRevision=settings.redaction_revision, imageId=str(uuid4()), itemId=str(uuid4()),
-                sourceVersion=1, sourceSha256=hashlib.sha256(raw).hexdigest(), processingProfile="redact-v1"), raw)
+                sourceVersion=1, sourceSha256=hashlib.sha256(raw).hexdigest(), processingProfile="redact-v3"), raw)
             message.content_type = "image/png"
             await worker.handle(message, "image")
             response = worker.reply.await_args

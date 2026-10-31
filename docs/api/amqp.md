@@ -17,7 +17,7 @@ Không log URI/credential, ảnh, query, OCR, answer hoặc message body.
 | --- | --- |
 | `findie.ai.commands` | Ops tạo durable quorum, persistent index commands/output parts, TTL 30 giây, DLX/retention hữu hạn |
 | `findie.api.results` | Ops tạo durable quorum, persistent index receipts, TTL hữu hạn và DLX; .NET kiểm queue tồn tại khi kết nối |
-| `findie.ai.image` | Python tạo non-durable/exclusive/auto-delete, nonpersistent raw input/query, TTL tối đa 30 giây, trần byte/số message; **không DLX/alternate routing/tracing body** |
+| `findie.ai.image` | Python tạo non-durable/exclusive/auto-delete, nonpersistent raw input/query, TTL tối đa 300 giây cho xử lý ảnh và 30 giây cho tìm ảnh, trần byte/số message; **không DLX/alternate routing/tracing body** |
 | `findie.ai.query` | Python tạo queue text query tạm, non-durable/exclusive/auto-delete, TTL hữu hạn |
 | Reply queue do broker sinh | .NET tạo exclusive/non-durable/auto-delete cho output ảnh/query; TTL 60 giây, tối đa 64 message/32 MiB; không DLX |
 
@@ -43,10 +43,12 @@ snapshot công khai và receipt metadata, không original/query image.
 ## Envelope AMQP
 
 `BasicProperties`: `Type` là operation bên dưới, `CorrelationId` UUID do .NET tạo,
-`ReplyTo` queue do .NET chỉ định, `ContentType`, `Persistent`, `Expiration:"30000"`.
+`ReplyTo` queue do .NET chỉ định, `ContentType`, `Persistent`, `Expiration:"300000"` cho
+`image.redact`, `Expiration:"30000"` cho các operation khác.
 Header `metadata` là **bytes JSON UTF-8**, tối đa 16 KiB. Body ảnh nhị phân tối đa 10 MiB;
 body text/snapshot/ứng viên JSON UTF-8, không base64. Tối đa 32 waiter AI đang chờ;
-deadline 30 giây, không giữ DB transaction khi gọi broker hoặc model/R2.
+deadline 300 giây cho `image.redact`, 30 giây cho các operation khác; không giữ DB
+transaction khi gọi broker hoặc model/R2.
 
 Metadata request chung: `schemaVersion:1`, `deadlineAt` ISO UTC, định danh model/version
 và profile tùy operation. Worker kiểm deadline trước suy luận và trước commit.
@@ -58,7 +60,26 @@ Lỗi an toàn `succeeded:false` thành HTTP 503; không trả trace/OCR/dữ li
 
 Route `findie.ai.image`, nonpersistent, body raw ảnh. Metadata:
 `schemaVersion,imageId,itemId,sourceVersion:1,sourceSha256,modelId,modelRevision,
-processingProfile,deadlineAt`. Full mode dùng `qwen3-vl:4b`; modelId/revision phải khớp cấu hình đã ghim của hai service.
+processingProfile:"redact-v3",deadlineAt`. Full mode dùng `qwen3-vl:4b-instruct`; modelId/revision phải khớp cấu hình đã ghim của hai service.
+
+`redact-v3` chỉ che khuôn mặt, số điện thoại, số CCCD/CMND và địa chỉ riêng tư/quê quán.
+QR và mã vạch cũng được che vì có thể mã hóa số giấy tờ. Họ tên, ngày sinh, các ngày
+cấp/hết hạn, mã sinh viên và thông tin học tập được giữ nguyên cùng bố cục, logo,
+tên cơ quan và nhãn trường; không che toàn bộ thẻ.
+Nhãn vùng là `face`, `identity_number`, `phone`, `address`, `qr_code`, `barcode`.
+Mỗi `bbox` gồm bốn số nguyên `[x1,y1,x2,y2]` trong khoảng 0–1000 theo toàn ảnh;
+mỗi giá trị nhạy cảm hoặc trường địa chỉ đầy đủ có một khung riêng; trường địa chỉ
+có thể gồm nhãn và các dòng tiếp theo. Chữ/khuôn mặt thêm viền
+2–4 px; QR/mã vạch dùng `max(2, ceil(cạnh_ngắn / 200))`, tức 5–8 px khi cạnh ngắn
+là 1000–1600 px, để che kín mép mã khi khung nhận diện hơi thiếu.
+
+Nếu lượt đầu phát hiện địa chỉ, worker lấy vùng bao các khung địa chỉ từ pixel gốc
+đã chuẩn hóa, mở rộng mỗi bên ngang 50% chiều rộng và trên/dưới một chiều cao vùng,
+để model thấy nhãn trường và ngày tháng lân cận khi xác định ranh giới địa chỉ.
+Lượt nhận diện bổ sung chỉ tìm địa chỉ trong vùng cắt, quy đổi khung về toàn ảnh,
+giữ cả khung cũ lẫn khung bổ sung và bỏ bản trùng chính xác. Không có khung địa chỉ
+thì không gọi lượt bổ sung; hai lượt cùng chịu deadline 300 giây. Lỗi lượt bổ sung
+hoặc tổng quá 32 vùng khiến xử lý thất bại; không trả ảnh che dở.
 
 Worker luôn decode, kiểm MIME/frame/pixel, phát hiện PII, che/mờ nếu có, bỏ EXIF và encode
 ảnh mới kể cả không có PII. Lỗi model không được coi là ảnh sạch. Response body là output,

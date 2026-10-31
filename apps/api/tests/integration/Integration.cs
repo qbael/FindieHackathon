@@ -147,6 +147,8 @@ await Expect(client.GetAsync("/api/users/me"), HttpStatusCode.Unauthorized, "log
 await CheckDatabaseRules();
 await RecoveryChecks.RunAsync(factory, async (browser, subject) =>
     await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
+await ItemDeletionChecks.RunAsync(factory, aiGateway, async (browser, subject) =>
+    await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
 await ImageSearchChecks.RunAsync(factory, aiGateway, storage, async (browser, subject) =>
     await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
 await BrokerChecks.RunAsync(factory.Services.GetRequiredService<IServiceScopeFactory>());
@@ -155,15 +157,15 @@ using (var seedScope = factory.Services.CreateScope())
 var documentation = string.Join("\n", new[] { "recovery.md", "media-search.md" }.Select(file => File.ReadAllText(
     Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../../docs/api/", file)))));
 static string NormalizeRoute(string route) => Regex.Replace(route.Split('?')[0].TrimStart('/'), "\\{[^}]+\\}", "{id}");
-var documented = Regex.Matches(documentation, @"(?m)^## (GET|POST|PUT) (/api/[^\s?]+)")
+var documented = Regex.Matches(documentation, @"(?m)^## (GET|POST|PUT|DELETE) (/api/[^\s?]+)")
     .Select(match => match.Groups[1].Value + " " + NormalizeRoute(match.Groups[2].Value)).ToHashSet();
 var implemented = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
     .Where(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>() is { } action
         && typeof(RecoveryController).IsAssignableFrom(action.ControllerTypeInfo))
     .SelectMany(endpoint => endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.Select(method =>
         method + " " + NormalizeRoute(endpoint.RoutePattern.RawText!))).ToHashSet();
-Check(implemented.Count == 28 && documented.SetEquals(implemented), "every new recovery/media/search endpoint has dedicated API documentation");
-Console.WriteLine("PASS: all 28 business/media/search endpoints have matching per-endpoint documentation");
+Check(implemented.Count == 29 && documented.SetEquals(implemented), "every new recovery/media/search endpoint has dedicated API documentation");
+Console.WriteLine("PASS: all 29 business/media/search endpoints have matching per-endpoint documentation");
 Console.WriteLine("PASS: migrations, EF relationships, Google OAuth, Identity, cookie/CSRF, profile validation, DTOs, point lookup, SQL invariants and concurrency");
 
 HttpClient NewClient() => factory.CreateClient(new WebApplicationFactoryClientOptions

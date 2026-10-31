@@ -12,6 +12,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener, ProxyHand
 
 MAX_REQUEST = 16 * 1024 * 1024
 MAX_RESPONSE = 2 * 1024 * 1024
+GENERATE_TIMEOUT = 300
 
 
 class NoGatewayRedirect(HTTPRedirectHandler):
@@ -78,6 +79,8 @@ def gateway(token, models, *, address=("127.0.0.1", 11435), upstream="http://127
             self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
+            if self.path == "/api/generate":
+                self.send_header("X-Findie-Inference-Timeout-Seconds", str(GENERATE_TIMEOUT))
             self.end_headers()
             try:
                 self.wfile.write(body)
@@ -137,7 +140,7 @@ def gateway(token, models, *, address=("127.0.0.1", 11435), upstream="http://127
                 else:
                     request = Request(upstream + self.path, data=body,
                                       headers={"Content-Type": "application/json"}, method=self.command)
-                    with opener.open(request, timeout=25) as response:
+                    with opener.open(request, timeout=GENERATE_TIMEOUT if self.path == "/api/generate" else 25) as response:
                         data = response.read(MAX_RESPONSE + 1)
                         if len(data) > MAX_RESPONSE:
                             raise ValueError()
@@ -149,8 +152,12 @@ def gateway(token, models, *, address=("127.0.0.1", 11435), upstream="http://127
                             result["models"].append({"name": embedding.model_id, "digest": "sha256:" + embedding.digest})
             except HTTPError as error:
                 error.close()
-                status, result = 502, {"error": "ollama_unavailable"}
-            except (URLError, OSError, ValueError, KeyError, TypeError, RuntimeError, MemoryError):
+                status, result = 502, {"error": "ollama_http_error", "upstreamStatus": error.code}
+            except TimeoutError:
+                status, result = 502, {"error": "ollama_timeout"}
+            except URLError as error:
+                status, result = 502, {"error": "ollama_timeout" if isinstance(error.reason, TimeoutError) else "ollama_unavailable"}
+            except (OSError, ValueError, KeyError, TypeError, RuntimeError, MemoryError):
                 status, result = 502, {"error": "ollama_unavailable"}
             finally:
                 if inference:

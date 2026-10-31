@@ -14,7 +14,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
 using System.Threading.RateLimiting;
 using Findie.Api.Infrastructure;
-
+using Microsoft.AspNetCore.HttpOverrides;
 var seedLocal = args.Contains("--seed-local", StringComparer.Ordinal);
 var builder = WebApplication.CreateBuilder(seedLocal ? [] : args);
 
@@ -169,6 +169,13 @@ builder.Services.AddHttpClient("ai", client =>
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedHost
+        | ForwardedHeaders.XForwardedProto,
+    AllowedHosts = { "zfjnvx2f-5173.asse.devtunnels.ms" }
+});
 
 app.UseExceptionHandler();
 app.UseAuthentication();

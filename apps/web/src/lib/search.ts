@@ -1,4 +1,5 @@
 import { api, validateImages, writeHeaders, type Item } from "./api.ts";
+import { prepareImage } from "./images.ts";
 
 export type SearchFilters = { area?: string; from?: string; until?: string };
 export type SearchResponse = {
@@ -35,17 +36,19 @@ export async function searchImage(
   filters: SearchFilters,
   signal?: AbortSignal,
 ): Promise<SearchResponse> {
-  validateImages([file]);
+  signal?.throwIfAborted();
+  const image = await prepareImage(file);
+  signal?.throwIfAborted();
   const query = new URLSearchParams({ limit: "10" });
   for (const [key, value] of Object.entries(filters))
     if (value?.trim()) query.set(key, value.trim());
   return api<SearchResponse>(`/api/search/image?${query}`, {
     method: "POST",
     signal,
-    body: file,
+    body: image,
     headers: {
       ...(await writeHeaders()),
-      "Content-Type": file.type,
+      "Content-Type": image.type,
     },
   });
 }
@@ -67,7 +70,11 @@ export async function searchImages(
   if (text.length > 2000)
     throw new Error("Mô tả tìm kiếm có tối đa 2000 ký tự.");
   const body = new FormData();
-  for (const file of files) body.append("images", file);
+  for (const file of files) {
+    signal?.throwIfAborted();
+    body.append("images", await prepareImage(file), file.name);
+  }
+  signal?.throwIfAborted();
   if (text) body.append("text", text);
   const query = new URLSearchParams({ limit: "10" });
   for (const [key, value] of Object.entries(filters))
@@ -80,9 +87,9 @@ export async function searchImages(
   });
 }
 
-export function basicSearchUrl(filters: SearchFilters): string {
+export function basicSearchUrl(filters: SearchFilters): string | null {
   const query = new URLSearchParams({ mode: "basic" });
   for (const [key, value] of Object.entries(filters))
     if (value?.trim()) query.set(key, value.trim());
-  return `/search?${query}`;
+  return query.size > 1 ? `/search?${query}` : null;
 }

@@ -67,8 +67,11 @@ public sealed class RecoveryWorkflow(IRecoveryRepository repository)
         return id;
     }
 
-    public async Task<Item> ItemAsync(Guid id, bool locked, CancellationToken ct) =>
-        await repository.ItemAsync(id, locked, ct) ?? throw new ApiException(404, "Item not found.");
+    public async Task<Item> ItemAsync(Guid id, bool locked, CancellationToken ct)
+    {
+        var item = await repository.ItemAsync(id, locked, ct);
+        return item is null || item.Lifecycle == "deleted" ? throw new ApiException(404, "Item not found.") : item;
+    }
 
     public Task<bool> CanManageAsync(Item item, Guid actor, CancellationToken ct) => item.CustodyKind switch
     {
@@ -119,12 +122,14 @@ public sealed class RecoveryWorkflow(IRecoveryRepository repository)
     }
     public static bool PublicImage(ItemImage image) => image.RetiredAt is null && image.ProcessingState == "ready"
         && image.ReviewState == "approved" && image.ProcessedObject is { ObjectKind: "processed", ObjectState: "validated" };
-    public static ItemResponse Response(Item item) => new(item.Id, item.Title, item.PublicDescription, item.FoundArea,
+    public async Task<ItemResponse> ResponseAsync(Item item, Guid actor, CancellationToken ct) => new(item.Id, item.Title, item.PublicDescription, item.FoundArea,
         item.FoundTimePrecision, item.FoundOn, item.FoundFrom, item.FoundUntil, item.FoundTimezone, Custody(item),
         item.Lifecycle, item.PublicationState, item.RowVersion, item.DocumentVersion, item.CreatedAt,
         item.Images.Where(PublicImage).OrderBy(image => image.Position)
             .Select(image => new ImageSummary(image.Id, image.Position, image.ContentVersion,
-                $"/api/items/{item.Id}/images/{image.Id}/content")).ToList());
+                $"/api/items/{item.Id}/images/{image.Id}/content")).ToList(),
+        Public(item) && item.CustodyKind == "person" && item.PostedBy != actor && item.HolderUserId != actor,
+        await CanManageAsync(item, actor, ct));
 
     public void Changed(Item item, bool content = false, bool custody = false)
     {

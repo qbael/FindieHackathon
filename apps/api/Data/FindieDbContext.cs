@@ -71,7 +71,7 @@ public sealed class FindieDbContext(DbContextOptions<FindieDbContext> options)
                 table.HasCheckConstraint("items_description_check", "char_length(btrim(public_description)) BETWEEN 1 AND 5000");
                 table.HasCheckConstraint("items_area_check", "btrim(found_area) <> ''");
                 table.HasCheckConstraint("items_timezone_check", "btrim(found_timezone) <> ''");
-                table.HasCheckConstraint("items_lifecycle_check", "lifecycle IN ('active', 'returned')");
+                table.HasCheckConstraint("items_lifecycle_check", "lifecycle IN ('active', 'returned', 'deleted')");
                 table.HasCheckConstraint("items_publication_check", "publication_state IN ('draft', 'published', 'hidden')");
                 table.HasCheckConstraint("items_versions_check", "content_version > 0 AND custody_version > 0 AND row_version > 0 AND document_version > 0");
                 table.HasCheckConstraint("items_found_time_check", """

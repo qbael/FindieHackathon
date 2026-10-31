@@ -113,6 +113,7 @@ def run(environment, api_url):
         models.get("redaction") == environment.get("AI_REDACTION_MODEL"),
         status.get("modelRevision") == environment.get("AI_EMBEDDING_REVISION"),
         status.get("redactionRevision") == environment.get("AI_REDACTION_REVISION"),
+        status.get("redactionProfileId") == environment.get("Ai__RedactionProfile", "redact-v3"),
         str(status.get("embeddingDimensions")) == environment.get("AI_EMBEDDING_DIMENSIONS"),
         status.get("searchProfileId") == environment.get("AI_TEXT_SEARCH_PROFILE"),
         status.get("imageSearchProfileId") == environment.get("AI_IMAGE_SEARCH_PROFILE"),

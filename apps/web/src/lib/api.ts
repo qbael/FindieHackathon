@@ -1,3 +1,6 @@
+import { prepareImage } from "./images.ts";
+export { validateImages } from "./images.ts";
+
 export type Page<T> = {
   items: T[];
   page: number;
@@ -25,6 +28,8 @@ export type Item = {
   };
   lifecycle: string;
   publicationState: string;
+  canClaim: boolean;
+  canDelete: boolean;
   rowVersion: number;
   createdAt: string;
   images: {
@@ -198,22 +203,12 @@ export async function writeHeaders(): Promise<Record<string, string>> {
   return { "X-CSRF-TOKEN": csrf.token };
 }
 
-export function validateImages(files: readonly Pick<File, "type" | "size">[]) {
-  if (files.length > 5) throw new Error("Mỗi tin có tối đa 5 ảnh.");
-  for (const file of files) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
-      throw new Error("Chỉ nhận ảnh JPEG, PNG hoặc WebP.");
-    if (!file.size || file.size > 10 * 1024 * 1024)
-      throw new Error("Mỗi ảnh cần có dung lượng từ 1 byte đến 10 MB.");
-  }
-}
-
 export async function uploadImage(
   itemId: string,
   file: File,
   position: number,
 ): Promise<ItemImage> {
-  validateImages([file]);
+  const prepared = await prepareImage(file);
   // Reuse the key for this exact File object while a failed upload remains in memory.
   let key = uploadKeys.get(file);
   if (!key) {
@@ -224,12 +219,13 @@ export async function uploadImage(
     `/api/items/${itemId}/images?position=${position}`,
     {
       method: "POST",
-      body: file,
+      body: prepared,
       headers: {
         ...(await writeHeaders()),
-        "Content-Type": file.type,
+        "Content-Type": prepared.type,
         "Idempotency-Key": key,
       },
+      signal: AbortSignal.timeout(300000),
     },
   );
   uploadKeys.delete(file);

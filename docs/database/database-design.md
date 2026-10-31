@@ -114,6 +114,11 @@ riêng trong nơi nhặt, bản chụp lịch sử hoặc thông tin nơi giữ 
 nơi đó vẫn đang giữ món đồ. Không hiển thị món đã trả trong danh sách có thể nhận. Người nhận
 được ghi ở sự kiện trả, không bị biến thành người giữ mới của một món đang có thể nhận.
 
+Xóa bài đăng đặt `lifecycle = 'deleted'`, giữ nguyên nơi giữ và lịch sử liên quan. .NET
+loại bài đã xóa khỏi mọi scope, chi tiết và tìm kiếm, đồng thời ghi tombstone vào outbox;
+claim/intake cũ hết hiệu lực và hội thoại chỉ còn đọc. Đây là xóa mềm, không xóa dữ liệu
+hoặc object ảnh đã lưu.
+
 `custody_events.from_custody/to_custody` là JSON chụp loại nơi giữ, ID, tên điểm/nơi và địa chỉ
 công khai tại thời điểm thao tác. Bản chụp tránh mất lịch sử khi điểm đổi tên. JSON không thay
 FK của nơi giữ hiện tại; .NET phải kiểm tra cấu trúc và đối chiếu với hàng `items` bị khóa.

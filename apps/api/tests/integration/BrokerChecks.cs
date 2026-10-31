@@ -27,7 +27,7 @@ static class BrokerChecks
         await using var worker = await connection.CreateChannelAsync(new CreateChannelOptions(true, true));
         foreach (var suffix in new[] { "index", "image", "query", "results" })
             await worker.QueueDeclareAsync(prefix + "-" + suffix, suffix is "index" or "results", suffix is "image" or "query", suffix is "image" or "query",
-                new Dictionary<string, object?> { ["x-message-ttl"] = 30000, ["x-max-length"] = 64 });
+                new Dictionary<string, object?> { ["x-message-ttl"] = suffix == "image" ? 300000 : 30000, ["x-max-length"] = 64 });
         var errors = new ConcurrentQueue<Exception>();
         var transientQueues = new ConcurrentBag<string>();
         var imageSeen = false;
@@ -41,9 +41,10 @@ static class BrokerChecks
                 if (command.BasicProperties.Type == "image.redact")
                 {
                     Check(!command.BasicProperties.Persistent && command.Body.Span.SequenceEqual("private raw input"u8), "raw image is binary and nonpersistent");
-                    Check(command.BasicProperties.Expiration == "30000", "raw image has bounded TTL");
+                    Check(command.BasicProperties.Expiration == "300000", "raw image has a five-minute TTL");
                     imageSeen = true;
                 }
+                else Check(command.BasicProperties.Expiration == "30000", "other AI requests keep their thirty-second TTL");
                 if (command.BasicProperties.Type == "index.upsert")
                 {
                     Check(command.BasicProperties.Persistent && command.BasicProperties.ReplyTo == prefix + "-results", "index receipt uses durable result queue");

@@ -21,7 +21,7 @@ dịch vụ riêng; không giả lập kết quả AI khi worker không hoạt �
   khi nhân viên can_receive xác nhận cầm giữ; người thường chọn điểm tạo intake pending.
 - Nơi ngoài hệ thống có địa chỉ công khai; người đăng được ghi nhận đã trả sau xác
   nhận bàn giao thực tế. Không tạo chat/claim tại điểm hoặc nơi ngoài hệ thống.
-- Đăng metadata được giữ độc lập với ảnh; ảnh chưa duyệt/lỗi dùng placeholder.
+- Lưu metadata thành bản nháp trước khi upload; công khai cần mô tả hợp lệ và ít nhất một ảnh đã xử lý, được duyệt. Gỡ hoặc từ chối ảnh công khai cuối cùng tự ẩn tin.
 - Không hard-delete dữ liệu, không rút/thu hồi claim, không upload attachment chat.
 
 ## Nghiệm thu

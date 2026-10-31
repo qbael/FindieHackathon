@@ -21,9 +21,10 @@ DB test bắt buộc prefix `findie_test_`; sau chạy tự dọn cả hai conta
 Không áp dụng SQL hoặc migration vào DB `.env`/Compose đang dùng.
 Docker có thể cần tải hai image khi chạy lần đầu.
 
-Kết quả ngày 27/10/2026: **181 kiểm tra API nghiệp vụ + 115 kiểm tra ảnh/search/outbox**
-đều qua, cùng kiểm thử RabbitMQ thật và đối chiếu tài liệu đủ **27 endpoint**. Build
-không có warning/error. Đã có regression upload → trao trả → replay cùng key, bảo đảm
+Kết quả ngày 30/10/2026: **215 kiểm tra API nghiệp vụ + 108 kiểm tra xóa bài +
+204 kiểm tra ảnh/search/outbox** đều qua, cùng kiểm thử RabbitMQ và xuyên dịch vụ thật.
+Đối chiếu tài liệu đủ **29 endpoint**, kể cả `DELETE /api/items/{id}`.
+Đã có regression upload → trao trả → replay cùng key, bảo đảm
 không gọi AI hoặc ghi R2 thêm. `make check` kiểm tra thêm toàn bộ bootstrap/AI/web.
 
 ## Phạm vi kiểm chứng
@@ -32,11 +33,12 @@ không gọi AI hoặc ghi R2 thêm. `make check` kiểm tra thêm toàn bộ bo
 | --- | --- |
 | `Integration.cs` | Migration khớp model, 22 entity, restrict FK, không original; OAuth state/correlation qua provider giả, provider identity, tài khoản disabled, cookie/CSRF, DTO hồ sơ, điểm active; SQL constraints và concurrency token |
 | `RecoveryChecks.cs` | Tất cả item/claim/chat/intake/return endpoints; 0–3 câu hỏi, answer snapshots, nhiều approved, IDOR/overposting, phiên bản cũ, key replay/conflict, concurrent create, thứ tự tin nhắn/đọc bù, phân quyền điểm/thu hồi, nhiều return và receive-vs-return đồng thời, privacy của outbox |
+| `ItemDeletionChecks.cs` | Xóa mềm theo quyền quản lý hiện tại, kể cả bài đã trả; CSRF/key/phiên bản, replay/concurrency, loại khỏi mọi scope/chi tiết/search, giữ lịch sử và chặn thao tác claim/intake/chat sau xóa |
 | `ImageSearchChecks.cs` | HTTP upload/search/review/retire/content; MIME/byte/hash/provenance, raw buffer cleanup, chỉ output tới R2 double, pending/rejected không public, sai source/version và model, thứ tự/dedup/filter kết quả, AI/R2 lỗi, ảnh bị thu hồi trong khi đọc, canonical jsonb checksum, outbox ACK sau commit, lease cũ, receipt không còn waiter, retry hữu hạn và orphan cleanup |
 | `CrossServiceChecks.cs` + `cross_service.py` | .NET gateway/receipt/outbox → RabbitMQ → Python worker → PostgreSQL search thật; upload/review hai output, full manifest/parts, tìm text/ảnh, retire và tombstone; Ollama/R2 double |
 | `LocalSeedChecks.cs` | Seed Hub/staff idempotent cho Google account đã có; giữ hồ sơ, CLI Development và từ chối Production |
 | `BrokerChecks.cs` | RabbitMQ thật: channel/queue lâu dài, confirms + mandatory unrouted, raw binary/nonpersistent/TTL, durable receipt route, requests đồng thời, waiter cancellation, malformed metadata và duplicate/late replies |
-| Documentation check | So sánh 27 route/method runtime mới với tiêu đề tài liệu từng endpoint, không bỏ sót API |
+| Documentation check | So sánh 29 route/method runtime với tiêu đề tài liệu từng endpoint, gồm DELETE item, không bỏ sót API |
 | `smoke.py` | Kestrel không DB, health/status, AI health/token probe, unauthorized và auth routes không hỗ trợ |
 | `make check` | Bootstrap/notebooks, FastAPI health, build API, smoke, test TypeScript và build React |
 

@@ -95,7 +95,7 @@ Lưu thông tin công khai, nơi nhặt, nơi giữ và trạng thái của món
 | `external_name` | `text` | Có | Tên nơi giữ ngoài hệ thống; bắt buộc với nhánh `external`. |
 | `external_public_address` | `text` | Có | Địa chỉ công khai của nơi ngoài hệ thống; bắt buộc với nhánh `external`. |
 | `external_instructions` | `text` | Có | Hướng dẫn liên hệ hoặc nhận đồ tại nơi ngoài hệ thống. |
-| `lifecycle` | `text` | Không | Vòng đời món đồ: `active` hoặc `returned`; mặc định `active`. |
+| `lifecycle` | `text` | Không | Vòng đời món đồ: `active`, `returned` hoặc `deleted` (xóa mềm bài đăng); mặc định `active`. |
 | `publication_state` | `text` | Không | Trạng thái hiển thị: `draft`, `published` hoặc `hidden`; mặc định `draft`. |
 | `content_version` | `bigint` | Không | Phiên bản nội dung văn bản dùng tạo vector; mặc định `1`, phải lớn hơn 0. |
 | `custody_version` | `bigint` | Không | Phiên bản nơi giữ/bàn giao, dùng phát hiện thao tác dựa trên trạng thái cũ; mặc định `1`. |

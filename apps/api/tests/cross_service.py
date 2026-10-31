@@ -58,7 +58,7 @@ def run():
         "Ai__EmbeddingModelId": fixture.MODEL, "Ai__EmbeddingRevision": fixture.REVISION,
         "Ai__EmbeddingDimensions": str(fixture.DIMENSIONS), "Ai__TextSearchProfile": "text-description-v1",
         "Ai__RedactionModelId": fixture.REDACTION_MODEL, "Ai__RedactionRevision": fixture.REDACTION_REVISION,
-        "Ai__RedactionProfile": "redact-v1", "Ai__ImageSearchProfile": "image-only-v1",
+        "Ai__RedactionProfile": "redact-v3", "Ai__ImageSearchProfile": "image-only-v1",
     }
     image = BytesIO()
     metadata = PngImagePlugin.PngInfo()

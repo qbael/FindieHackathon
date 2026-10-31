@@ -3,7 +3,6 @@ import {
   custodyLabels,
   imageUrl,
   uploadImage,
-  validateImages,
   write,
   type Item,
   type ItemImage,
@@ -19,6 +18,7 @@ import {
   vietnamLocal,
   type ItemDraft,
 } from "../lib/itemForm";
+import { validatePostImages } from "../lib/images";
 import { useAction, useResource } from "../hooks/hooks";
 import { ImagePreviews } from "../components/ImagePreviews";
 import {
@@ -81,6 +81,15 @@ function PostEditor({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!item) {
+      try {
+        validatePostImages(files);
+      } catch (cause) {
+        action.setError(cause as Error);
+        setStep(1);
+        return;
+      }
+    }
     if (step < 3) {
       setStep(step + 1);
       document.getElementById("post-heading")?.focus();
@@ -147,7 +156,7 @@ function PostEditor({
             {[
               "Ảnh & thông tin món đồ",
               "Nơi lưu giữ hiện tại",
-              "Câu hỏi xác minh",
+              draft.kind === "person" ? "Câu hỏi xác minh" : "Kiểm tra tin đăng",
             ].map((label, index) => (
               <li
                 key={label}
@@ -187,11 +196,21 @@ function PostEditor({
                       ? "Kể một chút về món đồ"
                       : step === 2
                         ? "Bạn đang giữ món đồ ở đâu?"
-                        : "Thiết lập câu hỏi xác minh"}
+                        : draft.kind === "person"
+                          ? "Thiết lập câu hỏi xác minh"
+                          : "Kiểm tra trước khi đăng"}
                   </h2>
                 </div>
                 <Icon
-                  name={step === 1 ? "document" : step === 2 ? "pin" : "lock"}
+                  name={
+                    step === 1
+                      ? "document"
+                      : step === 2
+                        ? "pin"
+                        : draft.kind === "person"
+                          ? "lock"
+                          : "shield"
+                  }
                   size={26}
                 />
               </div>
@@ -211,18 +230,21 @@ function PostEditor({
                     <div>
                       <label className="upload-zone">
                         <Icon name="upload" size={28} />
-                        <strong>Thêm ảnh món đồ</strong>
-                        <span>JPEG, PNG, WebP · tối đa 5 ảnh, 10 MB/ảnh</span>
+                        <strong>
+                          Thêm ảnh món đồ <span className="required">*</span>
+                        </strong>
+                        <span>JPEG, PNG, WebP · từ 1 đến 3 ảnh, 10 MB/ảnh</span>
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
                           multiple
+                          required={!files.length}
                           onChange={(event) => {
                             const selected = Array.from(
                               event.target.files ?? [],
                             );
                             try {
-                              validateImages(selected);
+                              validatePostImages(selected);
                               setFiles(selected);
                               action.setError(null);
                             } catch (cause) {
@@ -240,8 +262,8 @@ function PostEditor({
                       </label>
                       <ImagePreviews files={files} />
                       <p className="field-hint">
-                        Ảnh sẽ được xử lý sau khi lưu tin. Bạn cần duyệt bản ảnh
-                        đầu ra trước khi ảnh xuất hiện công khai.
+                        Tin cần ít nhất 1 ảnh kèm mô tả. Ảnh sẽ được xử lý sau
+                        khi lưu tin; bạn cần duyệt ảnh trước khi công khai.
                       </p>
                     </div>
                   )}
@@ -475,68 +497,75 @@ function PostEditor({
               )}
               {step === 3 && (
                 <div className="form-stack">
-                  <Notice>
-                    <strong>
-                      Câu hỏi chỉ chủ sở hữu thật mới trả lời được.
-                    </strong>
-                    <p>
-                      Đặt tối đa 3 câu hỏi, không cần nhập đáp án. Bạn sẽ tự đối
-                      chiếu với món đồ khi xét yêu cầu.
-                    </p>
-                  </Notice>
-                  {draft.questions.map((question, index) => (
-                    <div className="question-field" key={index}>
-                      <label>
-                        Câu hỏi {index + 1}
-                        <textarea
-                          required
-                          rows={2}
-                          maxLength={500}
-                          value={question}
-                          onChange={(event) =>
-                            update(
-                              "questions",
-                              draft.questions.map((value, at) =>
-                                at === index ? event.target.value : value,
-                              ),
-                            )
+                  {draft.kind === "person" ? (
+                    <>
+                      <Notice>
+                        <strong>
+                          Câu hỏi chỉ chủ sở hữu thật mới trả lời được.
+                        </strong>
+                        <p>
+                          Đặt tối đa 3 câu hỏi, không cần nhập đáp án. Bạn sẽ tự đối
+                          chiếu với món đồ khi xét yêu cầu.
+                        </p>
+                      </Notice>
+                      {draft.questions.map((question, index) => (
+                        <div className="question-field" key={index}>
+                          <label>
+                            Câu hỏi {index + 1}
+                            <textarea
+                              required
+                              rows={2}
+                              maxLength={500}
+                              value={question}
+                              onChange={(event) =>
+                                update(
+                                  "questions",
+                                  draft.questions.map((value, at) =>
+                                    at === index ? event.target.value : value,
+                                  ),
+                                )
+                              }
+                              placeholder="Ví dụ: Móc khóa có hình gì?"
+                            />
+                          </label>
+                          <button
+                            className="icon-button"
+                            type="button"
+                            aria-label={`Xóa câu hỏi ${index + 1}`}
+                            onClick={() =>
+                              update(
+                                "questions",
+                                draft.questions.filter((_, at) => at !== index),
+                              )
+                            }
+                          >
+                            <Icon name="close" size={17} />
+                          </button>
+                        </div>
+                      ))}
+                      {draft.questions.length < 3 && (
+                        <button
+                          className="button button-secondary"
+                          type="button"
+                          onClick={() =>
+                            update("questions", [...draft.questions, ""])
                           }
-                          placeholder="Ví dụ: Móc khóa có hình gì?"
-                        />
-                      </label>
-                      <button
-                        className="icon-button"
-                        type="button"
-                        aria-label={`Xóa câu hỏi ${index + 1}`}
-                        onClick={() =>
-                          update(
-                            "questions",
-                            draft.questions.filter((_, at) => at !== index),
-                          )
-                        }
-                      >
-                        <Icon name="close" size={17} />
-                      </button>
-                    </div>
-                  ))}
-                  {draft.questions.length < 3 && (
-                    <button
-                      className="button button-secondary"
-                      type="button"
-                      onClick={() =>
-                        update("questions", [...draft.questions, ""])
-                      }
-                    >
-                      <Icon name="plus" size={17} />
-                      Thêm câu hỏi xác minh
-                    </button>
+                        >
+                          <Icon name="plus" size={17} />
+                          Thêm câu hỏi xác minh
+                        </button>
+                      )}
+                      <p className="field-hint">
+                        Bạn có thể để trống phần câu hỏi. Người tìm vẫn được gửi
+                        yêu cầu nhận đồ.
+                      </p>
+                    </>
+                  ) : (
+                    <Notice>
+                      Món đồ tại điểm tiếp nhận hoặc nơi ngoài hệ thống được
+                      xác minh trực tiếp khi nhận đồ.
+                    </Notice>
                   )}
-                  <p className="field-hint">
-                    Bạn có thể để trống phần câu hỏi.{" "}
-                    {draft.kind === "person"
-                      ? "Người tìm vẫn được gửi yêu cầu nhận đồ."
-                      : "Món đồ tại điểm tiếp nhận hoặc nơi ngoài hệ thống được xác minh trực tiếp."}
-                  </p>
                   <label className="checkbox-field">
                     <input type="checkbox" required />
                     Tôi đã kiểm tra mô tả công khai và không để lộ thông tin cá
@@ -630,12 +659,13 @@ export function ReviewImages({ id }: { id: string }) {
   if (item.error || images.error)
     return <ErrorNotice error={item.error ?? images.error} retry={reload} />;
   if (!item.data || !images.data) return null;
-  const availablePosition = [1, 2, 3, 4, 5].find(
-    (position) =>
-      !images.data!.some(
-        (image) => image.position === position && image.previewUrl,
-      ),
-  );
+  const activeImages = images.data.filter((image) => image.previewUrl);
+  const availablePosition =
+    activeImages.length < 3
+      ? [1, 2, 3].find(
+          (position) => !activeImages.some((image) => image.position === position),
+        )
+      : undefined;
   return (
     <>
       <PageHeader
@@ -670,7 +700,7 @@ export function ReviewImages({ id }: { id: string }) {
             />
           ) : (
             <EmptyState title="Chưa có bản ảnh để duyệt">
-              <p>Thêm ảnh để xử lý hoặc công khai tin bằng mô tả.</p>
+              <p>Thêm ít nhất 1 ảnh, kiểm tra và duyệt ảnh để công khai tin.</p>
             </EmptyState>
           )}
           {images.data.some((image) => image.previewUrl) && (
@@ -807,8 +837,8 @@ export function ReviewImages({ id }: { id: string }) {
           )}
           <div className="publication-actions">
             <Notice>
-              Tin có thể công khai bằng mô tả. Ảnh chưa được duyệt vẫn được giữ
-              kín.
+              Tin cần mô tả và ít nhất 1 ảnh đã được duyệt để công khai.
+              Nếu từ chối hoặc gỡ ảnh công khai cuối cùng, tin sẽ tự động ẩn.
             </Notice>
             {item.data.publicationState === "published" ? (
               <a className="button button-wide" href={`/items/${id}`}>
@@ -819,7 +849,11 @@ export function ReviewImages({ id }: { id: string }) {
               <button
                 className="button button-wide"
                 type="button"
-                disabled={action.busy || item.data.lifecycle !== "active"}
+                disabled={
+                  action.busy ||
+                  item.data.lifecycle !== "active" ||
+                  !item.data.images.length
+                }
                 onClick={async () => {
                   const result = await action.run(() =>
                     write<Item>(

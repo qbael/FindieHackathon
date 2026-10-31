@@ -63,7 +63,7 @@ async def status(request: Request):
         'models': {'embedding': settings.model_id, 'redaction': settings.redaction_model if settings.redaction_revision else None},
         'modelRevision': settings.revision or None,
         'redactionRevision': settings.redaction_revision or None,
-        'redactionProfileId': 'redact-v1',
+        'redactionProfileId': 'redact-v3',
         'embeddingDimensions': settings.dimensions,
         'searchProfileId': settings.search_profile,
         'imageSearchProfileId': settings.image_search_profile,

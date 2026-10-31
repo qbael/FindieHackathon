@@ -168,7 +168,7 @@ Dùng **[04_full_stack_ollama_ngrok.ipynb](notebooks/colab/04_full_stack_ollama_
    | Model | Vai trò |
    | --- | --- |
    | `Qwen/Qwen3-VL-Embedding-2B` qua Transformers | Embedding văn bản và ảnh native, 2048 chiều |
-   | `qwen3-vl:4b` qua Ollama | Gợi ý vùng nhạy cảm để worker local che ảnh |
+   | `qwen3-vl:4b-instruct` qua Ollama | Gợi ý vùng nhạy cảm để worker local che ảnh |
 
 6. Chỉ tiếp tục khi các cell kiểm embedding text/ảnh, JSON vision và gateway HTTPS hoàn tất. Chạy cell **Tải cấu hình về local** để tải `findie-colab.json` về máy.
 7. Giữ runtime đang kết nối trong suốt phiên sử dụng. JSON không chứa token; gateway ngrok yêu cầu Bearer token và chỉ mở các endpoint model cần thiết.
@@ -245,7 +245,7 @@ Kết quả cần `inferenceReady: true` và `capabilities.textSearch`, `imageSe
 
 Dùng ảnh demo không nhạy cảm cho lần thử đầu. Các bước này xác minh cả OAuth, R2 và model thật:
 
-1. **Người nhặt (tài khoản A):** tạo tin nhặt được, điền tên món đồ, mô tả công khai và khu vực nhặt được; thời gian có thể chọn **Không nhớ chính xác**. Chọn **Tôi đang tự giữ**, đính kèm ảnh JPEG/PNG/WebP (tối đa 5 ảnh, 10 MiB/ảnh), rồi bấm **Lưu tin & kiểm tra ảnh**.
+1. **Người nhặt (tài khoản A):** tạo tin nhặt được, điền tên món đồ, mô tả công khai và khu vực nhặt được; thời gian có thể chọn **Không nhớ chính xác**. Chọn **Tôi đang tự giữ**, bắt buộc đính kèm **1–3 ảnh** JPEG/PNG/WebP (10 MiB/ảnh), rồi bấm **Lưu tin & kiểm tra ảnh**. Tin chỉ được công khai khi có ít nhất một ảnh đã được xử lý và duyệt; gỡ hoặc từ chối ảnh công khai cuối cùng sẽ tự ẩn tin.
 2. **Ảnh:** chờ xử lý, xem kỹ bản đã che, tích đủ ba xác nhận cho từng ảnh và bấm **Duyệt ảnh công khai**, rồi **Công khai tin**. Kiểm bucket R2 chỉ có output đã xử lý và vẫn private. Ảnh gốc không được lưu lên R2; nội dung gửi inference đi qua gateway Colab/ngrok của bạn.
 3. **Tìm kiếm:** tìm tin vừa công khai bằng mô tả và bằng ảnh, thử thêm bộ lọc. Chờ job lập chỉ mục hoàn tất nếu kết quả chưa xuất hiện ngay; giữ tin công khai để thử yêu cầu nhận đồ ở bước tiếp theo.
 4. **Người nhận (tài khoản B):** đăng nhập bằng profile trình duyệt khác hoặc cửa sổ ẩn danh, mở tin và **Gửi yêu cầu nhận đồ**. Tài khoản A vào **Yêu cầu trao trả**, xác nhận đã đối chiếu và **Chấp thuận & mở hội thoại**. Hai bên thử nhắn tin; sau khi bàn giao, tài khoản A bấm **Xác nhận đã trao trả** trong hội thoại.

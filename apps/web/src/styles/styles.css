@@ -98,6 +98,13 @@ svg {
   margin: 0 auto;
   flex: 1;
   padding-bottom: 80px;
+  overflow-wrap: anywhere;
+}
+.main-content :where(section, aside, form, label),
+.notice > div,
+.page-heading > div,
+.chat-heading > div {
+  min-width: 0;
 }
 .main-content h1,
 .main-content h2,
@@ -324,6 +331,7 @@ svg {
 }
 .breadcrumb {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 24px 0 30px;
   color: #66747b;
@@ -983,7 +991,7 @@ label > .field-hint {
 .item-photo img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .photo-placeholder {
   display: flex;
@@ -1050,6 +1058,7 @@ label > .field-hint {
 }
 .pagination {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 18px;
@@ -1064,6 +1073,8 @@ label > .field-hint {
 }
 .detail-topline {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
   margin: 0 0 20px;
 }
@@ -1103,6 +1114,8 @@ label > .field-hint {
 }
 .photo-caption {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   justify-content: space-between;
   padding: 13px 20px;
   color: #81908b;
@@ -1110,11 +1123,13 @@ label > .field-hint {
 }
 .photo-thumbnails {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px 16px 0;
 }
 .photo-thumbnails button {
   width: 65px;
+  flex-shrink: 0;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -1400,6 +1415,8 @@ label > .field-hint {
   color: #85978d;
 }
 .upload-zone input {
+  width: 100%;
+  min-width: 0;
   max-width: 240px;
   font-size: 10px;
   color: #7d9287;
@@ -1581,7 +1598,7 @@ input::file-selector-button {
 .review-thumbnails img {
   width: 100%;
   height: 60px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 3px;
   margin-bottom: 5px;
 }
@@ -1692,6 +1709,7 @@ input::file-selector-button {
 }
 .request-card-top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 15px;
@@ -1791,6 +1809,7 @@ input::file-selector-button {
 }
 .managed-item-top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -2118,6 +2137,33 @@ input::file-selector-button {
   }
 }
 @media (max-width: 850px) {
+  .button,
+  .pagination .button,
+  .card-actions .button,
+  .text-button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .icon-button,
+  .image-previews button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .main-content label {
+    font-size: 14px;
+  }
+  .main-content input:not([type="checkbox"]):not([type="radio"]),
+  .main-content textarea,
+  .main-content select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .main-content input[type="file"] {
+    font-size: 14px;
+  }
+  .input-icon > svg {
+    top: 15px;
+  }
   .header-inner {
     min-height: 115px;
     flex-wrap: wrap;
@@ -2153,8 +2199,10 @@ input::file-selector-button {
     font-size: 13px;
   }
   .detail-layout,
-  .review-layout {
-    grid-template-columns: minmax(0, 1.3fr) minmax(265px, 1fr);
+  .review-layout,
+  .claim-layout,
+  .transfer-layout {
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
   }
   .panel {
@@ -2183,10 +2231,6 @@ input::file-selector-button {
     grid-template-columns: 1fr 1fr;
     align-items: start;
   }
-  .claim-layout {
-    grid-template-columns: 230px minmax(0, 1fr);
-    gap: 18px;
-  }
   .form-actions {
     flex-wrap: wrap;
   }
@@ -2214,8 +2258,16 @@ input::file-selector-button {
     height: 30px;
   }
   .search-layout {
-    grid-template-columns: 195px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 17px;
+  }
+  .filter-panel form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .filter-panel form > label:nth-of-type(-n + 3),
+  .filter-panel form > .notice,
+  .filter-panel form > .button {
+    grid-column: 1 / -1;
   }
   .filter-panel {
     padding: 17px;
@@ -2248,26 +2300,102 @@ input::file-selector-button {
   }
   .header-inner {
     width: calc(100% - 32px);
+    min-height: 0;
+    padding-top: 12px;
+    gap: 8px 0;
   }
   .header-actions {
-    gap: 15px;
+    gap: 6px;
   }
   .header-actions .button {
-    padding: 7px 10px;
-    font-size: 11px;
-    gap: 5px;
+    min-height: 44px;
+    padding: 10px;
+    font-size: 13px;
+    gap: 6px;
   }
   .hub-link {
-    display: none;
+    display: inline-flex;
+    justify-content: center;
+    width: 44px;
+    min-height: 44px;
   }
   .main-nav {
-    justify-content: space-between;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: auto;
+    min-height: 56px;
+    gap: 4px;
   }
   .main-nav a {
-    font-size: 10px;
+    justify-content: center;
+    min-width: 0;
+    padding: 8px 2px;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+    white-space: normal;
   }
   .signin-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .account-menu summary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .account-menu > div {
+    gap: 4px;
+  }
+  .account-menu a,
+  .account-menu button {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .notice,
+  .item-description > p,
+  .choice-card strong,
+  .timeline strong,
+  .saved-panel > p,
+  .answer-review > p:last-child {
+    font-size: 14px;
+  }
+  .muted,
+  .choice-card small,
+  .timeline p,
+  .tips-list,
+  .review-checklist > .muted {
+    font-size: 13px;
+  }
+  .checkbox-field {
+    font-size: 13px !important;
+  }
+  .field-hint,
+  .upload-zone > span,
+  .item-facts span,
+  .item-summary .muted,
+  .chat-heading .muted,
+  .footer-inner p {
+    font-size: 12px;
+  }
+  .item-facts p,
+  .managed-item-body .muted {
+    font-size: 13px;
+  }
+  .message-sender,
+  .message time {
+    font-size: 11px;
+  }
+  .eyebrow {
+    font-size: 11px;
+  }
+  .badge {
     font-size: 11px;
   }
   .trust-banner {
@@ -2292,13 +2420,13 @@ input::file-selector-button {
     line-height: 1.35;
   }
   .hero p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .mobile-break {
     display: initial;
   }
   .hero-eyebrow {
-    font-size: 9px;
+    font-size: 11px;
   }
   .search-card-heading {
     padding: 17px 18px;
@@ -2321,12 +2449,13 @@ input::file-selector-button {
     margin-bottom: 2px;
   }
   .suggestions button {
-    font-size: 9px;
-    padding: 5px 7px;
-    gap: 4px;
+    min-height: 44px;
+    font-size: 12px;
+    padding: 8px 10px;
+    gap: 6px;
   }
   .search-context {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px 12px;
     padding-top: 18px;
   }
@@ -2353,7 +2482,7 @@ input::file-selector-button {
     font-size: 20px;
   }
   .section-heading > .eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
   .benefit-grid {
     grid-template-columns: 1fr;
@@ -2377,10 +2506,10 @@ input::file-selector-button {
   }
   .benefit-card h3 {
     margin: 0 0 4px;
-    font-size: 13px;
+    font-size: 15px;
   }
   .benefit-card p {
-    font-size: 11px;
+    font-size: 13px;
   }
   .footer-inner {
     width: calc(100% - 32px);
@@ -2391,11 +2520,16 @@ input::file-selector-button {
   .footer-links {
     margin: 0;
     gap: 14px;
-    font-size: 9px;
+    font-size: 12px;
+  }
+  .footer-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
   .breadcrumb {
     margin: 18px 0 23px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .page-heading {
     flex-wrap: wrap;
@@ -2409,10 +2543,10 @@ input::file-selector-button {
     font-size: 25px;
   }
   .page-heading .muted {
-    font-size: 12px;
+    font-size: 14px;
   }
   .page-heading .eyebrow {
-    font-size: 9px;
+    font-size: 11px;
   }
   .panel {
     padding: 20px;
@@ -2435,7 +2569,7 @@ input::file-selector-button {
     margin-bottom: 15px;
   }
   .filter-panel form {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px 12px;
   }
   .filter-panel form .button {
@@ -2458,7 +2592,13 @@ input::file-selector-button {
     font-size: 17px;
   }
   .item-card-body > p {
-    font-size: 12px;
+    font-size: 14px;
+  }
+  .item-location,
+  .item-card-action,
+  .results-heading .muted {
+    font-size: 13px;
+    white-space: normal;
   }
   .item-card .photo-placeholder span {
     display: block;
@@ -2470,13 +2610,13 @@ input::file-selector-button {
     grid-template-columns: 1fr;
   }
   .photo-badge {
-    font-size: 8px;
+    font-size: 11px;
     top: 12px;
     left: 12px;
     padding: 6px 8px;
   }
   .photo-caption {
-    font-size: 8px;
+    font-size: 11px;
     padding: 12px;
   }
   .detail-layout {
@@ -2502,7 +2642,7 @@ input::file-selector-button {
     display: none;
   }
   .stepper strong {
-    font-size: 9px;
+    font-size: 11px;
     display: block;
     line-height: 1.6;
   }
@@ -2525,7 +2665,8 @@ input::file-selector-button {
     gap: 15px;
   }
   .form-actions .button {
-    font-size: 11px;
+    width: 100%;
+    font-size: 14px;
     padding: 10px 12px;
     gap: 7px;
   }
@@ -2538,7 +2679,7 @@ input::file-selector-button {
     width: 90px;
   }
   .form-sidebar .item-summary h3 {
-    font-size: 12px;
+    font-size: 14px;
   }
   .form-sidebar {
     gap: 14px;
@@ -2551,10 +2692,10 @@ input::file-selector-button {
     width: 85px;
   }
   .item-summary h3 {
-    font-size: 12px;
+    font-size: 14px;
   }
   .item-summary .eyebrow {
-    font-size: 8px;
+    font-size: 10px;
   }
   .processed-image {
     height: 300px;
@@ -2564,13 +2705,13 @@ input::file-selector-button {
     align-items: flex-start;
   }
   .request-card-top .eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
   .request-card-top .badge {
     flex-shrink: 0;
   }
   .progress-track li {
-    font-size: 8px;
+    font-size: 11px;
   }
   .managed-item-body {
     grid-template-columns: 100px minmax(0, 1fr);
@@ -2580,20 +2721,25 @@ input::file-selector-button {
     font-size: 14px;
   }
   .managed-item-body .badge {
-    font-size: 8px;
+    font-size: 11px;
   }
   .managed-item-top .eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
   .managed-item-top .badge {
-    font-size: 8px;
+    font-size: 11px;
   }
   .card-actions {
     gap: 10px;
   }
   .card-actions .button,
   .card-actions .text-button {
-    font-size: 10px;
+    font-size: 14px;
+  }
+  .card-actions > *,
+  .page-heading > .button {
+    width: 100%;
+    justify-content: center;
   }
   .messenger {
     grid-template-columns: 1fr;
@@ -2603,6 +2749,8 @@ input::file-selector-button {
     border-right: 0;
     border-bottom: 1px solid var(--line);
     padding: 18px 0 0;
+    max-height: 260px;
+    overflow-y: auto;
   }
   .conversation-list > .panel-title {
     padding: 0 18px;
@@ -2617,6 +2765,12 @@ input::file-selector-button {
   .conversation-link .avatar {
     width: 34px;
     height: 34px;
+  }
+  .conversation-link strong {
+    font-size: 13px;
+  }
+  .conversation-link small {
+    font-size: 12px;
   }
   .conversation-link:not(.selected) {
     padding-top: 10px;
@@ -2639,6 +2793,7 @@ input::file-selector-button {
   }
   .chat-notice {
     padding: 12px 18px;
+    font-size: 12px;
   }
   .message-history {
     padding: 20px 16px;
@@ -2648,7 +2803,7 @@ input::file-selector-button {
     max-width: 92%;
   }
   .message > p {
-    font-size: 11px;
+    font-size: 14px;
     padding: 12px;
   }
   .message-composer {
@@ -2657,7 +2812,7 @@ input::file-selector-button {
   .message-composer .button {
     padding: 10px;
     gap: 6px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .handover-action {
     padding: 0 15px 16px;
@@ -2667,6 +2822,33 @@ input::file-selector-button {
   }
   .confirm-dialog h2 {
     font-size: 18px;
+  }
+}
+@media (max-width: 400px) {
+  .managed-item-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .managed-item-body .item-photo {
+    height: auto;
+    aspect-ratio: 1.5;
+  }
+  .item-summary,
+  .form-sidebar .item-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .item-summary > .item-photo,
+  .form-sidebar .item-summary > .item-photo {
+    width: 100%;
+    aspect-ratio: 1.5;
+  }
+}
+@media (max-width: 360px) {
+  .header-actions .button {
+    min-width: 44px;
+  }
+  .header-actions .button span {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

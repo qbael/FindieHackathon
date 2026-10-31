@@ -42,6 +42,16 @@ test("item metadata trims text, omits empty questions and does not submit stale 
   assert.equal(content.foundUntil, null);
 });
 
+test("only personal custody submits verification questions", () => {
+  for (const kind of ["point", "external"] as const)
+    assert.deepEqual(
+      itemContent({ ...draft, kind, questions: ["x".repeat(501), "a", "b", "c"] }, now)
+        .verificationQuestions,
+      [],
+    );
+  assert.deepEqual(itemContent(draft, now).verificationQuestions, ["Có móc khóa hình gì?"]);
+});
+
 test("found times use Vietnam time even when the browser or host has another timezone", () => {
   assert.equal(
     itemContent({ ...draft, precision: "exact", from: "2026-10-24T08:30" }, now)

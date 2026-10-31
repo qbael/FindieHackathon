@@ -93,7 +93,7 @@ class Worker:
                     )
                     image = await self.consumer.declare_queue(
                         self.settings.image_queue, exclusive=True, auto_delete=True,
-                        arguments={"x-message-ttl": 30000, "x-max-length": 4, "x-max-length-bytes": 32 * 1024 * 1024},
+                        arguments={"x-message-ttl": 300000, "x-max-length": 4, "x-max-length-bytes": 32 * 1024 * 1024},
                     )
                     await index.consume(lambda message: self.handle(message, "index"))
                     await query.consume(lambda message: self.handle(message, "query"))

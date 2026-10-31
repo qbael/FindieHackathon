@@ -38,8 +38,11 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             if (await workflow.ReplayedAsync(actor, key, operation, request, "image", ct) is { } oldId)
                 return Response(Find(current, oldId));
             RecoveryWorkflow.RequireActive(current);
+            if (position is < 1 or > 3) throw new ApiException(400, "Image position must be between 1 and 3.");
             if (current.Images.Any(image => image.RetiredAt == null && image.Position == position))
                 throw new ApiException(409, "This image position is occupied; retire the existing image first.");
+            if (current.Images.Count(image => image.RetiredAt == null) >= 3)
+                throw new ApiException(409, "An item may have at most three images; retire an existing image first.");
             if (!storage.Configured) throw new ApiException(503, "Processed image storage is not configured.");
             var model = AiProtocol.Setting(configuration, "RedactionModelId");
             var revision = AiProtocol.Setting(configuration, "RedactionRevision");
@@ -47,7 +50,7 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             var imageId = Guid.NewGuid();
             var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
                 sourceSha256 = request.sha256, modelId = model, modelRevision = revision, processingProfile = profile,
-                deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
+                deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json);
             await using var reply = await ai.RequestAsync(new AiCommand("image.redact", metadata, bytes, mime!), ct);
             var output = ValidateOutput(reply, metadata);
             var value = new StoredObject { OwnerUserId = actor, Bucket = storage.Bucket, ObjectKey = $"processed/{itemId}/{Guid.NewGuid():N}",
@@ -67,6 +70,8 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
                     throw new ApiException(409, "The output reservation expired; upload the image again.");
                 if (item.Images.Any(image => image.RetiredAt == null && image.Position == position))
                     throw new ApiException(409, "This image position was occupied during processing.");
+                if (item.Images.Count(image => image.RetiredAt == null) >= 3)
+                    throw new ApiException(409, "An item may have at most three images; retire an existing image first.");
                 value.ObjectState = "validated";
                 value.ValidatedAt = DateTimeOffset.UtcNow;
                 value.ExpiresAt = value.CleanupNextAt = null;
@@ -119,6 +124,8 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             image.ProcessingState = request.Decision == "approved" ? "ready" : "rejected";
             image.ReviewedBy = actor;
             image.ReviewedAt = DateTimeOffset.UtcNow;
+            if (item.PublicationState == "published" && !item.Images.Any(RecoveryWorkflow.PublicImage))
+                item.PublicationState = "hidden";
             workflow.Changed(item);
             return imageId;
         }, ct);
@@ -147,6 +154,8 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             image.ReviewState = "rejected";
             image.ReviewedBy = actor;
             image.ReviewedAt = DateTimeOffset.UtcNow;
+            if (item.PublicationState == "published" && !item.Images.Any(RecoveryWorkflow.PublicImage))
+                item.PublicationState = "hidden";
             workflow.Changed(item);
             return imageId;
         }, ct);

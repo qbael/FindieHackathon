@@ -33,7 +33,7 @@ sys.path.insert(0, str(ROOT / "services/ai"))
 MODEL = "qwen3-embedding:4b"
 REVISION = "a" * 64
 DIMENSIONS = 8
-REDACTION_MODEL = "qwen3-vl:4b"
+REDACTION_MODEL = "qwen3-vl:4b-instruct"
 REDACTION_REVISION = "b" * 64
 CAMPUS = "Trường Đại học Sài Gòn"
 
@@ -244,7 +244,7 @@ async def checks(broker_url, dsn, ollama_url):
         response, output = await request("image.redact", raw_image,
             {"modelId": REDACTION_MODEL, "modelRevision": REDACTION_REVISION,
              "itemId": room_id, "imageId": str(uuid4()), "sourceVersion": 1,
-             "sourceSha256": digest(raw_image), "processingProfile": "redact-v1"}, content_type="image/png")
+             "sourceSha256": digest(raw_image), "processingProfile": "redact-v3"}, content_type="image/png")
         assert response["succeeded"] and response["sha256"] == digest(output)
         assert response["contentType"] == "image/png" and response["byteSize"] == len(output)
         assert output != raw_image and private_note.encode() not in output

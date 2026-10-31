@@ -1,6 +1,6 @@
 # AI service: văn bản, xử lý ảnh và tìm ảnh qua gateway Colab
 
-Cập nhật 28/10/2026. Python nhận lệnh qua RabbitMQ, gọi gateway tương thích API Ollama, sở hữu database `findie_search` và trả ứng viên để .NET kiểm lại quyền/nguồn/phiên bản. FastAPI chỉ phục vụ health/status nội bộ. Web, API, worker, PostgreSQL và broker ở local; chỉ model inference chạy từ xa.
+Cập nhật 31/10/2026. Python nhận lệnh qua RabbitMQ, gọi gateway tương thích API Ollama, sở hữu database `findie_search` và trả ứng viên để .NET kiểm lại quyền/nguồn/phiên bản. FastAPI chỉ phục vụ health/status nội bộ. Web, API, worker, PostgreSQL và broker ở local; chỉ model inference chạy từ xa.
 
 ## Khởi tạo kho tìm kiếm và chạy local
 
@@ -21,7 +21,12 @@ Notebook tải model embedding qua Transformers và cài Ollama release/checksum
 | Model | Vai trò | Cấu hình full mode |
 | --- | --- | --- |
 | `Qwen/Qwen3-VL-Embedding-2B` | Embedding văn bản và ảnh native qua Transformers | 2048 chiều, FP16, SDPA, L2; instruction truy vấn rỗng |
-| `qwen3-vl:4b` | Gợi ý vùng nhạy cảm | JSON schema, temperature 0 |
+| `qwen3-vl:4b-instruct` | Gợi ý vùng nhạy cảm | JSON schema, temperature 0 |
+
+Dùng đúng tag `-instruct` để trả JSON trực tiếp. Bản Qwen3-VL Thinking không hỗ trợ
+tắt suy luận bằng `think:false`; cần chọn biến thể model theo [hướng dẫn của maintainer Ollama](https://github.com/ollama/ollama/issues/13353).
+Khi chuyển model nhận diện vùng, chạy lại notebook, nhập cấu hình để đồng bộ tên/digest
+giữa API và worker, rồi khởi động lại hai service.
 
 Model/processor Qwen và mã inference official được ghim tại commit `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda`, cùng cách lấy token cuối không padding đã kiểm SHA-256 trong notebook 01. Gateway xử lý `/api/embed` bằng Transformers, nhận văn bản hoặc `{image: base64}` và giữ hợp đồng Ollama hiện có; `/api/generate` chuyển tới Ollama cho redaction. System instruction Qwen giống nhau cho hai loại input; `AI_EMBEDDING_QUERY_INSTRUCTION` để rỗng để local không thêm instruction khác. Xem [model card Qwen](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B/tree/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda).
 
@@ -61,6 +66,8 @@ Colab có quota/thời lượng và hạn chế proxy/web services, nhất là t
 
 Chỉ một Python process, không dùng nhiều Uvicorn workers với queue exclusive. Ngoài loopback cần HTTPS/token cho Ollama và AMQPS cho broker. Token Colab không phải token ngrok hay AI_SERVICE_TOKEN.
 
+Xử lý/che ảnh có thời gian chờ 5 phút (300 giây) ở web, API, RabbitMQ, worker và gateway model; tìm kiếm/lập chỉ mục vẫn có deadline 30 giây. Sau khi cập nhật, nạp notebook 04 mới, chạy lại cell `gateway-source` rồi `gateway-start`. Nếu URL ngrok thay đổi, tải JSON mới và import lại bằng `scripts/configure_ollama.py`; sau đó khởi động lại API/worker để áp dụng giới hạn mới.
+
 ```sh
 make local-doctor
 ```
@@ -69,6 +76,12 @@ Doctor kiểm schema hai DB, Hub/staff, các queue có consumer, identity model 
 
 ## Luồng ảnh và tìm kiếm
 
+Web dùng chung bước [chuẩn bị ảnh](../api/media-search.md) cho upload và mọi truy vấn
+ảnh: kiểm file gốc/animation, đọc hướng EXIF, giới hạn cạnh dài 1600 px và tạo JPEG
+quality 0.92 với nền trắng, giữ tỷ lệ, không phóng lớn/cắt/làm nét/khử nhiễu. Giữ file
+gốc nếu đã trong 1600 px và JPEG không nhỏ hơn; dùng lại cùng bytes theo `File` khi retry.
+Bước này giảm tải truyền ảnh; API trực tiếp và kiểm tra server vẫn giữ nguyên.
+
 1. .NET kiểm quyền/byte và chuyển raw qua AMQP tạm, nonpersistent, có TTL, không DLQ raw.
 2. Python kiểm JPEG/PNG/WebP, MIME thật, tối đa 10 MiB, 40 triệu pixel/cạnh 10000, từ chối animation. Áp dụng EXIF orientation, giảm cạnh tối đa 1600px, bỏ EXIF/GPS, flatten alpha và encode PNG mới.
 3. Vision model trả bbox/nhãn theo schema, không OCR text; Python validate tọa độ hữu hạn 0..1000/thứ tự/nhãn/số vùng rồi OpenCV che kín với khoảng đệm. Model/JSON lỗi làm cả request thất bại; không dùng raw làm output. Không PII vẫn re-encode.
@@ -76,7 +89,14 @@ Doctor kiểm schema hai DB, Hub/staff, các queue có consumer, identity model 
 5. Worker ghép và kiểm manifest text + tối đa 5 output ảnh đã duyệt theo job/lease, hash và deadline; giới hạn pending metadata/bytes. Ghi các vector được bật và watermark/hash của full snapshot trong một transaction, receipt sau commit, ACK sau broker confirm/route. Snapshot cũ sau tombstone không phục hồi dữ liệu.
 6. Text dùng semantic + PostgreSQL FTS + tín hiệu vị trí. Ảnh dùng native image vectors semantic-only trong `image-v1`, không tự sinh OCR/keyword. Bộ lọc chạy trước limit; nhiều ảnh cùng món được dedupe. .NET kiểm lại nguồn hiện hành trước DTO.
 
-Ảnh query chỉ tồn tại trong RAM/transport tạm, không R2/search DB. Broker có thể page message xuống đĩa; TTL/ACK không phải bảo đảm xóa forensic. Chỉ model inference ra khỏi máy local; ảnh gửi model đi qua gateway ngrok/Colab của bạn. 1600px và model có thể bỏ sót vùng nhạy cảm nhỏ: phải kiểm output trước duyệt; chưa có cam kết PII recall.
+Profile `redact-v3` chỉ che khuôn mặt, số điện thoại, số CCCD/CMND và địa chỉ riêng tư;
+giữ nguyên họ tên, ngày sinh, các ngày tháng và thông tin sinh viên. Đặt
+`Ai__RedactionProfile=redact-v3` rồi khởi động
+lại API/worker sau khi cập nhật. Prompt/schema được worker gửi trong mỗi request nên
+không cần tải lại model hoặc gateway Colab. Ảnh đã xử lý giữ nguyên profile và output cũ;
+muốn áp dụng cách che mới cần tải lại ảnh gốc vì hệ thống không lưu bản gốc.
+
+Ảnh query chỉ tồn tại trong RAM/transport tạm, không R2/search DB. Broker có thể page message xuống đĩa; TTL/ACK không phải bảo đảm xóa forensic. Chỉ model inference ra khỏi máy local; ảnh gửi model đi qua gateway ngrok/Colab của bạn. Nén JPEG có thể mất chi tiết chữ nhỏ; chưa có benchmark chứng minh tiền xử lý tăng độ chính xác. 1600px và model có thể bỏ sót vùng nhạy cảm nhỏ: phải kiểm output trước duyệt; chưa có cam kết PII recall.
 
 ## Hub và nghiệm thu thủ công
 

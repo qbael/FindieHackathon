@@ -21,7 +21,7 @@ public sealed class ClaimService(IRecoveryRepository repository, RecoveryWorkflo
             var item = await workflow.ItemAsync(itemId, true, ct);
             if (!RecoveryWorkflow.Public(item)) throw new ApiException(404, "Item is not available.");
             if (item.CustodyKind != "person") throw new ApiException(409, "Claims apply only to items held by a person.");
-            if (item.HolderUserId == actor) throw new ApiException(400, "The holder cannot claim their own item.");
+            if (item.PostedBy == actor || item.HolderUserId == actor) throw new ApiException(400, "The author or holder cannot claim their own item.");
             if (item.ContentVersion != request.ContentVersion) throw new ApiException(409, "The questions changed; reload them before submitting your answers.");
             if (await repository.ExistingClaimAsync(actor, item, ct)) throw new ApiException(409, "An active claim already exists.");
             var answers = request.Answers ?? [];

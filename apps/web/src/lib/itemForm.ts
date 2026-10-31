@@ -71,7 +71,7 @@ export function itemContent(draft: ItemDraft, now = Date.now()) {
     foundOn: null as string | null,
     foundFrom: null as string | null,
     foundUntil: null as string | null,
-    verificationQuestions: draft.questions
+    verificationQuestions: (draft.kind === "person" ? draft.questions : [])
       .filter((question) => question.trim())
       .map((question) => text(question, 500, "Câu hỏi")),
   };

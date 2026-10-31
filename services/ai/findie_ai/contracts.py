@@ -29,7 +29,7 @@ class Metadata(Contract):
         remaining = (self.deadlineAt - datetime.now(timezone.utc)).total_seconds()
         if remaining <= 0:
             raise TimeoutError("deadline_expired")
-        if remaining > 35:
+        if remaining > (305 if isinstance(self, RedactMetadata) else 35):
             raise ValueError("deadline_too_long")
         return remaining
 
@@ -55,7 +55,7 @@ class RedactMetadata(Metadata):
     itemId: UUID
     sourceVersion: Version
     sourceSha256: Digest
-    processingProfile: Literal["redact-v1"]
+    processingProfile: Literal["redact-v3"]
 
 
 class SearchMetadata(Metadata):

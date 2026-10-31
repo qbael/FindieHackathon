@@ -25,7 +25,7 @@ public sealed class RecoveryRepository(FindieDbContext db) : IRecoveryRepository
 
     public Task<List<Item>> ItemsAsync(Guid actor, ItemFilter filter, CancellationToken ct)
     {
-        var items = db.Items.AsNoTracking().AsQueryable();
+        var items = db.Items.AsNoTracking().Where(item => item.Lifecycle != "deleted");
         items = filter.Scope switch
         {
             "mine" => items.Where(item => item.PostedBy == actor || item.HolderUserId == actor),

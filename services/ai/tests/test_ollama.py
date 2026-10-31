@@ -59,6 +59,33 @@ def test_native_image_embedding_uses_same_model_space_and_authenticated_gateway(
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('label', ['address', 'face'])
+def test_address_refinement_restricts_schema_and_rejects_other_fields(label):
+    settings = replace(SETTINGS, redaction_revision='b' * 64)
+
+    def respond(request):
+        if request.method == 'GET':
+            return httpx.Response(200, json={'models': [{'name': settings.redaction_model, 'digest': settings.redaction_revision}]})
+        body = json.loads(request.content)
+        assert body['format']['$defs']['Region']['properties']['label']['enum'] == ['address']
+        assert 'first house-number fragment' in body['prompt']
+        assert 'Do not box names, dates' in body['prompt']
+        return httpx.Response(200, json={'model': settings.redaction_model, 'done': True, 'done_reason': 'stop',
+                                        'response': json.dumps({'regions': [{'label': label, 'bbox': [0, 0, 100, 100]}]})})
+
+    async def run():
+        model = Ollama(settings, httpx.MockTransport(respond))
+        try:
+            if label == 'address':
+                assert await model.detect_regions(image_bytes(), address_only=True) == [{'label': 'address', 'bbox': [0, 0, 100, 100]}]
+            else:
+                with pytest.raises(ModelUnavailable, match='invalid_regions'):
+                    await model.detect_regions(image_bytes(), address_only=True)
+        finally:
+            await model.close()
+    asyncio.run(run())
+
+
 def test_media_calls_require_explicit_configuration():
     async def run():
         model = Ollama(SETTINGS)
@@ -79,6 +106,7 @@ def test_vision_redaction_uses_pinned_model_and_strict_structured_schema():
 
     def respond(request):
         paths.append(request.url.path)
+        assert request.extensions['timeout']['read'] == (300 if request.url.path == '/api/generate' else 25)
         if request.method == 'GET':
             return httpx.Response(200, json={'models': [{'name': settings.redaction_model, 'digest': settings.redaction_revision}]})
         body = json.loads(request.content)
@@ -86,13 +114,21 @@ def test_vision_redaction_uses_pinned_model_and_strict_structured_schema():
         assert base64.b64decode(body['images'][0]) == image
         assert body['format']['additionalProperties'] is False
         assert body['format']['properties']['regions']['maxItems'] == 32
+        labels = body['format']['$defs']['Region']['properties']['label']['enum']
+        assert 'identity_number' in labels and 'personal_text' not in labels
+        assert 'identity_document' not in labels and 'payment_card' not in labels
+        assert 'separate tight bounding box' in body['prompt']
+        assert 'Keep card borders, logos, institution names' in body['prompt']
+        assert 'cropped secondary cards at every image edge' in body['prompt']
+        assert 'Keep personal names, birth dates, all other dates, student numbers' in body['prompt']
+        assert body['options'] == {'temperature': 0, 'num_ctx': 8192, 'num_predict': 2048}
         return httpx.Response(200, json={'model': settings.redaction_model, 'done': True, 'done_reason': 'stop',
                                         'response': '{"regions":[{"label":"face","bbox":[0,0,100,100]}]}'})
 
     async def run():
         model = Ollama(settings, httpx.MockTransport(respond))
         try:
-            assert await model.detect_regions(image) == [{'label': 'face', 'bbox': [0.0, 0.0, 100.0, 100.0]}]
+            assert await model.detect_regions(image) == [{'label': 'face', 'bbox': [0, 0, 100, 100]}]
             assert paths == ['/api/tags', '/api/generate', '/api/tags']
         finally:
             await model.close()

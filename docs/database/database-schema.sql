@@ -53,7 +53,7 @@ CREATE TABLE items (
     external_name text,
     external_public_address text,
     external_instructions text,
-    lifecycle text NOT NULL DEFAULT 'active' CHECK (lifecycle IN ('active', 'returned')),
+    lifecycle text NOT NULL DEFAULT 'active' CHECK (lifecycle IN ('active', 'returned', 'deleted')),
     publication_state text NOT NULL DEFAULT 'draft' CHECK (publication_state IN ('draft', 'published', 'hidden')),
     content_version bigint NOT NULL DEFAULT 1 CHECK (content_version > 0),
     custody_version bigint NOT NULL DEFAULT 1 CHECK (custody_version > 0),

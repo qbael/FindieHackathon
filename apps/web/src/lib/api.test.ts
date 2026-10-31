@@ -40,11 +40,12 @@ test("return URLs and image sources stay on trusted local routes", () => {
 
 test("image constraints match the upload API before sending private bytes", () => {
   validateImages([{ type: "image/jpeg", size: 10 * 1024 * 1024 }]);
+  validateImages(Array(3).fill({ type: "image/webp", size: 100 }));
   for (const files of [
     [{ type: "image/svg+xml", size: 50 }],
     [{ type: "image/png", size: 0 }],
     [{ type: "image/png", size: 10 * 1024 * 1024 + 1 }],
-    Array(6).fill({ type: "image/webp", size: 100 }),
+    Array(4).fill({ type: "image/webp", size: 100 }),
   ])
     assert.throws(() => validateImages(files));
 });
@@ -73,6 +74,28 @@ test("writes attach CSRF and preserve idempotency after an uncertain network fai
     (requests[2].headers as Record<string, string>)["Idempotency-Key"],
     first["Idempotency-Key"],
   );
+});
+
+test("deleting a post sends its version with CSRF and accepts an empty response", async () => {
+  let deletion: RequestInit | undefined;
+  mock.method(globalThis, "fetch", async (path: string, init?: RequestInit) => {
+    if (path === "/api/auth/csrf")
+      return Response.json({ token: "csrf-delete" });
+    assert.equal(path, "/api/items/delete-post");
+    deletion = init;
+    return new Response(null, { status: 204 });
+  });
+  assert.equal(
+    await write<void>("/api/items/delete-post", { rowVersion: 7 }, "DELETE"),
+    undefined,
+  );
+  assert.equal(deletion?.method, "DELETE");
+  assert.equal(deletion?.body, JSON.stringify({ rowVersion: 7 }));
+  assert.equal(
+    (deletion?.headers as Record<string, string>)["X-CSRF-TOKEN"],
+    "csrf-delete",
+  );
+  assert.equal(deletion?.credentials, "same-origin");
 });
 
 test("failed sessions and malformed CSRF prevent writes; response failures stay actionable", async () => {

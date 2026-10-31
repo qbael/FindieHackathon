@@ -1,5 +1,6 @@
 """CPU checks of Ollama notebooks; no model download or network."""
 
+import ast
 import hashlib
 import io
 import json
@@ -23,6 +24,47 @@ def tagged_source(tag, path=NOTEBOOK):
 
 
 class OllamaNotebookTests(unittest.TestCase):
+    def test_full_stack_redaction_matches_runtime_fields_prompt_and_options(self):
+        root = NOTEBOOK.parents[2]
+        source = tagged_source("inference-check", INSTALL_NOTEBOOKS[1])
+        scope = {}
+        exec(source.split("\n\ndef chunk", 1)[0], scope)
+        image_tree = ast.parse((root / "services/ai/findie_ai/images.py").read_text())
+        region = next(node for node in image_tree.body if isinstance(node, ast.ClassDef) and node.name == "Region")
+        labels = next(node.annotation.slice for node in region.body
+                      if isinstance(node, ast.AnnAssign) and node.target.id == "label")
+        self.assertEqual(scope["REGIONS_SCHEMA"]["$defs"]["Region"]["properties"]["label"]["enum"],
+                         list(ast.literal_eval(labels)))
+        ollama_tree = ast.parse((root / "services/ai/findie_ai/ollama.py").read_text())
+        prompt = next(ast.literal_eval(value.orelse if isinstance(value, ast.IfExp) else value)
+                      for node in ast.walk(ollama_tree) if isinstance(node, ast.Dict)
+                      for key, value in zip(node.keys, node.values)
+                      if isinstance(key, ast.Constant) and key.value == "prompt")
+        self.assertEqual(scope["REDACTION_PROMPT"], prompt)
+        runtime_options = next(ast.literal_eval(value) for node in ast.walk(ollama_tree) if isinstance(node, ast.Dict)
+                               for key, value in zip(node.keys, node.values)
+                               if isinstance(key, ast.Constant) and key.value == "options")
+        notebook_options = next(ast.literal_eval(value) for node in ast.walk(ast.parse(source)) if isinstance(node, ast.Dict)
+                                for key, value in zip(node.keys, node.values)
+                                if isinstance(key, ast.Constant) and key.value == "options")
+        self.assertEqual(notebook_options, runtime_options)
+
+    def test_full_stack_redaction_requires_integer_box_coordinates(self):
+        source = tagged_source("inference-check", INSTALL_NOTEBOOKS[1])
+        scope = {}
+        exec(source.split("\n\ndef chunk", 1)[0], scope)
+        bbox = scope["REGIONS_SCHEMA"]["$defs"]["Region"]["properties"]["bbox"]
+        self.assertTrue(all(coordinate["type"] == "integer" for coordinate in bbox["prefixItems"]))
+        validation = source[source.index('for region in regions["regions"]:'):source.index("\ncurrent =")]
+        for coordinate in (0, 0.5, True):
+            scope["regions"] = {"regions": [{"label": "identity_number", "bbox": [coordinate, 0, 100, 100]}]}
+            with self.subTest(coordinate=coordinate):
+                if type(coordinate) is int:
+                    exec(validation, scope)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "Vision bbox sai schema"):
+                        exec(validation, scope)
+
     def test_qwen_dependency_install_requires_restart_before_loading(self):
         notebook = INSTALL_NOTEBOOKS[1]
         scope = {}
@@ -75,8 +117,8 @@ class OllamaNotebookTests(unittest.TestCase):
                 "json": json, "WORK": Path(directory),
                 "tunnel": SimpleNamespace(public_url="https://example.ngrok.app"),
                 "EMBEDDING_MODEL": runtime["MODEL_ID"], "DIMENSIONS": runtime["DIMENSIONS"],
-                "REDACTION_MODEL": "qwen3-vl:4b",
-                "revisions": {runtime["MODEL_ID"]: runtime["MODEL_DIGEST"], "qwen3-vl:4b": "b" * 64},
+                "REDACTION_MODEL": "qwen3-vl:4b-instruct",
+                "revisions": {runtime["MODEL_ID"]: runtime["MODEL_DIGEST"], "qwen3-vl:4b-instruct": "b" * 64},
                 "NGROK_AUTHTOKEN": "private-ngrok-token", "FINDIE_OLLAMA_TOKEN": "private-gateway-token",
             }
             files = Mock()

@@ -14,12 +14,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 MAX_BYTES = 10 * 1024 * 1024
 MIME_FORMATS = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
-Coordinate = Annotated[float, Field(strict=True, ge=0, le=1000, allow_inf_nan=False)]
+Coordinate = Annotated[int, Field(strict=True, ge=0, le=1000)]
 
 
 class Region(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    label: Literal["face", "identity_document", "payment_card", "phone", "address", "qr_code", "barcode"]
+    label: Literal["face", "identity_number", "phone", "address", "qr_code", "barcode"]
     bbox: tuple[Coordinate, Coordinate, Coordinate, Coordinate]
 
     @model_validator(mode="after")
@@ -70,8 +70,8 @@ async def normalize(body: bytes, content_type: str) -> bytes:
 
 def _mask(image, regions):
     height, width = image.shape[:2]
-    padding = max(2, math.ceil(max(width, height) / 100))
     for region in regions:
+        padding = max(2, math.ceil(min(width, height) / (200 if region.label in {"qr_code", "barcode"} else 500)))
         x1, y1, x2, y2 = region.bbox
         left, top = max(0, math.floor(x1 * width / 1000) - padding), max(0, math.floor(y1 * height / 1000) - padding)
         right, bottom = min(width - 1, math.ceil(x2 * width / 1000) + padding - 1), min(height - 1, math.ceil(y2 * height / 1000) + padding - 1)
@@ -81,10 +81,32 @@ def _mask(image, regions):
 
 async def redact(ollama, body: bytes, content_type: str) -> tuple[bytes, dict]:
     image = await asyncio.to_thread(_decode, body, content_type)
+    height, width = image.shape[:2]
     clean = await asyncio.to_thread(_encode, image)
     regions = Regions(regions=await ollama.detect_regions(clean)).regions
+    addresses = [region.bbox for region in regions if region.label == "address"]
+    if addresses:
+        left = math.floor(min(box[0] for box in addresses) * width / 1000)
+        top = math.floor(min(box[1] for box in addresses) * height / 1000)
+        right = math.ceil(max(box[2] for box in addresses) * width / 1000)
+        bottom = math.ceil(max(box[3] for box in addresses) * height / 1000)
+        margin_x, margin_y = (right - left) // 2, bottom - top
+        left, top = max(0, left - margin_x), max(0, top - margin_y)
+        right, bottom = min(width, right + margin_x), min(height, bottom + margin_y)
+        crop = await asyncio.to_thread(_encode, image[top:bottom, left:right])
+        refined = Regions(regions=await ollama.detect_regions(crop, address_only=True)).regions
+        for region in refined:
+            if region.label != "address":
+                raise ValueError("invalid_address_region")
+            x1, y1, x2, y2 = region.bbox
+            regions.append(Region(label="address", bbox=(
+                math.floor((left * 1000 + x1 * (right - left)) / width),
+                math.floor((top * 1000 + y1 * (bottom - top)) / height),
+                math.ceil((left * 1000 + x2 * (right - left)) / width),
+                math.ceil((top * 1000 + y2 * (bottom - top)) / height),
+            )))
+        regions = Regions(regions=list({(region.label, region.bbox): region for region in regions}.values())).regions
     output = await asyncio.to_thread(_mask, image, regions)
-    height, width = image.shape[:2]
     return output, {
         "contentType": "image/png", "sha256": sha256(output).hexdigest(), "byteSize": len(output),
         "width": width, "height": height, "sensitiveRegions": [region.model_dump(mode="json") for region in regions],

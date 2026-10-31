@@ -37,6 +37,7 @@ public sealed record ItemInput(
 
 public sealed record CreateItemRequest([Required] ItemInput Content, [Required] CustodyInput Custody);
 public sealed record UpdateItemRequest([Range(1, long.MaxValue)] long RowVersion, [Required] ItemInput Content);
+public sealed record DeleteItemRequest([Range(1, long.MaxValue)] long RowVersion);
 public sealed record PublicationRequest([Range(1, long.MaxValue)] long RowVersion,
     [Required, RegularExpression("^(published|hidden)$")] string State);
 
@@ -46,7 +47,7 @@ public sealed record ImageSummary(Guid Id, short Position, long ContentVersion, 
 public sealed record ItemResponse(Guid Id, string Title, string PublicDescription, string FoundArea,
     string FoundTimePrecision, DateOnly? FoundOn, DateTimeOffset? FoundFrom, DateTimeOffset? FoundUntil,
     string FoundTimezone, CustodyResponse Custody, string Lifecycle, string PublicationState,
-    long RowVersion, long DocumentVersion, DateTimeOffset CreatedAt, IReadOnlyList<ImageSummary> Images);
+    long RowVersion, long DocumentVersion, DateTimeOffset CreatedAt, IReadOnlyList<ImageSummary> Images, bool CanClaim, bool CanDelete);
 public sealed record QuestionResponse(short Slot, string QuestionText);
 public sealed record QuestionSetResponse(long ContentVersion, IReadOnlyList<QuestionResponse> Questions);
 

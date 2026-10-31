@@ -58,26 +58,30 @@ static class CrossServiceChecks
             Check(text.Items.Count == 1 && text.Items[0].Item.Id == item.Id, "real Python text candidate passes .NET provenance checks");
             Check(image.Items.Count == 1 && image.Items[0].Item.Id == item.Id && image.Items[0].Item.Images.Count == 2,
                 "real image vectors retrieve the public item with two approved source versions");
-            Check((await InScope(services => Search(services).TextAsync(new SearchRequest("ví", "Wrong campus"), default))).Items.Count == 0,
+            Check(!text.Items[0].Item.CanClaim && !image.Items[0].Item.CanClaim,
+                "search results do not allow the poster to claim their own item");
+            Check((await InScope(services => Search(services).TextAsync(actor, new SearchRequest("ví", "Wrong campus"), default))).Items.Count == 0,
                 "cross-service area filters stay strict");
-            foreach (var source in images)
-                await InScope(services => Images(services).RetireAsync(actor, Guid.NewGuid(), item.Id, source.Id,
-                    new RetireImageRequest(source.ContentVersion), default));
+            await InScope(services => Images(services).RetireAsync(actor, Guid.NewGuid(), item.Id, images[0].Id,
+                new RetireImageRequest(images[0].ContentVersion), default));
+            item = await Current();
+            Check(item.PublicationState == "published" && item.Images.Count == 1, "removing one of two approved images keeps the item public");
+            await Flush(item.Id, item.DocumentVersion);
+            Check((await Text()).Items.Count == 1 && (await Image()).Items.Count == 1,
+                "replacement snapshot retains text and the remaining approved image");
+            await InScope(services => Images(services).RetireAsync(actor, Guid.NewGuid(), item.Id, images[1].Id,
+                new RetireImageRequest(images[1].ContentVersion), default));
             Check((await Image()).Items.Count == 0, ".NET removes stale image hits before worker catches up");
             item = await Current();
-            await Flush(item.Id, item.DocumentVersion);
-            Check((await Image()).Items.Count == 0 && (await Text()).Items.Count == 1,
-                "full replacement snapshot removes retired image sources and retains public text");
-            item = await InScope(services => services.GetRequiredService<IItemService>().PublishAsync(actor, Guid.NewGuid(), item.Id,
-                new PublicationRequest(item.RowVersion, "hidden"), default));
+            Check(item.PublicationState == "hidden" && item.Images.Count == 0, "removing the last approved image hides the item");
             await Flush(item.Id, item.DocumentVersion);
             Check((await Text()).Items.Count == 0 && (await Image()).Items.Count == 0,
-                "committed tombstone removes text and image matches across the real service boundary");
+                "last-image retirement commits a tombstone removing text and image matches across the real service boundary");
             Console.WriteLine("PASS: .NET -> RabbitMQ -> Python -> Ollama test double -> processed-output R2 double; review, full multi-image manifest, search provenance, retirement and tombstone");
 
             Task<ItemResponse> Current() => InScope(services => services.GetRequiredService<IItemService>().GetAsync(actor, item.Id, default));
-            Task<SearchResponse> Text() => InScope(services => Search(services).TextAsync(new SearchRequest("ví da phòng E.205", "Bridge-only Campus"), default));
-            Task<SearchResponse> Image() => InScope(services => Search(services).ImageAsync(new ImageSearchFilter { Area = "Bridge-only Campus" },
+            Task<SearchResponse> Text() => InScope(services => Search(services).TextAsync(actor, new SearchRequest("ví da phòng E.205", "Bridge-only Campus"), default));
+            Task<SearchResponse> Image() => InScope(services => Search(services).ImageAsync(actor, new ImageSearchFilter { Area = "Bridge-only Campus" },
                 "image/png", new MemoryStream(raw, writable: false), raw.Length, default));
         }
         finally
@@ -95,7 +99,8 @@ static class CrossServiceChecks
         }
         ImageService Images(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(),
             services.GetRequiredService<RecoveryWorkflow>(), gateway, storage, configuration);
-        SearchService Search(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(), gateway, configuration);
+        SearchService Search(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(), gateway, configuration,
+            services.GetRequiredService<RecoveryWorkflow>());
         async Task<T> InScope<T>(Func<IServiceProvider, Task<T>> operation)
         {
             using var scope = scopes.CreateScope();

@@ -37,6 +37,7 @@ static class RecoveryChecks
         var body = CreateBody();
         var key = Guid.NewGuid();
         var item = await Send(owner, HttpMethod.Post, "/api/items", body, 201, key);
+        Check(!item.GetProperty("canClaim").GetBoolean(), "draft item cannot be claimed");
         var itemId = Id(item);
         var pathItem = $"/api/items/{itemId}";
         var replay = await Send(owner, HttpMethod.Post, "/api/items", body, 201, key);
@@ -49,6 +50,17 @@ static class RecoveryChecks
         await Send(owner, HttpMethod.Post, "/api/items", new { content = Content(), custody = new { kind = "external", name = "Desk" } }, 400);
         await Send(owner, HttpMethod.Post, "/api/items", new { content = Content(), custody = new { kind = "point", pointId = point, confirmedPhysicalReceipt = true } }, 403);
         await Send(owner, HttpMethod.Post, "/api/items", CreateBody("   "), 400);
+        await Send(owner, HttpMethod.Post, "/api/items", new
+        {
+            content = new { title = "Missing description", foundArea = "Campus", foundTimePrecision = "unknown" },
+            custody = new { kind = "person" }
+        }, 400);
+        foreach (var description in new string?[] { null, "", "   " })
+            await Send(owner, HttpMethod.Post, "/api/items", new
+            {
+                content = new { title = "Missing description", publicDescription = description, foundArea = "Campus", foundTimePrecision = "unknown" },
+                custody = new { kind = "person" }
+            }, 400);
         await Send(owner, HttpMethod.Post, "/api/items", new { content = Content(questions: ["1", "2", "3", "4"]), custody = new { kind = "person" } }, 400);
         await Send(owner, HttpMethod.Post, "/api/items", new { content = Content(questions: [null!]), custody = new { kind = "person" } }, 400);
         foreach (var time in new object[] {
@@ -58,6 +70,10 @@ static class RecoveryChecks
         }) await Send(owner, HttpMethod.Post, "/api/items", new { content = time, custody = new { kind = "person" } }, 400);
         await Send(outsider, HttpMethod.Get, pathItem, null, 404);
         item = await Publish(owner, item);
+        Check(!item.GetProperty("canClaim").GetBoolean()
+            && (await Get(claimant, pathItem)).GetProperty("canClaim").GetBoolean(), "claim eligibility is specific to the viewer");
+        Check((await Get(claimant, "/api/items")).GetProperty("items")[0].GetProperty("canClaim").GetBoolean()
+            && !(await Get(owner, "/api/items")).GetProperty("items")[0].GetProperty("canClaim").GetBoolean(), "item lists preserve viewer claim eligibility");
         Check((await Get(claimant, pathItem)).GetProperty("custody").GetProperty("kind").GetString() == "person", "public person custody");
         var questionSet = await Get(claimant, pathItem + "/verification-questions");
         var contentVersion = questionSet.GetProperty("contentVersion").GetInt64();
@@ -157,6 +173,7 @@ static class RecoveryChecks
         await Send(staff, HttpMethod.Post, $"/api/intake-requests/{Id(intake)}/decision", receiveBody, 200, receiveKey);
         await Send(staff, HttpMethod.Post, $"/api/intake-requests/{Id(intake)}/decision", receiveBody, 200, receiveKey);
         item = await Get(staff, pathItem);
+        Check(!item.GetProperty("canClaim").GetBoolean(), "items at a reception point cannot be claimed online");
         Check(item.GetProperty("custody").GetProperty("pointId").GetGuid() == point, "physical receipt changes to the assigned point");
         Check(!(await Get(claimant, $"/api/conversations/{claimId}")).GetProperty("canSend").GetBoolean(), "old conversation becomes read-only");
         await Get(owner, messagePath);
@@ -176,6 +193,7 @@ static class RecoveryChecks
 
         var external = await Publish(owner, await Send(owner, HttpMethod.Post, "/api/items", new
         { content = Content("External item"), custody = new { kind = "external", name = "Library", address = "Public library desk", instructions = "Ask reception" } }, 201));
+        Check(!(await Get(claimant, $"/api/items/{Id(external)}")).GetProperty("canClaim").GetBoolean(), "external items cannot be claimed online");
         Check((await Get(outsider, $"/api/items/{Id(external)}")).GetProperty("custody").GetProperty("publicAddress").GetString() == "Public library desk", "external location has public directions");
         await Send(claimant, HttpMethod.Post, $"/api/items/{Id(external)}/claims", new { contentVersion = 1 }, 409);
         await Send(owner, HttpMethod.Post, $"/api/items/{Id(external)}/return", new { rowVersion = Version(external), confirmedPhysicalHandover = true }, 201);
@@ -262,6 +280,28 @@ static class RecoveryChecks
                 && payloads.All(value => !value.Contains("holderUserId")), "private custody audit preserves holder identity without exposing it in public search projection");
             Check(await db.IdempotencyKeys.CountAsync(value => value.ActorUserId == ownerId && value.IdempotencyKeyValue == key) == 1, "idempotency row committed once");
         }
+        var differentHolderItem = new Item { PostedBy = ownerId, HolderUserId = staffId, Title = "Different author and holder",
+            PublicDescription = "Black wallet", FoundArea = "Campus", PublicationState = "published" };
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+            db.Items.Add(differentHolderItem);
+            await db.SaveChangesAsync();
+        }
+        var differentHolderClaims = $"/api/items/{differentHolderItem.Id}/claims";
+        Check(!(await Get(owner, $"/api/items/{differentHolderItem.Id}")).GetProperty("canClaim").GetBoolean()
+            && !(await Get(staff, $"/api/items/{differentHolderItem.Id}")).GetProperty("canClaim").GetBoolean()
+            && (await Get(outsider, $"/api/items/{differentHolderItem.Id}")).GetProperty("canClaim").GetBoolean(),
+            "both author and holder are excluded while unrelated viewers can claim");
+        await Send(owner, HttpMethod.Post, differentHolderClaims, new { contentVersion = 1 }, 400);
+        await Send(staff, HttpMethod.Post, differentHolderClaims, new { contentVersion = 1 }, 400);
+        await Send(outsider, HttpMethod.Post, differentHolderClaims, new { contentVersion = 1 }, 201);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+            await db.Items.Where(value => value.Id == differentHolderItem.Id).ExecuteUpdateAsync(update => update.SetProperty(value => value.Lifecycle, "returned"));
+        }
+        Check(!(await Get(staff, $"/api/items/{differentHolderItem.Id}")).GetProperty("canClaim").GetBoolean(), "returned personal-custody items cannot be claimed");
         Console.WriteLine($"PASS: {checks} recovery API checks (HTTP, authorization, validation, concurrency, replay and privacy)");
 
         async Task<HttpClient> User(string subject)
@@ -273,14 +313,18 @@ static class RecoveryChecks
             browser.DefaultRequestHeaders.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
             return browser;
         }
+        async Task<JsonElement> Publish(HttpClient browser, JsonElement value)
+        {
+            await PublicationImageFixture.EnsureAsync(factory, Id(value));
+            return await Send(browser, HttpMethod.Put, $"/api/items/{Id(value)}/publication",
+                new { rowVersion = Version(value), state = "published" }, 200);
+        }
     }
     static object Content(string title = "API wallet", string[]? questions = null) => new
     { title, publicDescription = "Black wallet with gold zipper", foundArea = "Campus", foundTimePrecision = "date", foundOn = "2026-01-01", verificationQuestions = questions ?? [] };
     static object CreateBody(string title = "API wallet") => new { content = Content(title), custody = new { kind = "person" } };
     static Guid Id(JsonElement value) => value.GetProperty("id").GetGuid();
     static long Version(JsonElement value) => value.GetProperty("rowVersion").GetInt64();
-    static Task<JsonElement> Publish(HttpClient client, JsonElement item) => Send(client, HttpMethod.Put,
-        $"/api/items/{Id(item)}/publication", new { rowVersion = Version(item), state = "published" }, 200);
     static Task<JsonElement> Get(HttpClient client, string path) => Send(client, HttpMethod.Get, path, null, 200);
     static async Task<(int Status, JsonElement Body)> Raw(HttpClient client, HttpMethod method, string path, object? body, Guid? key = null)
     {

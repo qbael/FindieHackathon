@@ -31,7 +31,7 @@ static class ImageSearchChecks
         using var seeker = await User("image-seeker");
         var item = await Send(owner, HttpMethod.Post, "/api/items", Create("Image test"), 201);
         var itemId = item.GetProperty("id").GetGuid();
-        item = await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = 1, state = "published" }, 200);
+        await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = 1, state = "published" }, 409);
         var imagesPath = $"/api/items/{itemId}/images";
         var original = Encoding.UTF8.GetBytes("PRIVATE ORIGINAL INPUT - MUST NEVER ENTER STORAGE");
         byte[]? lastInput = null;
@@ -69,10 +69,15 @@ static class ImageSearchChecks
             Check(content.StatusCode == HttpStatusCode.OK && (await content.Content.ReadAsByteArrayAsync()).SequenceEqual(Output), "review preview contains only processed bytes");
             Check(content.Headers.CacheControl?.NoStore == true, "private output responses prohibit caching");
         }
-        Check((await Get(seeker, $"/api/items/{itemId}")).GetProperty("images").GetArrayLength() == 0, "pending output is excluded from public DTO");
+        Check((await Get(owner, $"/api/items/{itemId}")).GetProperty("images").GetArrayLength() == 0, "pending output is excluded from the item DTO");
+        await Send(seeker, HttpMethod.Get, $"/api/items/{itemId}", null, 404);
+        item = await Get(owner, $"/api/items/{itemId}");
+        await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 409);
         await Send(seeker, HttpMethod.Post, reviewPath, new { contentVersion = 1, decision = "approved" }, 403);
         await Send(owner, HttpMethod.Post, reviewPath, new { contentVersion = 2, decision = "approved" }, 409);
         await Send(owner, HttpMethod.Post, reviewPath, new { contentVersion = 1, decision = "approved" }, 200);
+        item = await Get(owner, $"/api/items/{itemId}");
+        item = await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
         Check((await Get(seeker, $"/api/items/{itemId}")).GetProperty("images").GetArrayLength() == 1, "approved output becomes public");
         using (var content = await seeker.GetAsync(contentPath)) Check(content.IsSuccessStatusCode, "approved public output is readable");
         storage.CorruptRead = true;
@@ -113,6 +118,7 @@ static class ImageSearchChecks
         ai.Handler = ImageReply;
 
         var second = await Send(owner, HttpMethod.Post, "/api/items", Create("Second searchable item"), 201);
+        await PublicationImageFixture.EnsureAsync(factory, second.GetProperty("id").GetGuid());
         second = await Send(owner, HttpMethod.Put, $"/api/items/{second.GetProperty("id").GetGuid()}/publication", new { rowVersion = 1, state = "published" }, 200);
         var secondId = second.GetProperty("id").GetGuid();
         var firstCandidate = await Candidate(itemId, false);
@@ -159,10 +165,23 @@ static class ImageSearchChecks
         await staleRead;
         storage.OnRead = null;
         await Send(seeker, HttpMethod.Get, contentPath, null, 404);
+        item = await Get(owner, $"/api/items/{itemId}");
+        Check(item.GetProperty("publicationState").GetString() == "hidden", "rejecting the last public image hides the item");
+        await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 409);
         results = await Binary(seeker, "/api/search/image", original, "image/png", 200);
         Check(results.GetProperty("items").GetArrayLength() == 0, "revoked image review invalidates old search sources");
         await Send(owner, HttpMethod.Post, $"{imagesPath}/{imageId}/retire", new { contentVersion = 1 }, 200);
         await Send(owner, HttpMethod.Get, contentPath, null, 404);
+        ai.Handler = ImageReply;
+        var replacement = await Binary(owner, imagesPath, original, "image/png", 201);
+        var replacementId = replacement.GetProperty("id").GetGuid();
+        await Send(owner, HttpMethod.Post, $"{imagesPath}/{replacementId}/review", new { contentVersion = 1, decision = "approved" }, 200);
+        item = await Get(owner, $"/api/items/{itemId}");
+        Check(item.GetProperty("publicationState").GetString() == "hidden", "approving a replacement does not automatically republish the item");
+        item = await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
+        await Send(owner, HttpMethod.Post, $"{imagesPath}/{replacementId}/retire", new { contentVersion = 1 }, 200);
+        Check((await Get(owner, $"/api/items/{itemId}")).GetProperty("publicationState").GetString() == "hidden", "retiring the last public image hides the item");
+        await Send(seeker, HttpMethod.Get, $"/api/items/{itemId}", null, 404);
 
         using (var scope = factory.Services.CreateScope())
         {
@@ -178,8 +197,68 @@ static class ImageSearchChecks
         while (await maintenance.CleanupOneAsync(default)) { }
         Check(storage.Objects.Count == 0, "retired and abandoned outputs are cleaned without original payloads");
         await CheckOutbox(maintenance);
+        await CheckUploadLimit();
         Console.WriteLine($"PASS: {checks} image/search/outbox checks (output-only storage, review, stale results, bounded retry and cleanup)");
 
+        async Task CheckUploadLimit()
+        {
+            using var browser = await User("image-limit-owner");
+            var actor = (await Get(browser, "/api/users/me")).GetProperty("id").GetGuid();
+            var limitedItem = await Send(browser, HttpMethod.Post, "/api/items", Create("Three image limit"), 201);
+            var limitedId = limitedItem.GetProperty("id").GetGuid();
+            var path = $"/api/items/{limitedId}/images";
+            var firstKey = Guid.NewGuid();
+            var uploaded = new List<JsonElement>();
+            ai.Handler = ImageReply;
+            for (short position = 1; position <= 3; position++)
+                uploaded.Add(await Binary(browser, path + $"?position={position}", original, "image/png", 201,
+                    position == 1 ? firstKey : null));
+            Check(uploaded.Select(value => value.GetProperty("position").GetInt16()).SequenceEqual(new short[] { 1, 2, 3 }),
+                "uploads accept and preserve positions one through three");
+            var callsBefore = ai.Calls;
+            var putsBefore = storage.Puts;
+            var legacyKey = Guid.NewGuid();
+            await Binary(browser, path + "?position=4", original, "image/png", 400);
+            using (var scope = factory.Services.CreateScope())
+            {
+                using var input = new MemoryStream(original, writable: false);
+                try
+                {
+                    await scope.ServiceProvider.GetRequiredService<IImageService>().UploadAsync(actor, Guid.NewGuid(), limitedId, 4,
+                        "image/png", input, original.Length, default);
+                    throw new InvalidOperationException("Invalid image position should fail.");
+                }
+                catch (ApiException error) when (error.StatusCode == 400) { Check(true, "service validates upload positions independently of HTTP binding"); }
+                var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+                foreach (var legacy in await db.ItemImages.Where(value => value.ItemId == limitedId && value.Position > 1).ToListAsync())
+                    legacy.Position += 2;
+                var operation = $"image.upload:{limitedId}";
+                db.IdempotencyKeys.Add(new IdempotencyKey { ActorUserId = actor, IdempotencyKeyValue = legacyKey,
+                    Operation = operation, ResourceType = "image", ResourceId = uploaded[1].GetProperty("id").GetGuid(), ResponseStatus = 201,
+                    RequestSha256 = RecoveryWorkflow.RequestHash(operation,
+                        new { position = (short)4, mime = "image/png", sha256 = RecoveryWorkflow.Hash(original), length = original.Length }) });
+                await db.SaveChangesAsync();
+            }
+            var legacyReplay = await Binary(browser, path + "?position=4", original, "image/png", 201, legacyKey);
+            Check(legacyReplay.GetProperty("id").GetGuid() == uploaded[1].GetProperty("id").GetGuid()
+                && legacyReplay.GetProperty("position").GetInt16() == 4 && ai.Calls == callsBefore && storage.Puts == putsBefore,
+                "historical upload key at position four replays over HTTP without new AI or storage writes");
+            await Binary(browser, path + "?position=4", original, "image/png", 400);
+            await Binary(browser, path + "?position=2", original, "image/png", 409);
+            var replay = await Binary(browser, path, original, "image/png", 201, firstKey);
+            Check(replay.GetProperty("id").GetGuid() == uploaded[0].GetProperty("id").GetGuid()
+                && ai.Calls == callsBefore && storage.Puts == putsBefore,
+                "fourth uploads and legacy capacity are rejected before AI/storage while replay at capacity succeeds");
+            await Send(browser, HttpMethod.Post, $"{path}/{uploaded[1].GetProperty("id").GetGuid()}/retire", new { contentVersion = 1 }, 200);
+            await Binary(browser, path + "?position=2", original, "image/png", 201);
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+                Check(await db.ItemImages.CountAsync(value => value.ItemId == limitedId && value.RetiredAt == null) == 3
+                    && await db.ItemImages.AnyAsync(value => value.ItemId == limitedId && value.Position == 5 && value.RetiredAt == null),
+                    "retiring one legacy image permits replacement without removing another legacy image or exceeding three active images");
+            }
+        }
         async Task CheckMultipartSearch()
         {
             using var validation = await User("multipart-validation");
@@ -280,6 +359,11 @@ static class ImageSearchChecks
         }
         async Task CheckOutbox(RecoveryMaintenance worker)
         {
+            ai.Handler = ImageReply;
+            var liveImage = await Binary(owner, imagesPath, original, "image/png", 201);
+            await Send(owner, HttpMethod.Post, $"{imagesPath}/{liveImage.GetProperty("id").GetGuid()}/review", new { contentVersion = 1, decision = "approved" }, 200);
+            var liveItem = await Get(owner, $"/api/items/{itemId}");
+            await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = liveItem.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
             await db.IndexOutbox.Where(value => value.Status == "pending" || value.Status == "retry").ExecuteUpdateAsync(update => update
@@ -374,6 +458,8 @@ static class ImageSearchChecks
         {
             lastInput = command.Body;
             Check(command.Kind == "image.redact" && !command.Persistent && command.Body.SequenceEqual(original), "original is sent only via transient AI request");
+            var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
+            Check(remaining.TotalSeconds is > 295 and <= 300, "redaction gets a five-minute processing deadline");
             return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(ImageMetadata(command)), Output.ToArray()));
         }
     }

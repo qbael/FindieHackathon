@@ -7,6 +7,16 @@ Upload và truy vấn một ảnh nhận **body nhị phân**; tìm nhiều ản
 URL ảnh hoặc đường dẫn file từ client. .NET đọc trực tiếp stream vào RAM tối đa **10 MiB/ảnh**,
 không dùng `IFormFile` hoặc ghi tệp tạm. Python chịu trách nhiệm giải mã/kiểm ảnh thực.
 
+Web chuẩn bị ảnh trước cả upload, tìm một ảnh và tìm nhiều ảnh: kiểm MIME/signature
+JPEG/PNG/WebP, giới hạn file gốc 10 MiB, từ chối PNG/WebP động và ảnh vượt 10000 px
+mỗi chiều hoặc 40 triệu pixel. Trình duyệt đọc hướng EXIF, tạo bản JPEG quality 0.92
+trên nền trắng, thu cạnh dài về tối đa 1600 px, giữ tỷ lệ, không phóng lớn/cắt ảnh
+hoặc làm nét/khử nhiễu. Nếu ảnh đã trong giới hạn 1600 px và bản JPEG không nhỏ hơn
+file gốc thì gửi file gốc; ảnh cần thu nhỏ luôn gửi bản đã thu nhỏ. Cùng đối tượng
+`File` dùng lại cùng bytes đã chuẩn bị khi retry upload để giữ idempotency.
+Hợp đồng API trực tiếp không thay đổi; server luôn kiểm lại ảnh.
+Nén JPEG có thể làm mất chi tiết chữ nhỏ; chưa có benchmark chứng minh tăng độ chính xác.
+
 Phần .NET có adapter AMQP/R2; worker Python hỗ trợ text, che/chuẩn hóa ảnh và tìm ảnh native qua Ollama theo [hướng dẫn](../guides/ai-service.md). Cần cấu hình broker, private bucket và model/revision có capability phù hợp. Chưa có worker trả kết quả thì báo **503**,
 không giả lập kết quả hoặc lưu original. Xem [cấu hình local](../guides/development.md).
 
@@ -36,7 +46,11 @@ Người xem thông thường lấy ảnh được duyệt từ `GET /api/items/
 
 Quyền quản lý như trên, item còn active. Header:
 `Content-Type: image/jpeg|image/png|image/webp`, `X-CSRF-TOKEN`, `Idempotency-Key`.
-Query `position=1..5`, mặc định 1; mỗi vị trí có tối đa một ảnh chưa gỡ.
+Query `position=1..3`, mặc định 1; mỗi tin có tối đa 3 ảnh chưa gỡ và mỗi vị trí
+có tối đa một ảnh chưa gỡ. Ảnh cũ ở vị trí 4/5 được giữ nguyên và vẫn tính vào giới hạn;
+cần gỡ ảnh để còn dưới 3 ảnh trước khi tải thêm.
+Chỉ phát lại đúng khóa/input của upload cũ ở vị trí 4/5 được trả **201**;
+không chấp nhận upload mới ở các vị trí đó.
 
 ```sh
 curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' -H 'Idempotency-Key: <uuid>' \
@@ -46,7 +60,7 @@ curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' -H 'Idempotency-Key: <uuid>' \
 
 Response **201** `ImageResponse`, `Location` trỏ content. Các bước:
 
-1. Kiểm quyền/byte, hash input trong RAM và gửi `image.redact` tạm qua AMQP.
+1. Kiểm quyền/byte, hash input trong RAM và gửi `image.redact` tạm qua AMQP, chờ tối đa 5 phút.
 2. Kiểm schema, source ID/version/hash, model/revision/profile, MIME signature, số byte,
    hash output, dimensions (tối đa 10000 mỗi chiều và 40 triệu pixel). .NET không decode ảnh.
 3. Chỉ sau output hợp lệ mới ghi reservation loại `processed`, upload output vào R2
@@ -54,7 +68,8 @@ Response **201** `ImageResponse`, `Location` trỏ content. Các bước:
 4. Nếu item/quyền đã thay đổi trong khi xử lý, không gắn output cũ. Reservation hết hạn
    sau một giờ để cleanup. Dữ liệu gốc bị bỏ khi hoàn tất/lỗi/hủy.
 
-Sai MIME **415**, body rỗng **400**, quá 10 MiB **413**, vị trí/version đã đổi hoặc đã trả
+Sai MIME **415**, body rỗng hoặc vị trí ngoài 1..3 **400**, quá 10 MiB **413**,
+đã đủ 3 ảnh chưa gỡ, vị trí/version đã đổi hoặc đã trả
 **409**, sai quyền **403**, output sai hợp đồng **502**, AI/broker/R2 chưa sẵn sàng **503**.
 Không có output hợp lệ thì không tạo object/reservation. Lỗi upload R2 có thể để lại
 reservation output để dọn; không để lại image đã gắn hoặc báo đăng ảnh thành công.
@@ -67,6 +82,8 @@ Yêu cầu CSRF và idempotency; quyền quản lý hiện tại. Response **200
 Chỉ review output validated ở `needs_review|ready`, đúng version và item active.
 Approved → `ready`; rejected → `rejected`. Có thể từ chối output từng được duyệt để
 thu hồi công khai. Từ chối rồi muốn dùng ảnh khác thì gỡ ảnh và upload lại.
+Nếu từ chối ảnh công khai cuối cùng, tin tự chuyển sang `hidden`. Duyệt ảnh thay thế
+không tự công khai lại; người quản lý cần xuất bản lại tin.
 Ghi reviewer/time phía server, tăng row/document version và snapshot/tombstone nguyên tử.
 Sai quyền **403**, ảnh không thuộc món **404**, version cũ/đã gỡ/trạng thái sai **409**.
 
@@ -75,6 +92,8 @@ Sai quyền **403**, ảnh không thuộc món **404**, version cũ/đã gỡ/tr
 Body `{"contentVersion":1}`, CSRF và idempotency. Response **200** `ImageResponse`.
 Quyền quản lý hiện tại. Ghi retiredAt, tăng source version, bỏ liên kết object, đánh dấu
 output `delete_pending`, cập nhật outbox cùng transaction. Không xóa lịch sử món đồ.
+Gỡ ảnh công khai cuối cùng tự chuyển tin sang `hidden` và ghi tombstone cùng transaction;
+gỡ một ảnh khi vẫn còn ảnh công khai khác giữ nguyên trạng thái xuất bản.
 Version sai/đã gỡ **409**, sai quyền **403**, ảnh không thuộc món **404**.
 Cleanup xóa R2 sau commit; lỗi được retry tối đa 5 lần, sau đó cần vận hành xử lý.
 

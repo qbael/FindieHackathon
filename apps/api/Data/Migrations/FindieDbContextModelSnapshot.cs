@@ -868,7 +868,7 @@ namespace Findie.Api.Data.Migrations
 
                             t.HasCheckConstraint("items_found_time_check", "(found_time_precision = 'unknown' AND found_on IS NULL AND found_from IS NULL AND found_until IS NULL) OR\n(found_time_precision = 'date' AND found_on IS NOT NULL AND found_from IS NULL AND found_until IS NULL) OR\n(found_time_precision = 'exact' AND found_on IS NULL AND found_from IS NOT NULL AND found_until IS NULL) OR\n(found_time_precision = 'range' AND found_on IS NULL AND found_from IS NOT NULL AND found_until IS NOT NULL AND found_from <= found_until)");
 
-                            t.HasCheckConstraint("items_lifecycle_check", "lifecycle IN ('active', 'returned')");
+                            t.HasCheckConstraint("items_lifecycle_check", "lifecycle IN ('active', 'returned', 'deleted')");
 
                             t.HasCheckConstraint("items_publication_check", "publication_state IN ('draft', 'published', 'hidden')");
 

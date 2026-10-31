@@ -2,7 +2,15 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
+from findie_ai.config import Settings
 from findie_ai.main import app
+
+
+def test_redaction_defaults_select_the_instruct_model(monkeypatch):
+    monkeypatch.setenv("AI_SERVICE_TOKEN", "test")
+    monkeypatch.delenv("AI_REDACTION_MODEL", raising=False)
+    assert Settings(service_token="test").redaction_model == "qwen3-vl:4b-instruct"
+    assert Settings.from_env().redaction_model == "qwen3-vl:4b-instruct"
 
 
 def test_unconfigured_internal_status_requires_secret_and_reports_not_ready(monkeypatch):
@@ -18,6 +26,7 @@ def test_unconfigured_internal_status_requires_secret_and_reports_not_ready(monk
         assert response.json()["inferenceReady"] is False
         assert response.json()["embeddingDimensions"] == 2048
         assert response.json()["execution"] == "ollama"
+        assert response.json()["redactionProfileId"] == "redact-v3"
         assert response.json()["capabilities"]["imageSearch"] is False
         assert response.json()["capabilities"]["imageRedaction"] is False
         assert client.get("/health/ready", headers=headers).status_code == 503

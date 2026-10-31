@@ -22,6 +22,12 @@ public sealed class ItemsController(IItemService items, IClaimService claims, II
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ItemResponse>> Update(Guid id, UpdateItemRequest request, CancellationToken ct) =>
         Ok(await items.UpdateAsync(Actor, RequestKey, id, request, ct));
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, [FromBody] DeleteItemRequest request, CancellationToken ct)
+    {
+        await items.DeleteAsync(Actor, RequestKey, id, request, ct);
+        return NoContent();
+    }
     [HttpPut("{id:guid}/publication")]
     public async Task<ActionResult<ItemResponse>> Publish(Guid id, PublicationRequest request, CancellationToken ct) =>
         Ok(await items.PublishAsync(Actor, RequestKey, id, request, ct));

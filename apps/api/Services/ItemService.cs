@@ -11,6 +11,7 @@ public interface IItemService
     Task<QuestionSetResponse> QuestionsAsync(Guid actor, Guid id, CancellationToken ct);
     Task<ItemResponse> CreateAsync(Guid actor, Guid key, CreateItemRequest request, CancellationToken ct);
     Task<ItemResponse> UpdateAsync(Guid actor, Guid key, Guid id, UpdateItemRequest request, CancellationToken ct);
+    Task DeleteAsync(Guid actor, Guid key, Guid id, DeleteItemRequest request, CancellationToken ct);
     Task<ItemResponse> PublishAsync(Guid actor, Guid key, Guid id, PublicationRequest request, CancellationToken ct);
     Task<CustodyEventResponse> ReturnAsync(Guid actor, Guid key, Guid id, ReturnItemRequest request, CancellationToken ct);
     Task<PageResponse<CustodyEventResponse>> EventsAsync(Guid actor, Guid id, int page, int size, CancellationToken ct);
@@ -25,13 +26,15 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
         filter.Q = RecoveryWorkflow.Optional(filter.Q);
         filter.Area = RecoveryWorkflow.Optional(filter.Area);
         var items = await repository.ItemsAsync(actor, filter, ct);
-        return RecoveryWorkflow.Page(items.Select(RecoveryWorkflow.Response).ToList(), filter.Page, filter.PageSize);
+        var responses = new List<ItemResponse>();
+        foreach (var item in items) responses.Add(await workflow.ResponseAsync(item, actor, ct));
+        return RecoveryWorkflow.Page(responses, filter.Page, filter.PageSize);
     }
     public async Task<ItemResponse> GetAsync(Guid actor, Guid id, CancellationToken ct)
     {
         var item = await workflow.ItemAsync(id, false, ct);
         await workflow.RequireReadAsync(item, actor, ct);
-        return RecoveryWorkflow.Response(item);
+        return await workflow.ResponseAsync(item, actor, ct);
     }
     public async Task<QuestionSetResponse> QuestionsAsync(Guid actor, Guid id, CancellationToken ct)
     {
@@ -99,6 +102,18 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
         }, ct);
         return await GetAsync(actor, id, ct);
     }
+    public async Task DeleteAsync(Guid actor, Guid key, Guid id, DeleteItemRequest request, CancellationToken ct)
+    {
+        await workflow.WriteAsync(actor, key, $"item.delete:{id}", request, "item", 204, async () =>
+        {
+            var item = await workflow.ItemAsync(id, true, ct);
+            await workflow.RequireManagerAsync(item, actor, ct);
+            RecoveryWorkflow.RequireVersion(item, request.RowVersion);
+            item.Lifecycle = "deleted";
+            workflow.Changed(item);
+            return id;
+        }, ct);
+    }
     public async Task<ItemResponse> PublishAsync(Guid actor, Guid key, Guid id, PublicationRequest request, CancellationToken ct)
     {
         await workflow.WriteAsync(actor, key, $"item.publish:{id}", request, "item", 200, async () =>
@@ -107,6 +122,8 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
             await workflow.RequireManagerAsync(item, actor, ct);
             RecoveryWorkflow.RequireActive(item);
             RecoveryWorkflow.RequireVersion(item, request.RowVersion);
+            if (request.State == "published" && !item.Images.Any(RecoveryWorkflow.PublicImage))
+                throw new ApiException(409, "Upload and approve at least one image before publishing this item.");
             if (item.PublicationState != request.State)
             {
                 item.PublicationState = request.State;

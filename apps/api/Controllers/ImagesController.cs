@@ -16,6 +16,7 @@ public sealed class ImagesController(IImageService images) : RecoveryController
     [HttpPost]
     [RequestSizeLimit(BoundedImage.MaxBytes)]
     [EnableRateLimiting("images")]
+    // Legacy slots remain bindable for idempotent replay; the service rejects new uploads outside 1..3.
     public async Task<ActionResult<ImageResponse>> Upload(Guid itemId, [FromQuery, Range(1, 5)] short position = 1, CancellationToken ct = default)
     {
         var result = await images.UploadAsync(Actor, RequestKey, itemId, position, Request.ContentType,

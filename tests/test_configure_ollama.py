@@ -18,7 +18,7 @@ class ConfigTests(unittest.TestCase):
     def config(self):
         return {"OLLAMA_BASE_URL": "https://example.ngrok-free.app", "AI_EMBEDDING_MODEL": "Qwen/Qwen3-VL-Embedding-2B",
                 "AI_EMBEDDING_REVISION": "a" * 64, "AI_EMBEDDING_DIMENSIONS": 2048,
-                "AI_EMBEDDING_QUERY_INSTRUCTION": "", "AI_REDACTION_MODEL": "qwen3-vl:4b",
+                "AI_EMBEDDING_QUERY_INSTRUCTION": "", "AI_REDACTION_MODEL": "qwen3-vl:4b-instruct",
                 "AI_REDACTION_REVISION": "b" * 64, "AI_IMAGE_SEARCH_ENABLED": True,
                 "AI_IMAGE_SEARCH_PROFILE": "image-only-v1"}
 
@@ -50,11 +50,12 @@ class ConfigTests(unittest.TestCase):
                     ("AI_EMBEDDING_MODEL", "Ai__EmbeddingModelId", "Qwen/Qwen3-VL-Embedding-2B"),
                     ("AI_EMBEDDING_REVISION", "Ai__EmbeddingRevision", "a" * 64),
                     ("AI_EMBEDDING_DIMENSIONS", "Ai__EmbeddingDimensions", "2048"),
-                    ("AI_REDACTION_MODEL", "Ai__RedactionModelId", "qwen3-vl:4b"),
+                    ("AI_REDACTION_MODEL", "Ai__RedactionModelId", "qwen3-vl:4b-instruct"),
                     ("AI_REDACTION_REVISION", "Ai__RedactionRevision", "b" * 64)):
                 self.assertEqual(parsed[python_field], expected)
                 self.assertEqual(parsed[api_field], expected)
             self.assertEqual(parsed["AI_EMBEDDING_QUERY_INSTRUCTION"], "")
+            self.assertEqual(parsed["Ai__RedactionProfile"], "redact-v3")
             self.assertEqual(values["AI_TEXT_SEARCH_PROFILE"], values["Ai__TextSearchProfile"])
             self.assertNotIn("custom-profile", path.read_text())
 

@@ -40,7 +40,7 @@ class Settings:
     image_queue: str = "findie.ai.image"
     image_search_enabled: bool = False
     image_search_profile: str = "image-only-v1"
-    redaction_model: str = "qwen3-vl:4b"
+    redaction_model: str = "qwen3-vl:4b-instruct"
     redaction_revision: str = ""
 
     def __post_init__(self):
@@ -92,7 +92,7 @@ class Settings:
             search_profile=os.environ.get("AI_TEXT_SEARCH_PROFILE", "text-description-v1"),
             image_search_enabled=image_search == "true",
             image_search_profile=os.environ.get("AI_IMAGE_SEARCH_PROFILE", "image-only-v1"),
-            redaction_model=os.environ.get("AI_REDACTION_MODEL", "qwen3-vl:4b"),
+            redaction_model=os.environ.get("AI_REDACTION_MODEL", "qwen3-vl:4b-instruct"),
             redaction_revision=os.environ.get("AI_REDACTION_REVISION", ""),
             **{f"{kind}_queue": os.environ.get(f"AI_{kind.upper()}_QUEUE", default)
                for kind, default in (("index", "findie.ai.commands"), ("result", "findie.api.results"),

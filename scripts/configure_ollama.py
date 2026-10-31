@@ -57,7 +57,7 @@ def settings(config, token):
                "Ai__ImageSearchProfile": result["AI_IMAGE_SEARCH_PROFILE"],
                "Ai__RedactionModelId": result["AI_REDACTION_MODEL"],
                "Ai__RedactionRevision": result["AI_REDACTION_REVISION"],
-               "Ai__RedactionProfile": "redact-v1"}
+               "Ai__RedactionProfile": "redact-v3"}
     return result
 
 

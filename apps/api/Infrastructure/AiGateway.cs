@@ -144,7 +144,8 @@ public sealed class RabbitMqGateway(IConfiguration configuration, ILogger<Rabbit
         var waiter = new TaskCompletionSource<AiReply>(TaskCreationOptions.RunContinuationsAsynchronously);
         pending[correlation] = waiter;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        deadline.CancelAfter(TimeSpan.FromSeconds(30));
+        var timeoutSeconds = command.Kind == "image.redact" ? 300 : 30;
+        deadline.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
         try
         {
             await publisher.WaitAsync(deadline.Token);
@@ -164,7 +165,7 @@ public sealed class RabbitMqGateway(IConfiguration configuration, ILogger<Rabbit
                     if (header.Length > 16384 || body.Length > BoundedImage.MaxBytes) throw new ApiException(400, "AI message exceeds configured limits.");
                     var properties = new BasicProperties { CorrelationId = correlation,
                         ReplyTo = command.Persistent ? configuration["RabbitMq:ResultQueue"] ?? "findie.api.results" : replyQueue,
-                        Type = kind, ContentType = contentType, Persistent = command.Persistent, Expiration = "30000",
+                        Type = kind, ContentType = contentType, Persistent = command.Persistent, Expiration = (timeoutSeconds * 1000).ToString(),
                         Headers = new Dictionary<string, object?> { ["metadata"] = header } };
                     await channel.BasicPublishAsync("", route, true, properties, body, deadline.Token);
                 }

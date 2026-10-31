@@ -13,16 +13,16 @@ namespace Findie.Api.Controllers;
 public sealed class SearchController(ISearchService search) : RecoveryController
 {
     [HttpPost]
-    public async Task<ActionResult<SearchResponse>> Text(SearchRequest request, CancellationToken ct) => Ok(await search.TextAsync(request, ct));
+    public async Task<ActionResult<SearchResponse>> Text(SearchRequest request, CancellationToken ct) => Ok(await search.TextAsync(Actor, request, ct));
     [HttpPost("image")]
     [RequestSizeLimit(BoundedImage.MaxBytes)]
     public async Task<ActionResult<SearchResponse>> Image([FromQuery] ImageSearchFilter filter, CancellationToken ct) =>
-        Ok(await search.ImageAsync(filter, Request.ContentType, Request.Body, Request.ContentLength, ct));
+        Ok(await search.ImageAsync(Actor, filter, Request.ContentType, Request.Body, Request.ContentLength, ct));
     [HttpPost("images")]
     [StreamedMultipart]
     [RequestSizeLimit(3 * BoundedImage.MaxBytes + 65536)]
     public async Task<ActionResult<SearchResponse>> Images([FromQuery] ImageSearchFilter filter, CancellationToken ct) =>
-        Ok(await search.ImagesAsync(filter, Request.ContentType, Request.Body, Request.ContentLength, ct));
+        Ok(await search.ImagesAsync(Actor, filter, Request.ContentType, Request.Body, Request.ContentLength, ct));
 }
 
 sealed class StreamedMultipartAttribute : Attribute, IResourceFilter

@@ -8,7 +8,7 @@ import threading
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
@@ -149,8 +149,11 @@ class GatewayTests(unittest.TestCase):
                 self.wfile.write(b'{"model":"redaction","done":true}')
 
         upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
-        proxy = module.gateway(TOKEN, [model, "redaction"], address=("127.0.0.1", 0),
-                               upstream=f"http://127.0.0.1:{upstream.server_port}", embedding=embedding)
+        opener = module.build_opener(module.ProxyHandler({}))
+        opener.open = Mock(wraps=opener.open)
+        with patch.object(module, "build_opener", return_value=opener):
+            proxy = module.gateway(TOKEN, [model, "redaction"], address=("127.0.0.1", 0),
+                                   upstream=f"http://127.0.0.1:{upstream.server_port}", embedding=embedding)
         servers = [upstream, proxy]
         threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
         for thread in threads:
@@ -183,6 +186,7 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(calls, [])
             status, catalog = request("/api/tags")
             self.assertEqual(status, 200)
+            self.assertEqual(opener.open.call_args.kwargs["timeout"], 25)
             self.assertEqual(catalog["models"], [{"name": "redaction", "digest": "a" * 64},
                                                 {"name": model, "digest": "sha256:" + embedding.digest}])
             self.assertEqual(request("/api/show", {"model": model}),
@@ -218,6 +222,7 @@ class GatewayTests(unittest.TestCase):
             worker.join(timeout=3)
             self.assertEqual(result[0][0], 200)
             self.assertEqual(request("/api/generate", {"model": "redaction"})[0], 200)
+            self.assertEqual(opener.open.call_args.kwargs["timeout"], 300)
             self.assertEqual(calls[-1], ("/api/generate", {"model": "redaction"}))
         finally:
             release.set()
@@ -248,8 +253,10 @@ class GatewayTests(unittest.TestCase):
                 self.wfile.write(b'secret upstream prompt/credential')
 
         upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
-        proxy = module.gateway(TOKEN, ["allowed"], address=("127.0.0.1", 0),
-                               upstream=f"http://127.0.0.1:{upstream.server_port}")
+        opener = module.build_opener(module.ProxyHandler({}))
+        with patch.object(module, "build_opener", return_value=opener):
+            proxy = module.gateway(TOKEN, ["allowed"], address=("127.0.0.1", 0),
+                                   upstream=f"http://127.0.0.1:{upstream.server_port}")
         servers = [upstream, proxy]
         threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
         for thread in threads:
@@ -261,10 +268,10 @@ class GatewayTests(unittest.TestCase):
                               headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", **(headers or {})})
                 try:
                     with urlopen(req, timeout=3) as response:
-                        return response.status, json.load(response)
+                        return response.status, json.load(response), response.headers
                 except HTTPError as error:
                     with error:
-                        return error.code, json.load(error)
+                        return error.code, json.load(error), error.headers
 
             self.assertEqual(request("/api/tags", token="bad")[0], 401)
             self.assertEqual(request("/api/pull", {"model": "allowed"})[0], 404)
@@ -273,12 +280,22 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(request("/api/embed", {"model": "allowed", "stream": True})[0], 400)
             self.assertEqual(request("/api/embed", {"model": "allowed"}, headers={"Content-Length": str(module.MAX_REQUEST + 1)})[0], 413)
             self.assertEqual(calls, [])
-            status, body = request("/api/tags")
+            status, body, headers = request("/api/tags")
             self.assertEqual(status, 200)
             self.assertEqual([m["name"] for m in body["models"]], ["allowed"])
-            status, body = request("/api/generate", {"model": "allowed"})
+            self.assertIsNone(headers.get("X-Findie-Inference-Timeout-Seconds"))
+            status, body, headers = request("/api/generate", {"model": "allowed"})
             self.assertEqual(status, 502)
-            self.assertNotIn("secret", json.dumps(body))
+            self.assertEqual(body, {"error": "ollama_http_error", "upstreamStatus": 500})
+            self.assertEqual(headers["X-Findie-Inference-Timeout-Seconds"], "300")
+            for error, expected in ((TimeoutError("secret timeout"), "ollama_timeout"),
+                                    (URLError(TimeoutError("secret timeout")), "ollama_timeout"),
+                                    (URLError("secret upstream failure"), "ollama_unavailable")):
+                with self.subTest(error=type(error)), patch.object(opener, "open", side_effect=error):
+                    status, body, headers = request("/api/generate", {"model": "allowed"})
+                    self.assertEqual(status, 502)
+                    self.assertEqual(body, {"error": expected})
+                    self.assertEqual(headers["X-Findie-Inference-Timeout-Seconds"], "300")
         finally:
             for server in servers:
                 server.shutdown()

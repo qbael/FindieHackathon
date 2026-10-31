@@ -1,6 +1,6 @@
 # API món đồ, yêu cầu, hội thoại và bàn giao
 
-Cập nhật 24/10/2026. Base URL local: `http://127.0.0.1:5080`.
+Cập nhật 30/10/2026. Base URL local: `http://127.0.0.1:5080`.
 Đọc cùng [xác thực Google/cookie](README.md), [ảnh và tìm kiếm](media-search.md),
 [hợp đồng AMQP](amqp.md), [đặc tả và quyết định](../specs/002-recovery-api/spec.md).
 
@@ -9,7 +9,7 @@ Cập nhật 24/10/2026. Base URL local: `http://127.0.0.1:5080`.
 - Tất cả endpoint dưới đây yêu cầu cookie phiên Google còn hiệu lực. Chưa đăng nhập:
   **401**; tài khoản disabled: **403**, kể cả cookie được cấp trước đó.
 - Ghi dữ liệu: lấy `GET /api/auth/csrf`, gửi token trong `X-CSRF-TOKEN` cùng cookie.
-  Các thao tác tạo/sửa/xét duyệt/trao trả yêu cầu thêm `Idempotency-Key: <UUID khác 0>`.
+  Các thao tác tạo/sửa/xóa/xét duyệt/trao trả yêu cầu thêm `Idempotency-Key: <UUID khác 0>`.
   Tin nhắn dùng `clientMessageId` thay header này. Tìm kiếm chỉ yêu cầu CSRF.
 - Khóa được giới hạn theo tài khoản; cùng khóa/thao tác/payload trả lại cùng tài nguyên,
   cùng mã nhưng khác payload/thao tác trả **409**. Rollback không ghi khóa thành công.
@@ -63,8 +63,11 @@ ngữ cảnh ngày (mặc định Asia/Ho_Chi_Minh). Không tự bịa giờ khi
 
 `ItemResponse` gồm `id`, `title`, `publicDescription`, `foundArea`, các trường thời gian,
 `custody`, `lifecycle` (`active|returned`), `publicationState` (`draft|published|hidden`),
-`rowVersion`, `documentVersion`, `createdAt`, `images`. `images` chỉ chứa output được
-duyệt: `{id,position,contentVersion,url}`. Không có email, bằng chứng hoặc object key R2.
+`rowVersion`, `documentVersion`, `createdAt`, `images`, `canClaim`, `canDelete`. `canClaim` phụ thuộc
+người đang xem: chỉ true khi món published/active do cá nhân giữ và người xem không phải
+người đăng hoặc người giữ hiện tại. `images` chỉ chứa output được
+duyệt: `{id,position,contentVersion,url}`. `canDelete` cho biết người xem có quyền quản lý
+hiện tại để xóa bài đăng, kể cả khi món đã trao trả. Không có email, bằng chứng hoặc object key R2.
 
 `custody` gồm `kind`, `displayName` (cá nhân), `pointId`, `name`, `publicAddress`,
 `instructions`; trường không áp dụng là null. Không có địa chỉ nhà người giữ.
@@ -72,7 +75,8 @@ duyệt: `{id,position,contentVersion,url}`. Không có email, bằng chứng ho
 ## GET /api/items — danh sách và bộ lọc cơ bản
 
 Quyền: người đăng nhập; mặc định chỉ `published` và `active`. Response **200**:
-`PageResponse<ItemResponse>`. Không gọi AI, không trả món đã trao trả.
+`PageResponse<ItemResponse>`. Không gọi AI, không trả món đã trao trả ở scope public.
+Bài đã xóa không xuất hiện trong bất kỳ scope nào, kể cả `mine` và `managed`.
 
 | Query | Ý nghĩa |
 | --- | --- |
@@ -91,7 +95,7 @@ Ngày bắt đầu sau ngày kết thúc, from=0001-01-01, until=9999-12-31, sco
 
 Response **200** `ItemResponse`. Người ngoài chỉ đọc món published/active. Người đăng
 hoặc người giữ/nhân viên điểm có quyền hiện tại đọc được phần metadata của tin riêng.
-Không có/không được đọc: **404**. Cá nhân → gửi claim; điểm → đến xác minh tại điểm;
+Không có/đã xóa/không được đọc: **404**. Cá nhân → gửi claim; điểm → đến xác minh tại điểm;
 nơi ngoài hệ thống → làm theo địa chỉ/hướng dẫn. Mở chi tiết không ghi nhận trao trả.
 
 ## POST /api/items — đăng món đồ
@@ -99,7 +103,8 @@ nơi ngoài hệ thống → làm theo địa chỉ/hướng dẫn. Mở chi ti�
 Body: `{ "content": <ItemInput>, "custody": <CustodyInput> }`.
 Response **201**, `Location: /api/items/{id}`, `ItemResponse` ở trạng thái `draft`.
 Lưu item + registered event + outbox tombstone + idempotency trong cùng transaction.
-Có thể giữ metadata độc lập với ảnh để không mất bài đăng khi AI lỗi.
+Có thể lưu metadata thành bản nháp trước khi upload ảnh để không mất nội dung khi AI lỗi.
+Để công khai, tin phải có mô tả hợp lệ và ít nhất một ảnh đã xử lý, được duyệt.
 
 Ba body `custody` được phép:
 
@@ -128,11 +133,31 @@ Người giữ cá nhân, người đăng nơi ngoài hệ thống hoặc nhân 
 hiện tại mới được sửa (**403** nếu thiếu quyền). Không sửa trực tiếp nơi giữ bằng PUT.
 Món đã trả/version cũ **409**. Tăng content/row/document version và ghi outbox nguyên tử.
 
+## DELETE /api/items/{id} — xóa bài đăng nhặt được
+
+Body: `{ "rowVersion": 2 }`. Gửi cookie, `X-CSRF-TOKEN` và `Idempotency-Key` theo
+quy ước ghi dữ liệu. Response **204**, không có body. Cùng key/payload đã thành công
+trả lại **204**; key dùng cho thao tác hoặc payload khác trả **409**.
+
+Quyền như PUT item: người đang giữ cá nhân, người đăng nơi ngoài hệ thống hoặc nhân viên
+`canReceive` tại điểm hiện tại. Người đăng ban đầu không tự có quyền xóa sau khi đã giao
+món vào điểm. Thiếu quyền **403**, không có/đã xóa **404**, `rowVersion` cũ **409**.
+Cho phép xóa cả bài nháp, đang công khai, đang ẩn hoặc đã trao trả.
+
+Đây là xóa mềm: đặt lifecycle `deleted`, tăng row/document version và ghi search
+tombstone cùng idempotency key trong một transaction. Bài biến mất khỏi mọi danh sách
+item, chi tiết và tìm kiếm; không được sửa, công khai lại, đọc ảnh hoặc tiếp tục claim,
+tiếp nhận, trao trả. Claim cũ và intake còn pending được đánh dấu stale; hội thoại cũ chỉ đọc.
+Hai bên hội thoại vẫn đọc được tin nhắn theo quyền đã có. Bản ghi item, ảnh, yêu cầu,
+tin nhắn và lịch sử custody được giữ trong hệ thống; thao tác này không xóa toàn bộ dữ liệu.
+
 ## PUT /api/items/{id}/publication — công khai hoặc ẩn
 
 Body: `{ "rowVersion": 2, "state": "published" }`, hoặc `state:"hidden"`.
-Response **200** `ItemResponse`; quyền như PUT item. Có thể xuất bản metadata với
-placeholder khi chưa có output được duyệt; mọi ảnh chưa duyệt vẫn riêng tư.
+Response **200** `ItemResponse`; quyền như PUT item. Công khai yêu cầu ít nhất một
+ảnh chưa gỡ có output processed/validated, processingState `ready`, reviewState `approved`.
+Không có ảnh đủ điều kiện trả **409**; ảnh chưa duyệt vẫn riêng tư. Bản nháp được tạo
+trước để lấy item ID cho bước upload, không được công khai chỉ bằng mô tả.
 Ẩn ghi tombstone, không xóa claim/chat/lịch sử. Món đã trả/version cũ **409**.
 
 ## GET /api/items/{id}/verification-questions — bộ câu hỏi hiện tại
@@ -149,7 +174,7 @@ Body: `{"contentVersion":1}` hoặc
 Lấy `contentVersion` từ response bộ câu hỏi; thiếu/sai định dạng **400**, nội dung đã
 đổi từ lúc tải câu hỏi **409**. Tải lại bộ câu hỏi và trả lời theo câu hỏi mới trước khi gửi lại.
 Response **201** `ClaimResponse`, `Location: /api/claims/{id}`.
-Chỉ món published/active do cá nhân giữ; không được tự claim món mình giữ (**400**).
+Chỉ món published/active do cá nhân giữ; không được tự claim món mình đăng hoặc đang giữ (**400**).
 Claimant/reviewer/custody version lấy từ phiên và item bị khóa, không nhận từ client.
 Slot phải nằm trong bộ câu hỏi hiện tại, không trùng; câu trả lời tối đa 2000 ký tự,
 null/rỗng được lưu null. Luôn snapshot đủ bộ câu hỏi, kể cả câu chưa trả lời.
@@ -169,7 +194,7 @@ Claimant thấy yêu cầu của mình. Reviewer chỉ thấy bằng chứng khi
 ## GET /api/claims/{id} — chi tiết bằng chứng
 
 Response **200** `ClaimResponse`, quyền như danh sách; người không thuộc phạm vi **404**.
-`stale:true` khi đổi phiên nơi giữ hoặc món đã trả; claim không tự bị hủy.
+`stale:true` khi đổi phiên nơi giữ hoặc món đã trả/đã xóa; claim không tự bị hủy.
 
 ## POST /api/claims/{id}/decision — duyệt hoặc từ chối
 
@@ -189,7 +214,7 @@ DTO: `id,itemId,claimantUserId,reviewerUserId,canSend,createdAt`.
 ## GET /api/conversations/{id} — quyền chat hiện tại
 
 Response **200** `ConversationResponse`; pending/rejected/không thuộc hai bên **404**.
-`id` chính là claim ID. Sau đổi nơi giữ hoặc trao trả, `canSend:false`, hai bên vẫn
+`id` chính là claim ID. Sau đổi nơi giữ, trao trả hoặc xóa bài, `canSend:false`, hai bên vẫn
 đọc lịch sử. Ẩn bài đăng đơn thuần không thu hồi quyền chat của hai bên.
 
 ## GET /api/conversations/{id}/messages — lịch sử và đọc bù
@@ -205,7 +230,7 @@ Body: `{"clientMessageId":"<uuid khác 0>","body":"Hẹn gặp tại quầy lúc
 Response **200** `MessageResponse`:
 `id,conversationId,senderUserId,clientMessageId,sequence,body,createdAt`.
 Nội dung sau trim 1–4000. Sender lấy từ phiên. Gửi cùng mã/nội dung trả tin cũ;
-cùng mã khác nội dung **409**. Chat chỉ đọc **409**, không phải người tham gia **404**.
+cùng mã khác nội dung **409**. Chat chỉ đọc **409**, không phải người tham gia hoặc bài đã xóa **404**.
 Khóa item rồi conversation **trước INSERT**, commit trước response; sequence phản ánh
 thứ tự commit trong cùng chat, có thể có khoảng trống do rollback. Dùng HTTP polling
 và endpoint đọc bù; chưa cung cấp SignalR/push hoặc đính kèm.
@@ -280,7 +305,10 @@ Không trả verification note, recipient, câu trả lời hoặc bản chụp 
 ## Kiểm thử
 
 Chạy `make api-integration`. [RecoveryChecks.cs](../../apps/api/tests/integration/RecoveryChecks.cs)
-kiểm tra mọi endpoint trong tài liệu này qua HTTP + PostgreSQL dùng một lần, gồm
+kiểm tra các luồng nghiệp vụ qua HTTP + PostgreSQL dùng một lần, gồm
 claim 0 câu hỏi, bộ câu hỏi đổi trước khi gửi, nhiều approved, immutable answers, CSRF, stale version, phân quyền,
-replay, thứ tự tin nhắn, tiếp nhận và trao trả đồng thời. Xem thêm
+replay, thứ tự tin nhắn, tiếp nhận và trao trả đồng thời.
+[ItemDeletionChecks.cs](../../apps/api/tests/integration/ItemDeletionChecks.cs) kiểm tra xóa bài,
+phân quyền quản lý, phiên bản cũ, ẩn khỏi danh sách/chi tiết/tìm kiếm, giữ lịch sử và chặn
+thao tác sau xóa. Xem thêm
 [phạm vi kiểm chứng](testing.md) để phân biệt test double và dịch vụ thật.
