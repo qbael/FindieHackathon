@@ -25,10 +25,10 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
             throw new ApiException(400, "Invalid date filter.");
         filter.Q = RecoveryWorkflow.Optional(filter.Q);
         filter.Area = RecoveryWorkflow.Optional(filter.Area);
-        var items = await repository.ItemsAsync(actor, filter, ct);
+        var (items, totalCount) = await repository.ItemsAsync(actor, filter, ct);
         var responses = new List<ItemResponse>();
         foreach (var item in items) responses.Add(await workflow.ResponseAsync(item, actor, ct));
-        return RecoveryWorkflow.Page(responses, filter.Page, filter.PageSize);
+        return RecoveryWorkflow.Page(responses, filter.Page, filter.PageSize, totalCount);
     }
     public async Task<ItemResponse> GetAsync(Guid actor, Guid id, CancellationToken ct)
     {
@@ -214,7 +214,8 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
         if (item.PostedBy != actor && !await workflow.CanManageAsync(item, actor, ct)
             && !(item.HolderPointId is { } point && await repository.PointPermissionAsync(actor, point, false, ct)))
             throw new ApiException(403, "Custody history is private to the custodian and author.");
-        return RecoveryWorkflow.Page((await repository.EventsAsync(id, page, size, ct)).Select(EventResponse).ToList(), page, size);
+        var (items, totalCount) = await repository.EventsAsync(id, page, size, ct);
+        return RecoveryWorkflow.Page(items.Select(EventResponse).ToList(), page, size, totalCount);
     }
     private static CustodyEventResponse EventResponse(CustodyEvent value) => new(value.Id, value.ItemId, value.EventKind, value.CustodyVersion, value.OccurredAt);
 }

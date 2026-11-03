@@ -73,7 +73,7 @@ export function Intakes({ user }: { user: UserProfile }) {
             <a className="button" href="/posts">Xem bài đăng của tôi <Icon name="arrow" size={17} /></a>
           </EmptyState>
         )}
-        <Pagination page={page} hasMore={intakes.data.hasMore} />
+        <Pagination page={intakes.data.page} totalPages={intakes.data.totalPages} />
       </>}
       </div>
     </>

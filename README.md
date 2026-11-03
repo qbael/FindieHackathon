@@ -148,6 +148,8 @@ Kết quả: hai container ở trạng thái chạy/healthy; script kết thúc 
 
 Chạy lại không reset dữ liệu hoặc thay credential đã có trong `.env`. Nếu dùng database bootstrap cũ có dữ liệu, migration có thể dừng để bảo toàn dữ liệu; cần kế hoạch chuyển đổi riêng. Không nhập `docs/database/database-schema.sql` thay cho EF migrations. DSN tùy chỉnh được giữ nguyên và `local-setup` sẽ dừng nếu chúng không trỏ đúng database/role local mà script quản lý.
 
+Nếu database đặt trên AWS RDS, xem [hướng dẫn vận hành database AWS](docs/guides/aws-database.md) để dùng đúng kết nối, quản lý truy cập và quay lại bản local khi cần.
+
 ## 5. Chạy model AI trên Colab và mở gateway ngrok
 
 Dùng **[04_full_stack_ollama_ngrok.ipynb](notebooks/colab/04_full_stack_ollama_ngrok.ipynb)**. Notebook 01–03 là thử nghiệm riêng, không thay thế notebook 04 cho luồng đầy đủ.

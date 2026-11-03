@@ -492,7 +492,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 </EmptyState>
               )}
               {!request && basic.data && (
-                <Pagination page={page} hasMore={basic.data.hasMore} />
+                <Pagination page={basic.data.page} totalPages={basic.data.totalPages} />
               )}
             </>
           )}

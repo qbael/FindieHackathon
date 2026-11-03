@@ -106,8 +106,11 @@ public sealed class RecoveryWorkflow(IRecoveryRepository repository)
         if (string.IsNullOrEmpty(text) || text.Length > max) throw new ApiException(400, $"{name} must contain 1 to {max} characters.");
         return text;
     }
-    public static PageResponse<T> Page<T>(IReadOnlyList<T> values, int page, int size) =>
-        new(values.Take(size).ToList(), page, size, values.Count > size);
+    public static PageResponse<T> Page<T>(IReadOnlyList<T> values, int page, int size, int totalCount)
+    {
+        var totalPages = Math.Clamp((int)Math.Ceiling((double)totalCount / size), 1, 10000);
+        return new(values, page, size, page < totalPages, totalPages);
+    }
 
     public static CustodyResponse Custody(Item item) => new(item.CustodyKind,
         item.CustodyKind == "person" ? item.HolderUser?.DisplayName : null, item.HolderPointId,

@@ -1,0 +1,99 @@
+{
+  "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+  "fingerprint": "9ce047f6024f55e72ea406ba0779f2130bf666ff8992fa565bc04984a440223b",
+  "itemId": "0ad546fd-14a3-451f-a5f9-635cdaab2322",
+  "images": [
+    {
+      "position": 1,
+      "imageId": "442b98fe-969d-45b9-9c06-038611ad09e7",
+      "contentVersion": 1,
+      "sha256": "aca32ea14121d0fa982b621a79d801bb2f410685ed39ba36b14517fa62393c42",
+      "file": "processed-442b98fe-969d-45b9-9c06-038611ad09e7.png"
+    },
+    {
+      "position": 2,
+      "imageId": "be2d7010-c0da-47fc-99d2-af0f4bfcf2fc",
+      "contentVersion": 1,
+      "sha256": "a427997d88b9fe21e10f125c62950358786e107dc8b77d8c1bde8b902eb4e857",
+      "file": "processed-be2d7010-c0da-47fc-99d2-af0f4bfcf2fc.png"
+    }
+  ],
+  "privacyCorrection:d9e10e777143a43a42c8a59ab1b33c475da95515f424f35896ad609e7cfa299d": {
+    "planHash": "d9e10e777143a43a42c8a59ab1b33c475da95515f424f35896ad609e7cfa299d",
+    "plan": {
+      "sourceFingerprint": "9ce047f6024f55e72ea406ba0779f2130bf666ff8992fa565bc04984a440223b",
+      "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+      "itemId": "0ad546fd-14a3-451f-a5f9-635cdaab2322",
+      "imageId": "39d0e378-c04d-4fad-8769-263bfd6d3304",
+      "contentVersion": 1,
+      "sha256": "649d8f10631791ab5efded1224ee212a6347754a8bc89f704933c1241103059a",
+      "position": 2,
+      "file": "masked-e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab.png",
+      "maskedSha256": "e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab",
+      "regions": [
+        {
+          "label": "face",
+          "bbox": [
+            90,
+            285,
+            265,
+            685
+          ]
+        }
+      ]
+    },
+    "previous": {
+      "position": 2,
+      "imageId": "39d0e378-c04d-4fad-8769-263bfd6d3304",
+      "contentVersion": 1,
+      "sha256": "649d8f10631791ab5efded1224ee212a6347754a8bc89f704933c1241103059a",
+      "file": "processed-39d0e378-c04d-4fad-8769-263bfd6d3304.png"
+    },
+    "replacement": {
+      "position": 2,
+      "imageId": "cd0dbd24-3106-4157-a0e0-2ebf37e25977",
+      "contentVersion": 1,
+      "sha256": "e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab",
+      "file": "processed-cd0dbd24-3106-4157-a0e0-2ebf37e25977.png"
+    }
+  },
+  "privacyCorrection:9781b78e876d4eaed491df22397479b9fc15191da5b65bf239fc018d113c1490": {
+    "planHash": "9781b78e876d4eaed491df22397479b9fc15191da5b65bf239fc018d113c1490",
+    "plan": {
+      "sourceFingerprint": "9ce047f6024f55e72ea406ba0779f2130bf666ff8992fa565bc04984a440223b",
+      "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+      "itemId": "0ad546fd-14a3-451f-a5f9-635cdaab2322",
+      "imageId": "cd0dbd24-3106-4157-a0e0-2ebf37e25977",
+      "contentVersion": 1,
+      "sha256": "e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab",
+      "position": 2,
+      "file": "masked-a427997d88b9fe21e10f125c62950358786e107dc8b77d8c1bde8b902eb4e857.png",
+      "maskedSha256": "a427997d88b9fe21e10f125c62950358786e107dc8b77d8c1bde8b902eb4e857",
+      "regions": [
+        {
+          "label": "face",
+          "bbox": [
+            80,
+            675,
+            320,
+            1000
+          ]
+        }
+      ]
+    },
+    "previous": {
+      "position": 2,
+      "imageId": "cd0dbd24-3106-4157-a0e0-2ebf37e25977",
+      "contentVersion": 1,
+      "sha256": "e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab",
+      "file": "processed-cd0dbd24-3106-4157-a0e0-2ebf37e25977.png"
+    },
+    "replacement": {
+      "position": 2,
+      "imageId": "be2d7010-c0da-47fc-99d2-af0f4bfcf2fc",
+      "contentVersion": 1,
+      "sha256": "a427997d88b9fe21e10f125c62950358786e107dc8b77d8c1bde8b902eb4e857",
+      "file": "processed-be2d7010-c0da-47fc-99d2-af0f4bfcf2fc.png"
+    }
+  }
+}

@@ -21,7 +21,7 @@ export function CustodyHistory({ id }: { id: string }) {
           <p><time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time> · Lần giữ đồ {event.custodyVersion}</p>
         </li>)}
       </ol> : <EmptyState title="Chưa có lịch sử bàn giao"><p>Các lần tiếp nhận và trao trả sẽ hiển thị tại đây.</p></EmptyState>}
-      <Pagination page={page} hasMore={events.data.hasMore} />
+      <Pagination page={events.data.page} totalPages={events.data.totalPages} />
     </section>}
     <a className="text-button" href="/posts"><Icon name="back" size={16} />Về bài đăng của tôi</a>
   </>;

@@ -6,6 +6,7 @@ export type Page<T> = {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  totalPages: number;
 };
 export type CustodyKind = "person" | "point" | "external";
 export type Item = {

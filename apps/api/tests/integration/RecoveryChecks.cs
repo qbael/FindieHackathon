@@ -32,7 +32,10 @@ static class RecoveryChecks
         }
         using var anonymous = factory.CreateClient();
         foreach (var path in new[] { "/api/items", "/api/claims", "/api/conversations", "/api/intake-requests" })
+        {
             await Send(anonymous, HttpMethod.Get, path, null, 401);
+            await CheckPage(outsider, path + "?pageSize=1", 1, 1, 0, false);
+        }
 
         var body = CreateBody();
         var key = Guid.NewGuid();
@@ -80,6 +83,7 @@ static class RecoveryChecks
         Check(contentVersion == 1 && questionSet.GetProperty("questions").GetArrayLength() == 0, "zero questions include their content version");
         Check((await Get(claimant, "/api/items?q=API%20wallet&area=Campus")).GetProperty("items").GetArrayLength() == 1, "basic text search without image");
         Check((await Get(claimant, "/api/items?q=%25")).GetProperty("items").GetArrayLength() == 0, "LIKE wildcards treated literally");
+        await CheckPage(claimant, "/api/items?q=%25&pageSize=1", 1, 1, 0, false);
         await Send(owner, HttpMethod.Get, "/api/items?from=2026-10-02&until=2026-10-01", null, 400);
         await Send(owner, HttpMethod.Get, "/api/items?from=0001-01-01", null, 400);
         await Send(owner, HttpMethod.Get, "/api/items?pageSize=101", null, 400);
@@ -105,6 +109,13 @@ static class RecoveryChecks
         await Send(owner, HttpMethod.Post, $"/api/claims/{Id(secondClaim)}/decision", new { decision = "approved" }, 200);
         Check((await Get(owner, "/api/claims")).GetProperty("items").GetArrayLength() == 2, "multiple approvals are allowed");
         Check((await Get(claimant, "/api/conversations")).GetProperty("items").GetArrayLength() == 1, "conversation list is participant-scoped");
+        await CheckPage(owner, $"/api/claims?itemId={itemId}&pageSize=1", 1, 2, 1, true);
+        await CheckPage(owner, $"/api/claims?itemId={itemId}&pageSize=1&page=2", 2, 2, 1, false);
+        await CheckPage(claimant, "/api/claims?pageSize=1", 1, 1, 1, false);
+        await CheckPage(owner, $"/api/claims?itemId={Guid.NewGuid()}&pageSize=1", 1, 1, 0, false);
+        await CheckPage(owner, "/api/conversations?pageSize=1", 1, 2, 1, true);
+        await CheckPage(owner, "/api/conversations?pageSize=1&page=2", 2, 2, 1, false);
+        await CheckPage(claimant, "/api/conversations?pageSize=1", 1, 1, 1, false);
         var messagePath = $"/api/conversations/{claimId}/messages";
         await Send(outsider, HttpMethod.Get, messagePath, null, 404);
         await Send(outsider, HttpMethod.Post, messagePath, new { clientMessageId = Guid.NewGuid(), body = "Intrusion" }, 404);
@@ -131,6 +142,11 @@ static class RecoveryChecks
         var secretItem = await Publish(owner, await Send(owner, HttpMethod.Post, "/api/items", new
         { content = Content("Question item", ["What is inside?", "Optional question"]), custody = new { kind = "person" } }, 201));
         var secretId = Id(secretItem);
+        await CheckPage(claimant, "/api/items?pageSize=1", 1, 2, 1, true);
+        await CheckPage(claimant, "/api/items?pageSize=1&page=2", 2, 2, 1, false);
+        await CheckPage(claimant, "/api/items?pageSize=1&page=3", 3, 2, 0, false);
+        await CheckPage(claimant, "/api/items?q=API%20wallet&area=Campus&pageSize=1", 1, 1, 1, false);
+        await CheckPage(claimant, "/api/items?scope=mine&pageSize=1", 1, 1, 0, false);
         var secretQuestions = await Get(claimant, $"/api/items/{secretId}/verification-questions");
         var secretContentVersion = secretQuestions.GetProperty("contentVersion").GetInt64();
         await Send(claimant, HttpMethod.Post, $"/api/items/{secretId}/claims", new { contentVersion = secretContentVersion, answers = new[] { new { slot = 3, answerText = "Unknown slot" } } }, 400);
@@ -168,6 +184,10 @@ static class RecoveryChecks
         await Send(staff, HttpMethod.Post, $"/api/intake-requests/{Id(intake)}/decision", new { decision = "rejected", rowVersion = Version(item) }, 200);
         Check(Version(await Get(owner, pathItem)) == Version(item), "rejected intake does not change item version or custody");
         intake = await Send(owner, HttpMethod.Post, pathItem + "/intake-requests", new { targetPointId = point, rowVersion = Version(item) }, 201);
+        await CheckPage(staff, $"/api/intake-requests?pointId={point}&pageSize=1", 1, 2, 1, true);
+        await CheckPage(staff, $"/api/intake-requests?pointId={point}&pageSize=1&page=2", 2, 2, 1, false);
+        await CheckPage(staff, $"/api/intake-requests?pointId={secondPoint}&pageSize=1", 1, 1, 0, false);
+        await CheckPage(outsider, "/api/intake-requests?pageSize=1", 1, 1, 0, false);
         var receiveKey = Guid.NewGuid();
         var receiveBody = new { decision = "received", rowVersion = Version(item), confirmedPhysicalReceipt = true };
         await Send(staff, HttpMethod.Post, $"/api/intake-requests/{Id(intake)}/decision", receiveBody, 200, receiveKey);
@@ -179,6 +199,7 @@ static class RecoveryChecks
         await Get(owner, messagePath);
         await Send(owner, HttpMethod.Get, $"/api/claims/{claimId}", null, 404);
         Check((await Get(claimant, $"/api/claims/{claimId}")).GetProperty("stale").GetBoolean(), "claimant sees stale claim");
+        await CheckPage(owner, $"/api/claims?itemId={itemId}&pageSize=1", 1, 1, 0, false);
         await Send(claimant, HttpMethod.Post, messagePath, new { clientMessageId = Guid.NewGuid(), body = "After transfer" }, 409);
         await Send(owner, HttpMethod.Put, pathItem, new { rowVersion = Version(item), content = Content() }, 403);
         await Send(staff, HttpMethod.Post, pathItem + "/claims", new { contentVersion }, 409);
@@ -189,6 +210,8 @@ static class RecoveryChecks
         Check((await Get(staff, pathItem)).GetProperty("lifecycle").GetString() == "returned", "point handover updates lifecycle");
         await Send(outsider, HttpMethod.Get, pathItem, null, 404);
         Check((await Get(staff, pathItem + "/custody-events")).GetProperty("items").GetArrayLength() == 3, "registration, receipt and return recorded atomically");
+        await CheckPage(staff, pathItem + "/custody-events?pageSize=1", 1, 3, 1, true);
+        await CheckPage(staff, pathItem + "/custody-events?pageSize=1&page=3", 3, 3, 1, false);
         await Send(outsider, HttpMethod.Get, pathItem + "/custody-events", null, 403);
 
         var external = await Publish(owner, await Send(owner, HttpMethod.Post, "/api/items", new
@@ -312,6 +335,14 @@ static class RecoveryChecks
             var csrf = await Get(browser, "/api/auth/csrf");
             browser.DefaultRequestHeaders.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
             return browser;
+        }
+        async Task CheckPage(HttpClient browser, string path, int page, int totalPages, int itemCount, bool hasMore)
+        {
+            var result = await Get(browser, path);
+            Check(result.GetProperty("page").GetInt32() == page && result.GetProperty("pageSize").GetInt32() == 1
+                && result.GetProperty("totalPages").GetInt32() == totalPages
+                && result.GetProperty("items").GetArrayLength() == itemCount
+                && result.GetProperty("hasMore").GetBoolean() == hasMore, "filtered, authorized pagination metadata: " + path);
         }
         async Task<JsonElement> Publish(HttpClient browser, JsonElement value)
         {

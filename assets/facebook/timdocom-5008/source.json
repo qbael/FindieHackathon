@@ -1,0 +1,26 @@
+{
+  "sourceId": "timdocom-5008",
+  "sourceUrl": "https://timdo24h.com/roi-nhan",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-02T09:54:33.879541+00:00",
+  "title": "Rơi nhẫn ",
+  "sourceText": "Hôm 29/11 tối tầm 8h15, em có đi vệ sinh ở nhà vệ sinh tại royal city và để quên chiếc nhẫn màu bạc đính đá. Giá trị nhẫn không cao nhưng thật sự vô cùng, vô cùng ý nghĩa với em ạ!!! Nếu có ai thấy hay vô tình nhặt được thì cho em xin lại với ạ\nEm xin cảm ơn và có hậu tạ.",
+  "publicDescription": "Hôm 29/11 tối tầm 8h15, em có đi vệ sinh ở nhà vệ sinh tại royal city và để quên chiếc nhẫn màu bạc đính đá. Giá trị nhẫn không cao nhưng thật sự vô cùng, vô cùng ý nghĩa với em ạ!!! Nếu có ai thấy hay vô tình nhặt được thì cho em xin lại với ạ\nEm xin cảm ơn và có hậu tạ.",
+  "foundArea": "Royal City, Hà Nội",
+  "images": [
+    "photo-1.jpeg"
+  ],
+  "imageSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/44250569-53b0-4950-87fa-b4834f15e6fa.jpeg"
+  ],
+  "photoReview": "Original source photograph visually reviewed; no document IDs, readable personal contacts, identifiable faces, generated image or placeholder accepted.",
+  "photoNormalization": [
+    {
+      "file": "photo-1.jpeg",
+      "operation": "lossless JPEG container/metadata normalization",
+      "pixelsUnchanged": true,
+      "visualOrientationUnchanged": true,
+      "originalFile": "original-photo-1.mpo"
+    }
+  ]
+}

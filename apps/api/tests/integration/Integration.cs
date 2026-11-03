@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using System.Text.RegularExpressions;
 
+PaginationChecks.Run();
 await MaintenanceChecks.RunAsync();
 if (args.Contains("--maintenance-only")) return;
 

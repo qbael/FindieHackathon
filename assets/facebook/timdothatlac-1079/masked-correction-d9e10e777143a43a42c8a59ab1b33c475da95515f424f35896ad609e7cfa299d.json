@@ -1,0 +1,22 @@
+{
+  "sourceFingerprint": "9ce047f6024f55e72ea406ba0779f2130bf666ff8992fa565bc04984a440223b",
+  "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+  "itemId": "0ad546fd-14a3-451f-a5f9-635cdaab2322",
+  "imageId": "39d0e378-c04d-4fad-8769-263bfd6d3304",
+  "contentVersion": 1,
+  "sha256": "649d8f10631791ab5efded1224ee212a6347754a8bc89f704933c1241103059a",
+  "position": 2,
+  "file": "masked-e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab.png",
+  "maskedSha256": "e7500491e1942ddf2f4c84b2080cbb78846711c9e1474e90a6cc27c6b14417ab",
+  "regions": [
+    {
+      "label": "face",
+      "bbox": [
+        90,
+        285,
+        265,
+        685
+      ]
+    }
+  ]
+}

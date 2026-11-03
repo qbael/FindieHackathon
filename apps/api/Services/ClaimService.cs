@@ -48,8 +48,11 @@ public sealed class ClaimService(IRecoveryRepository repository, RecoveryWorkflo
             && claim.Item.CustodyVersion == claim.SourceCustodyVersion)) throw new ApiException(404, "Claim not found.");
         return Response(claim);
     }
-    public async Task<PageResponse<ClaimResponse>> ListAsync(Guid actor, Guid? itemId, int page, int size, CancellationToken ct) =>
-        RecoveryWorkflow.Page((await repository.ClaimsAsync(actor, itemId, page, size, ct)).Select(Response).ToList(), page, size);
+    public async Task<PageResponse<ClaimResponse>> ListAsync(Guid actor, Guid? itemId, int page, int size, CancellationToken ct)
+    {
+        var (items, totalCount) = await repository.ClaimsAsync(actor, itemId, page, size, ct);
+        return RecoveryWorkflow.Page(items.Select(Response).ToList(), page, size, totalCount);
+    }
     public async Task<ClaimResponse> DecideAsync(Guid actor, Guid key, Guid id, DecisionRequest request, CancellationToken ct)
     {
         await workflow.WriteAsync(actor, key, $"claim.decide:{id}", request, "claim", 200, async () =>

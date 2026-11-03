@@ -266,7 +266,7 @@ export function Requests({ user }: { user: UserProfile }) {
               </a>
             </EmptyState>
           )}
-          <Pagination page={page} hasMore={claims.data.hasMore} />
+          <Pagination page={claims.data.page} totalPages={claims.data.totalPages} />
         </>
       )}
     </>
@@ -638,7 +638,7 @@ export function MyPosts() {
                   </a>
                 </EmptyState>
               )}
-              <Pagination page={page} hasMore={items.data.hasMore} />
+              <Pagination page={items.data.page} totalPages={items.data.totalPages} />
             </>
           )}
         </section>
@@ -860,7 +860,7 @@ export function Messages({ user }: { user: UserProfile }) {
             </p>
           )}
           {conversations.data && (
-            <Pagination page={page} hasMore={conversations.data.hasMore} />
+            <Pagination page={conversations.data.page} totalPages={conversations.data.totalPages} />
           )}
         </aside>
         <section className="conversation-main">
