@@ -13,6 +13,7 @@ const baseURL = `http://127.0.0.1:${PORT}`;
  */
 export default defineConfig({
   testDir: path.resolve(__dirname, 'e2e/specs'),
+  testIgnore: ['**/node_modules/**', '**/.venv/**', '**/services/**'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
