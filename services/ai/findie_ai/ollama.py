@@ -57,7 +57,7 @@ class Ollama:
             raise ModelUnavailable("model_revision_mismatch")
 
     async def verify_models(self):
-        if time.monotonic() - self.media_verified_at < 60:
+        if self.media_verified_at > 0 and time.monotonic() - self.media_verified_at < 60:
             return
         if self.settings.image_search_enabled:
             await self._verify_revision()

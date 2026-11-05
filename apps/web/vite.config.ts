@@ -7,8 +7,8 @@ export default defineConfig({
   build: { assetsInlineLimit: 0 },
   server: {
     host: '127.0.0.1',
-    port: 5173,
-    strictPort: true,
+    port: Number(process.env.PORT) || 5173,
+    strictPort: false,
     proxy: {
       '/api': { target: 'http://127.0.0.1:5080', changeOrigin: false },
     },
