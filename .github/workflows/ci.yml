@@ -98,6 +98,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
