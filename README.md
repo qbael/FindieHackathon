@@ -231,7 +231,7 @@ Kiểm trạng thái model bằng token nội bộ trong một subshell:
 ```sh
 (
   set -a
-  . ./.env
+  . ./.env_old
   set +a
   curl -sS -H "X-Service-Token: ${AI_SERVICE_TOKEN}" http://127.0.0.1:8000/v1/status
 )
