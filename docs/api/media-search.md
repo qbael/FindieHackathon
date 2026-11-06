@@ -41,6 +41,7 @@ Response **200** mảng `ImageResponse`, có cả ảnh đã gỡ để đối c
 `previewUrl` chỉ trỏ output đã lưu hợp lệ; null khi gỡ/không có output. Không trả
 bucket/object key, original, OCR hoặc credential. Không có item **404**, thiếu quyền **403**.
 Người xem thông thường lấy ảnh được duyệt từ `GET /api/items/{id}`.
+Cache embedding ảnh gốc và OCR là dữ liệu nội bộ, không có trong DTO ảnh hoặc món đồ.
 
 ## POST /api/items/{itemId}/images?position=1 — xử lý và tải output
 
@@ -58,13 +59,20 @@ curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' -H 'Idempotency-Key: <uuid>' \
   'http://127.0.0.1:5080/api/items/<itemId>/images?position=1'
 ```
 
-Response **201** `ImageResponse`, `Location` trỏ content. Các bước:
+Response **201** `ImageResponse`, `Location` trỏ content. Web chờ tối đa 11 phút cho
+toàn bộ upload; deadline từng bước AI riêng như sau:
 
-1. Kiểm quyền/byte, hash input trong RAM và gửi `image.redact` tạm qua AMQP, chờ tối đa 5 phút.
-2. Kiểm schema, source ID/version/hash, model/revision/profile, MIME signature, số byte,
+1. Kiểm quyền/byte, hash input trong RAM và gửi `image.embed` tạm qua AMQP, deadline
+   300 giây, để đọc OCR và tạo vector riêng từ ảnh chưa che. OCR tối đa
+   3000 ký tự, có cờ nội dung không rõ; giữ số 0 đầu, không tự hoàn thiện số bị khuất.
+   Kiểm nguồn/model/chiều và vector hữu hạn,
+   khác zero; nếu capability tìm ảnh bị tắt, worker trả JSON `null` và không có cache.
+2. Gửi cùng input chưa che vào `image.redact` với profile `redact-v4`, chờ tối đa 5 phút.
+   Kiểm schema, source ID/version/hash, model/revision/profile, MIME signature, số byte,
    hash output, dimensions (tối đa 10000 mỗi chiều và 40 triệu pixel). .NET không decode ảnh.
 3. Chỉ sau output hợp lệ mới ghi reservation loại `processed`, upload output vào R2
-   ngoài transaction, rồi khóa item/object và gắn output thành `needs_review`.
+   ngoài transaction, rồi khóa item/object và gắn output thành `needs_review` cùng
+   cache vector/OCR nếu có. Chỉ ảnh được duyệt mới đưa vector và từ khóa OCR vào chỉ mục.
 4. Nếu item/quyền đã thay đổi trong khi xử lý, không gắn output cũ. Reservation hết hạn
    sau một giờ để cleanup. Dữ liệu gốc bị bỏ khi hoàn tất/lỗi/hủy.
 
@@ -74,6 +82,14 @@ Sai MIME **415**, body rỗng hoặc vị trí ngoài 1..3 **400**, quá 10 MiB 
 Không có output hợp lệ thì không tạo object/reservation. Lỗi upload R2 có thể để lại
 reservation output để dọn; không để lại image đã gắn hoặc báo đăng ảnh thành công.
 Gửi lại đúng khóa/input trả cùng ảnh, không chạy AI/upload thêm. Cùng khóa ảnh khác **409**.
+
+`redact-v4` che khoảng 60% phần đầu và giữ khoảng 40% phần cuối của số CCCD/CMND,
+điện thoại và mã định danh như MSSV, mã nhân viên, số thẻ/tài khoản. Tỷ lệ dựa trên
+chiều rộng vùng nhận diện, không phải phép đếm ký tự. Khuôn mặt, địa chỉ, QR và mã
+vạch vẫn che toàn bộ như trước; họ tên, ngày tháng và thông tin khác giữ nguyên.
+Ảnh đã xử lý trước thay đổi này giữ output cũ; muốn áp dụng cách che hoặc embedding
+ảnh gốc hoặc OCR mới phải tải lại ảnh gốc. Chỉ mục văn bản ghép mô tả hiện hành với
+OCR của ảnh đã duyệt; sửa mô tả không cần tải lại ảnh.
 
 ## POST /api/items/{itemId}/images/{imageId}/review — duyệt hoặc từ chối
 
@@ -92,6 +108,7 @@ Sai quyền **403**, ảnh không thuộc món **404**, version cũ/đã gỡ/tr
 Body `{"contentVersion":1}`, CSRF và idempotency. Response **200** `ImageResponse`.
 Quyền quản lý hiện tại. Ghi retiredAt, tăng source version, bỏ liên kết object, đánh dấu
 output `delete_pending`, cập nhật outbox cùng transaction. Không xóa lịch sử món đồ.
+Cache embedding/OCR gốc của ảnh được bỏ khi từ chối, gỡ ảnh hoặc xóa món đồ.
 Gỡ ảnh công khai cuối cùng tự chuyển tin sang `hidden` và ghi tombstone cùng transaction;
 gỡ một ảnh khi vẫn còn ảnh công khai khác giữ nguyên trạng thái xuất bản.
 Version sai/đã gỡ **409**, sai quyền **403**, ảnh không thuộc món **404**.
@@ -116,14 +133,26 @@ Cookie + CSRF; không yêu cầu Idempotency-Key vì không lưu query/job nghi�
   "area": "Công viên Bờ Sông",
   "from": "2026-10-01",
   "until": "2026-10-24",
+  "lostAt": "2026-10-18T09:30:00+07:00",
   "limit": 10
 }
 ```
 
 `text` 1–2000 sau trim, bắt buộc; `area` tùy chọn tối đa 200;
 `from/until` tùy chọn, ngày bao gồm hai đầu; `limit=1..10`, mặc định 10.
+`lostAt` là thời điểm mất ước tính, tùy chọn, dùng ISO 8601 kèm múi giờ.
+Giá trị sai hoặc nằm trong tương lai trả **400**.
 Không bắt ảnh. Gửi JSON tới Python qua AMQP `search.hybrid`; Python chọn thuật toán
 ngữ nghĩa/từ khóa theo profile cấu hình. .NET không đọc vector/search database.
+Python cache riêng ứng viên FTS/vị trí và vector trong Redis cho truy vấn văn bản;
+TTL mặc định 60 giây, vô hiệu hóa theo phiên bản chỉ mục trong cùng transaction.
+Cache hit vẫn đi qua kiểm tra nghiệp vụ của .NET. Redis lỗi thì tìm trực tiếp;
+xem [cấu hình và kiểm thử Redis](../guides/ai-service.md#cache-từ-khóa-và-ngữ-nghĩa-bằng-redis).
+Nhánh text tìm trên tiêu đề/mô tả/khu vực và OCR của ảnh đã duyệt thuộc bài công khai.
+Khi capability ảnh bật, nhánh này cũng xét vector ảnh riêng. OCR không được trả trong DTO hay
+ghi lại vào mô tả công khai. Ảnh cũ chưa có OCR cần tải lại để bổ sung. Không có điều
+kiện đối chiếu chính xác toàn bộ số hoặc đuôi CCCD/MSSV; kết quả gợi ý và OCR vẫn có
+thể sai hoặc trùng nhau.
 
 Response **200**:
 
@@ -141,7 +170,11 @@ Response **200**:
 
 `rank` là vị trí gợi ý sau kiểm tra nghiệp vụ, không phải xác suất sở hữu. Response
 thực tế `item` là object ItemResponse. .NET kiểm lại published/active, document/source
-version/hash, model/profile và bộ lọc hiện tại, bỏ ứng viên cũ/trùng, giữ thứ tự còn lại.
+version/hash, model/profile và bộ lọc hiện tại, bỏ ứng viên cũ/trùng.
+Khi có `lostAt`, .NET cộng tối đa 5% điểm cho giờ nhặt gần sau giờ mất,
+giảm dần về 0 trong 24 giờ. Khoảng giờ nhặt có thể khớp được tối đa 2,5%.
+Tin chỉ ghi ngày nhặt được cộng 2% nếu cùng ngày theo múi giờ của tin.
+Thời điểm mất chỉ ảnh hưởng thứ hạng. Các bộ lọc khu vực và khoảng ngày vẫn áp dụng riêng.
 Tối đa 200 ứng viên, không refill tự động; `partial:true` khi bỏ ứng viên khiến kết quả
 chưa đủ limit. Không tự nới bộ lọc. Kết quả hợp lệ rỗng là **200** với `items:[]`.
 
@@ -153,9 +186,13 @@ Tên profile là hợp đồng cấu hình, chưa phải chứng nhận đạt c
 ## POST /api/search/image — tìm bằng ảnh
 
 Cookie + CSRF, body ảnh JPEG/PNG/WebP nhị phân tối đa 10 MiB. Query `area`, `from`,
-`until`, `limit` như tìm text. Response **200** cùng SearchResponse, `mode:"image"`,
+`until`, `lostAt`, `limit` như tìm text. Response **200** cùng SearchResponse, `mode:"image"`,
 profile mặc định `image-only-v1`. Gửi AMQP `search.hybrid.image` nonpersistent/TTL;
-chỉ dùng nguồn ảnh sạch đã duyệt khi kiểm tra ứng viên. Không bịa OCR/nhánh keyword.
+chỉ nhận ứng viên gắn với ảnh đã che được duyệt ở đúng phiên bản hiện tại. Ảnh upload
+mới khi capability ảnh bật dùng vector từ ảnh gốc; nguồn cũ/không có cache vẫn dùng
+vector bản che hoặc cache ảnh cũ. Ảnh truy vấn được embedding riêng, không chạy OCR;
+deadline mỗi ảnh 300 giây. Không coi độ giống là khớp số chính xác.
+Trình duyệt chờ tối đa 330 giây cho endpoint một ảnh.
 
 ```sh
 curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' -H 'Content-Type: image/png' \
@@ -169,7 +206,7 @@ tìm text. Ảnh query không lưu DB/R2/outbox hoặc lịch sử; input bị b
 ## POST /api/search/images — tìm bằng tối đa ba ảnh và mô tả
 
 Cookie + CSRF; body `multipart/form-data`, không yêu cầu Idempotency-Key.
-Query `area`, `from`, `until`, `limit` giống tìm text. Các phần form:
+Query `area`, `from`, `until`, `lostAt`, `limit` giống tìm text. Các phần form:
 
 - `images`: bắt buộc **1–3 file**, mỗi file JPEG/PNG/WebP, từ 1 byte đến **10 MiB**.
 - `text`: tối đa một trường UTF-8 tùy chọn, tối đa **2000 ký tự** sau trim;
@@ -178,8 +215,9 @@ Query `area`, `from`, `until`, `limit` giống tìm text. Các phần form:
 Tổng request tối đa 30 MiB cộng 64 KiB cho form/header; không nhận trường khác.
 .NET dùng `MultipartReader`, đọc stream vào RAM, không `IFormFile` hoặc tệp tạm.
 Kiểm xong toàn bộ ảnh, mô tả và bộ lọc mới gọi AI. Mỗi ảnh gửi riêng qua
-`search.hybrid.image`; mô tả có nội dung gửi qua `search.hybrid`. Hợp đồng AMQP hiện có
-không thay đổi. Thời gian xử lý AI chung tối đa **40 giây**; một nhánh lỗi thì cả
+`search.hybrid.image`; mô tả có nội dung gửi qua `search.hybrid`.
+Thời gian xử lý AI chung tối đa **940 giây**, trình duyệt chờ tối đa
+**960 giây**, gồm tối đa ba nhánh ảnh 300 giây và một nhánh text 30 giây; một nhánh lỗi thì cả
 request lỗi, không trả kết quả thành công thiếu nhánh.
 
 ```sh

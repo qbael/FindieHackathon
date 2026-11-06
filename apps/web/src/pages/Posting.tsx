@@ -755,7 +755,7 @@ export function ReviewImages({ id }: { id: string }) {
             hợp.
           </p>
           {[
-            "Không lộ số giấy tờ, số điện thoại hoặc số thẻ ngân hàng.",
+            "Số giấy tờ, điện thoại và mã định danh đã che phần đầu, chỉ giữ tối đa khoảng 40% phần cuối để đối chiếu.",
             "Không lộ khuôn mặt, ảnh chân dung hoặc địa chỉ riêng.",
             "Không lộ mã QR, mã vạch hoặc chi tiết xác minh bí mật.",
           ].map((label, index) => (

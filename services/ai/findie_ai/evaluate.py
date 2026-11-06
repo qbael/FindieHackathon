@@ -38,7 +38,8 @@ def metrics(rows):
 
 async def evaluate(cases, settings):
     model = Ollama(settings)
-    store = Store(settings.search_dsn, settings.model_id, settings.revision, settings.dimensions)
+    store = Store(settings.search_dsn, settings.model_id, settings.revision, settings.dimensions,
+                  semantic_weight=settings.semantic_weight)
     rows = {mode: [] for mode in ("semantic", "lexical", "hybrid")}
     try:
         for case in cases:
@@ -54,7 +55,8 @@ async def evaluate(cases, settings):
     finally:
         await model.close()
     return {"model": settings.model_id, "revision": settings.revision, "dimensions": settings.dimensions,
-            "searchProfile": settings.search_profile, "scope": "retrieval_before_dotnet_eligibility",
+            "searchProfile": settings.search_profile, "semanticWeight": settings.semantic_weight,
+            "scope": "retrieval_before_dotnet_eligibility",
             "results": {mode: metrics(values) for mode, values in rows.items()}}
 
 

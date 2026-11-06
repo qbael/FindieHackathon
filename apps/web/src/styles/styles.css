@@ -645,6 +645,12 @@ label > .field-hint {
   padding-top: 21px;
   border-top: 1px dashed #dce6e5;
 }
+.search-lost-time {
+  grid-column: 1 / -1;
+}
+.search-context .search-lost-time {
+  max-width: 360px;
+}
 .input-icon {
   position: relative;
   margin-top: 7px;

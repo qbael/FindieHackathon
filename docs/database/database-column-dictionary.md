@@ -154,6 +154,13 @@ cần migration, không suy diễn rằng schema cũ đã đáp ứng luồng m�
 Snapshot liên kết original và sanitized cũ; FK gốc bắt buộc dưới đây không tương thích
 1.4.0. Thiết kế đích chỉ có một processed object hiện hành mỗi ảnh và trạng thái duyệt.
 
+EF runtime bổ sung `original_embedding` (`jsonb`, nullable) bằng migration
+`AddOriginalImageEmbedding`: lưu vector từ ảnh upload trước khi che, kèm `modelId`,
+`modelRevision`, `dimensions` và `sourceSha256` của ảnh upload; không lưu bytes ảnh gốc.
+Vector này chỉ phục vụ lập chỉ mục nội bộ, không xuất hiện trong DTO công khai,
+và bị xóa khi từ chối ảnh, gỡ ảnh hoặc xóa bài. Bản ghi legacy có giá trị NULL tiếp tục dùng
+ảnh đã che khi lập chỉ mục; đổi model của vector gốc cần upload lại ảnh.
+
 | Cột | Kiểu | NULL | Mô tả |
 |---|---|---|---|
 | `id` | `uuid` | Không | **PK**. Mã ảnh nghiệp vụ. |

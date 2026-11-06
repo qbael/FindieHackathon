@@ -19,7 +19,7 @@ Coordinate = Annotated[int, Field(strict=True, ge=0, le=1000)]
 
 class Region(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    label: Literal["face", "identity_number", "phone", "address", "qr_code", "barcode"]
+    label: Literal["face", "identity_number", "identifier_number", "phone", "address", "qr_code", "barcode"]
     bbox: tuple[Coordinate, Coordinate, Coordinate, Coordinate]
 
     @model_validator(mode="after")
@@ -75,6 +75,9 @@ def _mask(image, regions):
         x1, y1, x2, y2 = region.bbox
         left, top = max(0, math.floor(x1 * width / 1000) - padding), max(0, math.floor(y1 * height / 1000) - padding)
         right, bottom = min(width - 1, math.ceil(x2 * width / 1000) + padding - 1), min(height - 1, math.ceil(y2 * height / 1000) + padding - 1)
+        if region.label in {"identity_number", "identifier_number", "phone"}:
+            # shortcut: bbox width approximates the last 40% of horizontal digits; use digit boxes for rotated/exact suffixes.
+            right = min(width - 1, math.ceil((x1 + (x2 - x1) * 0.6) * width / 1000) - 1)
         cv2.rectangle(image, (left, top), (right, bottom), (0, 0, 0), thickness=cv2.FILLED)
     return _encode(image)
 
@@ -84,6 +87,10 @@ async def redact(ollama, body: bytes, content_type: str) -> tuple[bytes, dict]:
     height, width = image.shape[:2]
     clean = await asyncio.to_thread(_encode, image)
     regions = Regions(regions=await ollama.detect_regions(clean)).regions
+    if regions and all(region.label == "face" for region in regions):
+        # A broad pass can stop at the portraits and miss the printed fields on cards.
+        document_regions = await ollama.detect_regions(clean, document_only=True)
+        regions = Regions(regions=[*regions, *document_regions]).regions
     addresses = [region.bbox for region in regions if region.label == "address"]
     if addresses:
         left = math.floor(min(box[0] for box in addresses) * width / 1000)

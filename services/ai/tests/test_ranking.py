@@ -1,3 +1,5 @@
+import pytest
+
 from findie_ai.ranking import location_tokens, normalize_text, rank_candidates
 
 
@@ -25,6 +27,7 @@ def test_exact_room_wins_over_similar_embedding_without_losing_source_identity()
     assert [row["itemId"] for row in result] == ["correct", "wrong"]
     assert result[0] == {
         "itemId": "correct", "documentVersion": 2, "sourceId": "correct",
+        "sourceKind": "text",
         "sourceVersion": 1, "sourceSha256": "a" * 64,
     }
 
@@ -43,7 +46,27 @@ def test_matching_room_does_not_override_agreement_on_the_object():
     assert result[0]["itemId"] == "wallet"
 
 
-def test_rrf_rewards_agreement_and_ties_are_deterministic():
-    first, second, shared = [candidate(name, "") for name in ("a", "b", "c")]
-    result = rank_candidates([first, shared], [second, shared], [], [])
-    assert [row["itemId"] for row in result] == ["c", "a", "b"]
+def test_rrf_rewards_agreement_and_favors_semantic_on_disagreement():
+    keyword_only, semantic_only, shared = [candidate(name, "") for name in ("a", "b", "c")]
+    result = rank_candidates([semantic_only, shared], [keyword_only, shared], [], [])
+    assert [row["itemId"] for row in result] == ["c", "b", "a"]
+
+
+@pytest.mark.parametrize(("semantic_weight", "expected"), [(0.3, ["keyword", "semantic"]),
+                                                         (0.7, ["semantic", "keyword"])])
+def test_rrf_configured_weight_reverses_preference_when_the_channels_disagree(semantic_weight, expected):
+    semantic, keyword = [candidate(name, "") for name in ("semantic", "keyword")]
+    result = rank_candidates([semantic, keyword], [keyword, semantic], [], [], semantic_weight=semantic_weight)
+    assert [row["itemId"] for row in result] == expected
+
+
+@pytest.mark.parametrize(("semantic_weight", "expected"), [(0, ["keyword", "shared"]),
+                                                         (1, ["semantic", "shared"])])
+def test_zero_weight_channel_does_not_contribute_candidates_or_replace_source(semantic_weight, expected):
+    semantic, keyword, shared = [candidate(name, "") for name in ("semantic", "keyword", "shared")]
+    semantic_shared = shared | {"source_id": "semantic-source"}
+    keyword_shared = shared | {"source_id": "keyword-source"}
+    result = rank_candidates([semantic, semantic_shared], [keyword, keyword_shared], [], [],
+                             semantic_weight=semantic_weight)
+    assert [row["itemId"] for row in result] == expected
+    assert result[1]["sourceId"] == ("semantic-source" if semantic_weight == 1 else "keyword-source")

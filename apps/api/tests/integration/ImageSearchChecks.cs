@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 static class ImageSearchChecks
 {
     static int checks;
+    const string PrivateOcr = "PRIVATE OCR SAMPLE 0016 - NEVER EXPOSE";
     static readonly byte[] Output = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8i0AAAAASUVORK5CYII=");
     public static async Task RunAsync(WebApplicationFactory<FindieDbContext> factory, StubAiGateway ai, StubStorage storage,
         Func<HttpClient, string, Task> login)
@@ -35,6 +36,7 @@ static class ImageSearchChecks
         var imagesPath = $"/api/items/{itemId}/images";
         var original = Encoding.UTF8.GetBytes("PRIVATE ORIGINAL INPUT - MUST NEVER ENTER STORAGE");
         byte[]? lastInput = null;
+        var embeddingCompleted = false;
         await Binary(owner, imagesPath, original, "application/octet-stream", 415);
         await Binary(owner, imagesPath, [], "image/png", 400);
         await Binary(owner, imagesPath, new byte[BoundedImage.MaxBytes + 1], "image/png", 413);
@@ -43,17 +45,57 @@ static class ImageSearchChecks
         Check(storage.Puts == 0, "AI failure never uploads original or output");
         ai.Handler = command =>
         {
+            if (command.Kind == "image.embed") return ImageReply(command);
             var metadata = ImageMetadata(command);
             metadata["sha256"] = new string('0', 64);
             return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(metadata), Output.ToArray()));
         };
         await Binary(owner, imagesPath, original, "image/png", 502);
         Check(storage.Puts == 0, "invalid output hash never reaches R2");
+        foreach (var field in new[] { "modelId", "modelRevision", "dimensions", "sourceSha256", "vector" })
+        {
+            ai.Handler = command =>
+            {
+                var payload = EmbeddingPayload(command, factory.Services.GetRequiredService<IConfiguration>());
+                payload[field] = field == "dimensions" ? 1 : field == "vector" ? new double[768] : "wrong";
+                return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), JsonSerializer.SerializeToUtf8Bytes(payload)));
+            };
+            await Binary(owner, imagesPath, original, "image/png", 502);
+        }
+        Check(storage.Puts == 0, "invalid original embeddings fail before processed storage writes");
         ai.Handler = ImageReply;
         var uploadKey = Guid.NewGuid();
         var image = await Binary(owner, imagesPath, original, "image/png", 201, uploadKey);
         Check(lastInput?.All(value => value == 0) == true, "raw request buffer is cleared after processing");
         var imageId = image.GetProperty("id").GetGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var cached = await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages
+                .Where(value => value.Id == imageId).Select(value => value.OriginalEmbedding).SingleAsync();
+            using var document = JsonDocument.Parse(cached!);
+            Check(document.RootElement.GetProperty("sourceSha256").GetString() == RecoveryWorkflow.Hash(original)
+                && document.RootElement.GetProperty("vector").GetArrayLength() == 768, "upload persists the validated original vector without original bytes");
+            Check(document.RootElement.GetProperty("ocr").GetProperty("text").GetString() == PrivateOcr,
+                "upload preserves validated private OCR alongside its original image vector");
+            Check(!image.TryGetProperty("originalEmbedding", out _) && !image.GetRawText().Contains(PrivateOcr),
+                "private OCR and original embedding are excluded from image responses");
+            var legacy = document.RootElement.EnumerateObject().Where(property => property.Name != "ocr")
+                .ToDictionary(property => property.Name, property => property.Value.Clone());
+            var validated = AiProtocol.Embedding(JsonSerializer.SerializeToElement(legacy), factory.Services.GetRequiredService<IConfiguration>());
+            Check(!validated.Contains("\"ocr\""), "legacy visual-only caches remain valid without invented OCR");
+            foreach (var field in new[] { "text", "hasUnclearText", "modelId", "modelRevision", "processingProfile", "extra", "missing" })
+            {
+                var payload = document.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+                var ocr = document.RootElement.GetProperty("ocr").EnumerateObject().ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+                if (field == "missing") ocr.Remove("text");
+                else ocr[field] = field == "text" ? new string('x', 3001) : "invalid";
+                payload["ocr"] = ocr;
+                var rejected = false;
+                try { AiProtocol.Embedding(JsonSerializer.SerializeToElement(payload), factory.Services.GetRequiredService<IConfiguration>()); }
+                catch (Exception error) when (AiProtocol.Malformed(error)) { rejected = true; }
+                Check(rejected, "private OCR rejects invalid schema, bounds or model identity");
+            }
+        }
         var contentPath = $"{imagesPath}/{imageId}/content";
         var reviewPath = $"{imagesPath}/{imageId}/review";
         Check(image.GetProperty("processingState").GetString() == "needs_review", "output is held for human review");
@@ -108,7 +150,10 @@ static class ImageSearchChecks
         Check((await Get(owner, $"/api/items/{otherId}/images")).GetArrayLength() == 0, "failed R2 upload leaves no attached image");
         var processing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        ai.Handler = async command => { processing.SetResult(); await resume.Task; return await ImageReply(command); };
+        ai.Handler = async command => {
+            if (command.Kind == "image.redact") { processing.SetResult(); await resume.Task; }
+            return await ImageReply(command);
+        };
         var inFlight = Binary(owner, $"/api/items/{otherId}/images", original, "image/png", 409);
         await processing.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await Send(owner, HttpMethod.Put, $"/api/items/{otherId}", new { rowVersion = 1, content = Content("Edited while processing") }, 200);
@@ -147,8 +192,36 @@ static class ImageSearchChecks
         };
         await Send(seeker, HttpMethod.Post, "/api/search", new { text = "wallet" }, 502);
         var imageCandidate = await Candidate(itemId, true);
+        using var ocrSeeker = await User("ocr-search-validation");
+        ai.Handler = command => SearchReply(command, [imageCandidate]);
+        results = await Send(ocrSeeker, HttpMethod.Post, "/api/search", new { text = "0016" }, 200);
+        Check(results.GetProperty("items").GetArrayLength() == 1 && !results.GetRawText().Contains(PrivateOcr),
+            "text queries accept approved image-backed OCR candidates without exposing private OCR");
+        foreach (var field in new[] { "sourceVersion", "sourceSha256" })
+        {
+            var stale = JsonSerializer.SerializeToElement(imageCandidate).EnumerateObject()
+                .ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+            stale[field] = field == "sourceVersion" ? 2 : new string('0', 64);
+            ai.Handler = command => SearchReply(command, [stale]);
+            results = await Send(ocrSeeker, HttpMethod.Post, "/api/search", new { text = "0016" }, 200);
+            Check(results.GetProperty("items").GetArrayLength() == 0 && results.GetProperty("partial").GetBoolean(),
+                "text queries reject image-backed OCR with a stale image version or processed hash");
+        }
+        foreach (var invalidKind in new string?[] { null, "ocr", "unknown" })
+        {
+            var invalid = JsonSerializer.SerializeToElement(imageCandidate).EnumerateObject()
+                .ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+            if (invalidKind is null) invalid.Remove("sourceKind");
+            else invalid["sourceKind"] = invalidKind;
+            ai.Handler = command => SearchReply(command, [invalid]);
+            await Send(ocrSeeker, HttpMethod.Post, "/api/search", new { text = "0016" }, 502);
+        }
+        ai.Handler = command => SearchReply(command, [firstCandidate]);
+        await Binary(ocrSeeker, "/api/search/image", original, "image/png", 502);
         ai.Handler = command => {
             Check(command.Kind == "search.hybrid.image" && !command.Persistent && command.Body.SequenceEqual(original), "image query uses transient binary transport");
+            var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
+            Check(remaining.TotalSeconds is > 295 and <= 300, "image queries allow five minutes for image embedding");
             return SearchReply(command, [imageCandidate]);
         };
         var putCount = storage.Puts;
@@ -161,6 +234,9 @@ static class ImageSearchChecks
         var staleRead = Send(seeker, HttpMethod.Get, contentPath, null, 404);
         await reading.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await Send(owner, HttpMethod.Post, reviewPath, new { contentVersion = 1, decision = "rejected" }, 200);
+        using (var scope = factory.Services.CreateScope())
+            Check(await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages
+                .AnyAsync(value => value.Id == imageId && value.OriginalEmbedding == null), "permanent review rejection clears the original embedding");
         releaseRead.SetResult();
         await staleRead;
         storage.OnRead = null;
@@ -170,7 +246,13 @@ static class ImageSearchChecks
         await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 409);
         results = await Binary(seeker, "/api/search/image", original, "image/png", 200);
         Check(results.GetProperty("items").GetArrayLength() == 0, "revoked image review invalidates old search sources");
+        ai.Handler = command => SearchReply(command, [imageCandidate]);
+        results = await Send(ocrSeeker, HttpMethod.Post, "/api/search", new { text = "0016" }, 200);
+        Check(results.GetProperty("items").GetArrayLength() == 0, "text queries cannot rehydrate revoked image-backed OCR candidates");
         await Send(owner, HttpMethod.Post, $"{imagesPath}/{imageId}/retire", new { contentVersion = 1 }, 200);
+        using (var scope = factory.Services.CreateScope())
+            Check(await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages
+                .AnyAsync(value => value.Id == imageId && value.OriginalEmbedding == null), "retiring an image clears its original embedding");
         await Send(owner, HttpMethod.Get, contentPath, null, 404);
         ai.Handler = ImageReply;
         var replacement = await Binary(owner, imagesPath, original, "image/png", 201);
@@ -189,6 +271,8 @@ static class ImageSearchChecks
             Check((await db.StoredObjects.ToListAsync()).All(value => value.ObjectKind == "processed" && value.Sha256 != RecoveryWorkflow.Hash(original)), "database contains only processed output metadata");
             Check(storage.Objects.Values.All(value => value.SequenceEqual(Output)), "R2 receives only normalized output");
             Check((await db.IndexOutbox.Select(value => value.Payload).ToListAsync()).All(value => !value.Contains("PRIVATE ORIGINAL")), "raw input never enters outbox");
+            Check((await db.IndexOutbox.Select(value => value.Payload).ToListAsync()).All(value => !value.Contains(PrivateOcr)),
+                "private OCR never enters the public outbox document");
             await db.StoredObjects.Where(value => value.ObjectState == "reserved").ExecuteUpdateAsync(update => update
                 .SetProperty(value => value.ExpiresAt, DateTimeOffset.UtcNow.AddSeconds(-1)));
         }
@@ -198,7 +282,70 @@ static class ImageSearchChecks
         Check(storage.Objects.Count == 0, "retired and abandoned outputs are cleaned without original payloads");
         await CheckOutbox(maintenance);
         await CheckUploadLimit();
+        await CheckLostTimeRanking();
         Console.WriteLine($"PASS: {checks} image/search/outbox checks (output-only storage, review, stale results, bounded retry and cleanup)");
+
+        async Task CheckLostTimeRanking()
+        {
+            using var browser = await User("lost-time-seeker");
+            const string text = "wallet";
+            const string lostAt = "2026-01-02T09:00:00+07:00";
+            var later = await Publish("Found a week later", "exact", "2026-01-09T09:00:00+07:00");
+            var overlap = await Publish("Found around the time of loss", "range", "2026-01-02T08:55:00+07:00", "2026-01-02T09:10:00+07:00");
+            var near = await Publish("Found five minutes later", "exact", "2026-01-02T09:05:00+07:00");
+            var before = await Publish("Found one minute before", "exact", "2026-01-02T08:59:00+07:00");
+            var unknown = await Publish("Found at an unknown time", "unknown");
+            ai.Handler = command => command.Kind == "search.hybrid.image"
+                ? SearchReply(command, [later.Image, overlap.Image, near.Image, before.Image, unknown.Image])
+                : SearchReply(command, [later.Text, overlap.Text, near.Text, before.Text, unknown.Text]);
+
+            var baseline = await Send(browser, HttpMethod.Post, "/api/search", new { text }, 200);
+            Check(Ids(baseline).SequenceEqual([later.Id, overlap.Id, near.Id, before.Id, unknown.Id]),
+                "omitting loss time preserves worker ranking");
+            var ranked = await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt }, 200);
+            Check(Ids(ranked).SequenceEqual([near.Id, overlap.Id, later.Id, before.Id, unknown.Id]),
+                "loss time favors a nearby later find and an overlapping range while retaining earlier or unknown finds");
+            var limited = await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt, limit = 1 }, 200);
+            Check(Ids(limited).SequenceEqual([near.Id]), "loss time adjusts ranking before applying the result limit");
+            var filtered = await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt, from = "2026-01-03" }, 200);
+            Check(Ids(filtered).SequenceEqual([later.Id]), "loss time does not override the date filter");
+
+            var query = "?lostAt=" + Uri.EscapeDataString(lostAt);
+            var image = await Binary(browser, "/api/search/image" + query, original, "image/png", 200);
+            var combined = await Multipart(browser, "/api/search/images" + query, [original], text, 200);
+            Check(Ids(image).First() == near.Id && Ids(combined).First() == near.Id,
+                "loss time ranks image and combined results as well as text results");
+
+            var beforeInvalidRequests = ai.Calls;
+            await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt = "invalid" }, 400);
+            await Multipart(browser, "/api/search/images?lostAt=2026-01-02T09:00:00", [original], text, 400);
+            await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt = DateTimeOffset.UtcNow.AddDays(1) }, 400);
+            Check(ai.Calls == beforeInvalidRequests, "invalid loss time is rejected before contacting AI");
+
+            var dateOnly = await Publish("Found on the same local day", "date", foundOn: "2026-01-02");
+            ai.Handler = command => SearchReply(command, [later.Text, dateOnly.Text]);
+            var acrossMidnight = await Send(browser, HttpMethod.Post, "/api/search",
+                new { text, lostAt = "2026-01-01T23:00:00Z", limit = 1 }, 200);
+            Check(Ids(acrossMidnight).SequenceEqual([dateOnly.Id]), "date-only finds use their local day when comparing the loss timestamp");
+
+            async Task<(Guid Id, object Text, object Image)> Publish(string title, string foundTimePrecision,
+                string? foundFrom = null, string? foundUntil = null, string? foundOn = null)
+            {
+                var created = await Send(owner, HttpMethod.Post, "/api/items", new
+                {
+                    content = new { title, publicDescription = "Wallet", foundArea = "Campus",
+                        foundTimePrecision, foundFrom, foundUntil, foundOn, foundTimezone = "Asia/Ho_Chi_Minh" },
+                    custody = new { kind = "person" }
+                }, 201);
+                var id = created.GetProperty("id").GetGuid();
+                await PublicationImageFixture.EnsureAsync(factory, id);
+                await Send(owner, HttpMethod.Put, $"/api/items/{id}/publication", new { rowVersion = 1, state = "published" }, 200);
+                return (id, await Candidate(id, false), await Candidate(id, true));
+            }
+
+            static IEnumerable<Guid> Ids(JsonElement response) => response.GetProperty("items").EnumerateArray()
+                .Select(hit => hit.GetProperty("item").GetProperty("id").GetGuid());
+        }
 
         async Task CheckUploadLimit()
         {
@@ -258,6 +405,15 @@ static class ImageSearchChecks
                     && await db.ItemImages.AnyAsync(value => value.ItemId == limitedId && value.Position == 5 && value.RetiredAt == null),
                     "retiring one legacy image permits replacement without removing another legacy image or exceeding three active images");
             }
+            var textOnly = await Send(browser, HttpMethod.Post, "/api/items", Create("Text-only upload"), 201);
+            ai.Handler = command => command.Kind == "image.embed"
+                ? Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), "null"u8.ToArray()))
+                : ImageReply(command);
+            var textOnlyImage = await Binary(browser, $"/api/items/{textOnly.GetProperty("id").GetGuid()}/images", original, "image/png", 201);
+            using (var scope = factory.Services.CreateScope())
+                Check(await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages.AnyAsync(value =>
+                    value.Id == textOnlyImage.GetProperty("id").GetGuid() && value.OriginalEmbedding == null),
+                    "explicit disabled image embedding permits text-only upload without a cached vector");
         }
         async Task CheckMultipartSearch()
         {
@@ -369,11 +525,27 @@ static class ImageSearchChecks
             await db.IndexOutbox.Where(value => value.Status == "pending" || value.Status == "retry").ExecuteUpdateAsync(update => update
                 .SetProperty(value => value.Status, "obsolete").SetProperty(value => value.FinishedAt, DateTimeOffset.UtcNow));
             var current = await Get(owner, $"/api/items/{itemId}");
-            await Send(owner, HttpMethod.Put, $"/api/items/{itemId}", new { rowVersion = current.GetProperty("rowVersion").GetInt64(), content = Content("Outbox checksum") }, 200);
+            var originalCache = await db.ItemImages.Where(value => value.Id == liveImage.GetProperty("id").GetGuid())
+                .Select(value => value.OriginalEmbedding).SingleAsync();
+            await Send(owner, HttpMethod.Put, $"/api/items/{itemId}", new { rowVersion = current.GetProperty("rowVersion").GetInt64(),
+                content = Content("Outbox checksum", "Edited public description after upload") }, 200);
+            Check(await db.ItemImages.AnyAsync(value => value.Id == liveImage.GetProperty("id").GetGuid() && value.OriginalEmbedding == originalCache),
+                "editing public description preserves the independent image and OCR cache");
             var jobId = await db.IndexOutbox.Where(value => value.Status == "pending").Select(value => value.Id).SingleAsync();
             ai.Handler = command => {
                 Check(command.Persistent && command.Kind == "index.upsert", "index command uses persistent transport");
                 Check(command.Metadata.GetProperty("dimensions").GetInt32() == 768, "index dispatch uses configured nondefault embedding dimensions");
+                var part = command.Images!.Single();
+                using var cached = JsonDocument.Parse(part.Body);
+                Check(part.Kind == "index.source.vector" && part.ContentType == "application/json"
+                    && RecoveryWorkflow.Hash(part.Body) == part.Metadata.GetProperty("payloadSha256").GetString()
+                    && cached.RootElement.GetProperty("sourceSha256").GetString() == RecoveryWorkflow.Hash(original)
+                    && cached.RootElement.GetProperty("ocr").GetProperty("text").GetString() == PrivateOcr
+                    && part.Metadata.GetProperty("sourceSha256").GetString() == RecoveryWorkflow.Hash(Output),
+                    "outbox reuses the original joint vector and private OCR bound to the reviewed processed image");
+                using var manifest = JsonDocument.Parse(command.Body);
+                Check(manifest.RootElement.GetProperty("document").GetProperty("publicDescription").GetString() == "Edited public description after upload"
+                    && !Encoding.UTF8.GetString(command.Body).Contains(PrivateOcr), "current public description stays separate from private image OCR in the manifest");
                 Check(RecoveryWorkflow.Hash(RecoveryWorkflow.CanonicalJson(Encoding.UTF8.GetString(command.Body))) == command.Metadata.GetProperty("snapshotSha256").GetString(), "jsonb roundtrip preserves canonical snapshot checksum");
                 var metadata = StubAiGateway.ReplyMetadata(command); metadata["committed"] = true;
                 return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(metadata), [], async committed => {
@@ -381,8 +553,38 @@ static class ImageSearchChecks
                     if (committed) Check(await ackScope.ServiceProvider.GetRequiredService<FindieDbContext>().IndexOutbox.AnyAsync(value => value.Id == jobId && value.Status == "succeeded"), "index receipt is ACKed only after business commit");
                 }));
             };
-            Check(await worker.DispatchOneAsync(default), "outbox dispatched one due job");
+            storage.OnRead = () => throw new InvalidOperationException("Cached original vector indexing must not read masked image bytes.");
+            try { Check(await worker.DispatchOneAsync(default), "outbox dispatched one due job"); }
+            finally { storage.OnRead = null; }
             Check(await db.IndexOutbox.AnyAsync(value => value.Id == jobId && value.Status == "succeeded" && value.Attempts == 1), "successful receipt finishes matching lease");
+            var configuration = factory.Services.GetRequiredService<IConfiguration>();
+            foreach (var key in new[] { "Ai:EmbeddingRevision", "Ai:RedactionRevision" })
+            {
+                current = await Get(owner, $"/api/items/{itemId}");
+                await Send(owner, HttpMethod.Put, $"/api/items/{itemId}", new { rowVersion = current.GetProperty("rowVersion").GetInt64(), content = Content("Changed image/OCR model") }, 200);
+                var mismatchedJob = await db.IndexOutbox.Where(value => value.Status == "pending").Select(value => value.Id).SingleAsync();
+                var savedRevision = configuration[key];
+                configuration[key] = "new-model-needs-reupload";
+                var beforeMismatch = ai.Calls;
+                try { await worker.DispatchOneAsync(default); }
+                finally { configuration[key] = savedRevision; }
+                Check(ai.Calls == beforeMismatch && await db.IndexOutbox.AnyAsync(value => value.Id == mismatchedJob
+                    && value.Status == "failed" && value.LastErrorCode == "original_embedding_requires_reupload"),
+                    "embedding or OCR model changes require reupload instead of silently substituting masked pixels");
+            }
+            var liveImageId = liveImage.GetProperty("id").GetGuid();
+            var cachedOriginal = await db.ItemImages.Where(value => value.Id == liveImageId).Select(value => value.OriginalEmbedding).SingleAsync();
+            await db.ItemImages.Where(value => value.Id == liveImageId).ExecuteUpdateAsync(update => update.SetProperty(value => value.OriginalEmbedding, (string?)null));
+            current = await Get(owner, $"/api/items/{itemId}");
+            await Send(owner, HttpMethod.Put, $"/api/items/{itemId}", new { rowVersion = current.GetProperty("rowVersion").GetInt64(), content = Content("Legacy image reindex") }, 200);
+            ai.Handler = command => {
+                var part = command.Images!.Single();
+                Check(part.Kind == "index.source.image" && part.Body.SequenceEqual(Output), "legacy images without cached original vectors still index masked bytes");
+                var metadata = StubAiGateway.ReplyMetadata(command); metadata["committed"] = true;
+                return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(metadata), []));
+            };
+            await worker.DispatchOneAsync(default);
+            await db.ItemImages.Where(value => value.Id == liveImageId).ExecuteUpdateAsync(update => update.SetProperty(value => value.OriginalEmbedding, cachedOriginal));
             current = await Get(owner, $"/api/items/{itemId}");
             await Send(owner, HttpMethod.Put, $"/api/items/{itemId}", new { rowVersion = current.GetProperty("rowVersion").GetInt64(), content = Content("Retry outbox") }, 200);
             jobId = await db.IndexOutbox.Where(value => value.Status == "pending").Select(value => value.Id).SingleAsync();
@@ -444,7 +646,7 @@ static class ImageSearchChecks
             var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
             var entity = await db.Items.Include(value => value.Images).ThenInclude(value => value.ProcessedObject).SingleAsync(value => value.Id == id);
             var source = image ? entity.Images.Single(value => value.RetiredAt == null) : null;
-            return new { itemId = id, documentVersion = entity.DocumentVersion, sourceId = source?.Id ?? id,
+            return new { itemId = id, documentVersion = entity.DocumentVersion, sourceKind = image ? "image" : "text", sourceId = source?.Id ?? id,
                 sourceVersion = source?.ContentVersion ?? entity.ContentVersion, sourceSha256 = source?.ProcessedObject?.Sha256 ?? RecoveryWorkflow.Hash(entity.Title + "\n" + entity.PublicDescription) };
         }
         async Task<HttpClient> User(string subject)
@@ -457,11 +659,34 @@ static class ImageSearchChecks
         Task<AiReply> ImageReply(AiCommand command)
         {
             lastInput = command.Body;
-            Check(command.Kind == "image.redact" && !command.Persistent && command.Body.SequenceEqual(original), "original is sent only via transient AI request");
+            Check(command.Kind is "image.embed" or "image.redact" && !command.Persistent && command.Body.SequenceEqual(original), "original is sent only via transient AI requests");
+            if (command.Kind == "image.embed")
+            {
+                embeddingCompleted = false;
+                var embeddingRemaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
+                Check(embeddingRemaining.TotalSeconds is > 295 and <= 300, "original image OCR and image embedding get a five-minute deadline");
+                return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)),
+                    JsonSerializer.SerializeToUtf8Bytes(EmbeddingPayload(command, factory.Services.GetRequiredService<IConfiguration>())), committed => {
+                        embeddingCompleted = committed; return Task.CompletedTask;
+                    }));
+            }
+            Check(embeddingCompleted, "original embedding reply is ACKed before waiting for image redaction");
             var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
             Check(remaining.TotalSeconds is > 295 and <= 300, "redaction gets a five-minute processing deadline");
             return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(ImageMetadata(command)), Output.ToArray()));
         }
+    }
+    static Dictionary<string, object?> EmbeddingPayload(AiCommand command, IConfiguration configuration)
+    {
+        var metadata = command.Metadata;
+        var vector = new double[metadata.GetProperty("dimensions").GetInt32()];
+        vector[0] = 1;
+        return new Dictionary<string, object?> { ["modelId"] = metadata.GetProperty("modelId").GetString(),
+            ["modelRevision"] = metadata.GetProperty("modelRevision").GetString(), ["dimensions"] = vector.Length,
+            ["sourceSha256"] = metadata.GetProperty("sourceSha256").GetString(), ["vector"] = vector,
+            ["ocr"] = new Dictionary<string, object?> { ["text"] = PrivateOcr, ["hasUnclearText"] = false,
+                ["modelId"] = configuration["Ai:RedactionModelId"], ["modelRevision"] = configuration["Ai:RedactionRevision"],
+                ["processingProfile"] = "ocr-v1" } };
     }
     static Dictionary<string, object?> ImageMetadata(AiCommand command)
     {
@@ -472,7 +697,7 @@ static class ImageSearchChecks
     }
     static Task<AiReply> SearchReply(AiCommand command, object[] candidates) => Task.FromResult(new AiReply(
         JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), JsonSerializer.SerializeToUtf8Bytes(new { candidates })));
-    static object Content(string title) => new { title, publicDescription = "Safe public description", foundArea = "Campus", foundTimePrecision = "date", foundOn = "2026-01-01" };
+    static object Content(string title, string publicDescription = "Safe public description") => new { title, publicDescription, foundArea = "Campus", foundTimePrecision = "date", foundOn = "2026-01-01" };
     static object Create(string title) => new { content = Content(title), custody = new { kind = "person" } };
     static Task<JsonElement> Get(HttpClient client, string path) => Send(client, HttpMethod.Get, path, null, 200);
     static async Task<JsonElement> Send(HttpClient client, HttpMethod method, string path, object? body, int expected)

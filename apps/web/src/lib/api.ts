@@ -226,7 +226,7 @@ export async function uploadImage(
         "Content-Type": prepared.type,
         "Idempotency-Key": key,
       },
-      signal: AbortSignal.timeout(300000),
+      signal: AbortSignal.timeout(660000),
     },
   );
   uploadKeys.delete(file);

@@ -39,13 +39,24 @@ def check_gateway(base_url, token, revisions):
             return result
         except HTTPError as error:
             with error:
-                detail = error.headers.get("ngrok-error-code", "") + " " + error.read(4096).decode("utf-8", "replace")
-            code = re.search(r"\bERR_NGROK_\d+\b", detail)
+                body = error.read(4096).decode("utf-8", "replace")
+            code = re.search(r"\bERR_NGROK_\d+\b", error.headers.get("ngrok-error-code", "") + " " + body)
             if error.code == 404 and code and code[0] == "ERR_NGROK_3200" and attempt < 4:
                 time.sleep(1)
                 continue
             # Only return a machine error code; upstream pages can contain private content.
             marker = code[0] if code else "không có mã lỗi ngrok"
+            if error.code == 502 and not code:
+                try:
+                    failure = json.loads(body)
+                except (ValueError, RecursionError):
+                    failure = None
+                if isinstance(failure, dict) and failure.get("error") in (
+                        "ollama_unavailable", "ollama_timeout", "ollama_http_error"):
+                    marker = failure["error"]
+                    upstream_status = failure.get("upstreamStatus")
+                    if marker == "ollama_http_error" and type(upstream_status) is int and 100 <= upstream_status <= 599:
+                        marker += f" (Ollama HTTP {upstream_status})"
             raise RuntimeError(f"{endpoint}: HTTP {error.code}, {marker}.") from None
         except (URLError, OSError):
             raise RuntimeError(f"Không kết nối được {endpoint}; kiểm tra gateway và ngrok đang chạy.") from None
@@ -120,7 +131,10 @@ def gateway(token, models, *, address=("127.0.0.1", 11435), upstream="http://127
                 if self.path == "/api/generate":
                     return self.respond(400, {"error": "operation_not_supported"})
                 if self.path == "/api/show":
-                    return self.respond(200, {"capabilities": ["embedding", "vision"]})
+                    capabilities = ["embedding", "vision"]
+                    if getattr(embedding, "supports_image_text", False):
+                        capabilities.append("image_text")
+                    return self.respond(200, {"capabilities": capabilities})
                 if (("dimensions" in payload and (type(payload["dimensions"]) is not int
                                                  or payload["dimensions"] != embedding.dimensions))
                         or payload.get("truncate", False) is not False):

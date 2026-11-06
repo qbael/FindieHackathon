@@ -110,6 +110,7 @@ public sealed class ItemService(IRecoveryRepository repository, RecoveryWorkflow
             await workflow.RequireManagerAsync(item, actor, ct);
             RecoveryWorkflow.RequireVersion(item, request.RowVersion);
             item.Lifecycle = "deleted";
+            foreach (var image in item.Images) image.OriginalEmbedding = null;
             workflow.Changed(item);
             return id;
         }, ct);

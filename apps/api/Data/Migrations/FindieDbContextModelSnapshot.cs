@@ -907,6 +907,10 @@ namespace Findie.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("item_id");
 
+                    b.Property<string>("OriginalEmbedding")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("original_embedding");
+
                     b.Property<short>("Position")
                         .HasColumnType("smallint")
                         .HasColumnName("position");

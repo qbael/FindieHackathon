@@ -52,7 +52,7 @@ test("text search sends the cookie/CSRF JSON contract and preserves metadata", a
     return Response.json(path === "/api/auth/csrf" ? { token: "csrf-search" } : response);
   });
   assert.deepEqual(await searchText("  ví đen  ", {
-    area: "Quận 1", from: "2026-10-01", until: "2026-10-24",
+    area: "Quận 1", from: "2026-10-01", until: "2026-10-24", lostAt: "2026-10-24T09:30",
   }), response);
   assert.deepEqual(requests.map((request) => request.path), ["/api/auth/csrf", "/api/search"]);
   const init = requests[1].init!;
@@ -60,7 +60,8 @@ test("text search sends the cookie/CSRF JSON contract and preserves metadata", a
   assert.equal(init.credentials, "same-origin");
   assert.deepEqual(init.headers, { "X-CSRF-TOKEN": "csrf-search", "Content-Type": "application/json" });
   assert.deepEqual(JSON.parse(String(init.body)), {
-    text: "ví đen", area: "Quận 1", from: "2026-10-01", until: "2026-10-24", limit: 10,
+    text: "ví đen", area: "Quận 1", from: "2026-10-01", until: "2026-10-24",
+    lostAt: "2026-10-24T09:30:00+07:00", limit: 10,
   });
 });
 
@@ -72,13 +73,15 @@ test("image search sends prepared bytes, MIME, CSRF and filters without mixing t
     requests.push({ path, init });
     return Response.json(path === "/api/auth/csrf" ? { token: "csrf-image" } : { ...response, mode: "image" });
   });
-  const result = await searchImage(file, { area: " Quận 1 ", from: "2026-10-01", until: "2026-10-24" }, signal);
+  const result = await searchImage(file, {
+    area: " Quận 1 ", from: "2026-10-01", until: "2026-10-24", lostAt: "2026-10-24T09:30",
+  }, signal);
   assert.equal(result.mode, "image");
   const request = requests[1];
   const url = new URL(request.path, "https://findie.test");
   assert.equal(url.pathname, "/api/search/image");
   assert.deepEqual(Object.fromEntries(url.searchParams), {
-    limit: "10", area: "Quận 1", from: "2026-10-01", until: "2026-10-24",
+    limit: "10", area: "Quận 1", from: "2026-10-01", until: "2026-10-24", lostAt: "2026-10-24T09:30:00+07:00",
   });
   assert.equal(request.init!.body, preparedImage);
   assert.equal(request.init!.method, "POST");
@@ -110,7 +113,7 @@ test("multiple-image search sends three images, description, CSRF, filters and c
     return Response.json(path === "/api/auth/csrf" ? { token: "csrf-images" } : { ...response, mode: "combined" });
   });
   const result = await searchImages(files, "  ví đen  ", {
-    area: " Quận 1 ", from: "2026-10-01", until: "2026-10-24",
+    area: " Quận 1 ", from: "2026-10-01", until: "2026-10-24", lostAt: "2026-10-24T09:30",
   }, signal);
   assert.equal(result.mode, "combined");
   assert.equal(requests.length, 2);
@@ -119,7 +122,7 @@ test("multiple-image search sends three images, description, CSRF, filters and c
   const url = new URL(path, "https://findie.test");
   assert.equal(url.pathname, "/api/search/images");
   assert.deepEqual(Object.fromEntries(url.searchParams), {
-    limit: "10", area: "Quận 1", from: "2026-10-01", until: "2026-10-24",
+    limit: "10", area: "Quận 1", from: "2026-10-01", until: "2026-10-24", lostAt: "2026-10-24T09:30:00+07:00",
   });
   assert.equal(init!.method, "POST");
   assert.equal(init!.credentials, "same-origin");
@@ -244,7 +247,9 @@ test("unavailable search stays an error and fallback preserves only basic filter
       : new Response(null, { status: 503 }),
   );
   await assert.rejects(searchText("ví đen", {}), (error) => error instanceof ApiError && error.status === 503);
-  const fallback = new URL(basicSearchUrl({ area: " Bờ Sông ", from: "2026-10-01", until: "" })!, "https://findie.test");
+  const fallback = new URL(basicSearchUrl({
+    area: " Bờ Sông ", from: "2026-10-01", lostAt: "2026-10-24T09:30",
+  })!, "https://findie.test");
   assert.equal(fallback.pathname, "/search");
   assert.deepEqual(Object.fromEntries(fallback.searchParams), {
     mode: "basic", area: "Bờ Sông", from: "2026-10-01",
@@ -252,7 +257,7 @@ test("unavailable search stays an error and fallback preserves only basic filter
 });
 
 test("search fallback never opens the full list without filters", () => {
-  assert.equal(basicSearchUrl({}), null);
+  assert.equal(basicSearchUrl({ lostAt: "2026-10-24T09:30" }), null);
   assert.equal(basicSearchUrl({ area: "  ", from: "", until: " " }), null);
   assert.equal(basicSearchUrl({ until: "2026-10-30" }), "/search?mode=basic&until=2026-10-30");
 });

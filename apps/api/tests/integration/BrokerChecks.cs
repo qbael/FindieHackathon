@@ -38,10 +38,10 @@ static class BrokerChecks
             try
             {
                 var metadata = JsonDocument.Parse((byte[])command.BasicProperties.Headers!["metadata"]!).RootElement.Clone();
-                if (command.BasicProperties.Type == "image.redact")
+                if (command.BasicProperties.Type is "image.embed" or "image.redact" or "search.hybrid.image")
                 {
                     Check(!command.BasicProperties.Persistent && command.Body.Span.SequenceEqual("private raw input"u8), "raw image is binary and nonpersistent");
-                    Check(command.BasicProperties.Expiration == "300000", "raw image has a five-minute TTL");
+                    Check(command.BasicProperties.Expiration == "300000", "image OCR, embedding and redaction have a five-minute TTL");
                     imageSeen = true;
                 }
                 else Check(command.BasicProperties.Expiration == "30000", "other AI requests keep their thirty-second TTL");
@@ -73,6 +73,8 @@ static class BrokerChecks
             while (!gateway.Ready && DateTimeOffset.UtcNow < deadline) await Task.Delay(50);
             Check(gateway.Ready, "long-lived AMQP connection and consumers start");
             await Query("image.redact", "private raw input"u8.ToArray(), "image/png");
+            await Query("image.embed", "private raw input"u8.ToArray(), "image/png");
+            await Query("search.hybrid.image", "private raw input"u8.ToArray(), "image/png");
             await Query("index.upsert", "{}"u8.ToArray(), "application/json", true);
             await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Query("search.hybrid", "{}"u8.ToArray(), "application/json")));
             await Query("test.duplicate", [], "application/json");

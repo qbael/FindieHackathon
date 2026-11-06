@@ -9,6 +9,7 @@ dependencies = [
   "httpx2==2.16.0",
   "pydantic==2.14.1",
   "psycopg[binary]==3.3.6",
+  "redis==8.1.0",
   "uvicorn==0.54.0",
   "pillow==13.0.0",
   "opencv-python-headless==5.0.0.93",

@@ -161,7 +161,7 @@ make db-down
 và RabbitMQ thật để kiểm migration/Google OAuth giả lập/cookie, toàn bộ API nghiệp vụ,
 ảnh/search/outbox, concurrency và request/reply broker; tự dọn sau chạy, không ghi DB Compose.
 R2/Python trong kiểm thử dùng adapter double; xem [phạm vi kiểm chứng](../api/testing.md).
-`db-down` dừng cả PostgreSQL/RabbitMQ và giữ volume. API không tự chạy migration lúc startup.
+`db-down` dừng cả PostgreSQL/RabbitMQ/Redis và giữ volume. API không tự chạy migration lúc startup.
 Nếu volume có 16 bảng bootstrap cũ, script chỉ thay schema khi đã kiểm tra tất cả bảng rỗng.
 Nếu có dữ liệu, lệnh dừng và giữ nguyên DB; cần migration chuyển đổi dữ liệu riêng.
 Đổi mật khẩu trong `.env` cũng không tự đổi mật khẩu DB đã tồn tại.
@@ -261,7 +261,7 @@ revision/model inference và gói Colab nằm trong notebook.
 ```sh
 make check       # Bootstrap, notebook, API build/smoke, AI tests, web tests/build
 make db-check    # Migration/API/SQL trên PostgreSQL tạm và AMQP trên RabbitMQ tạm; cần Docker
-make ai-integration  # Worker Python + PostgreSQL/RabbitMQ thật, Ollama giả lập, tự dọn containers
+make ai-integration  # Worker Python + PostgreSQL/RabbitMQ/Redis thật, Ollama giả lập, tự dọn containers
 ```
 
 Kiểm tra notebook local chỉ xác nhận cấu trúc/cú pháp và logic không cần model. Chạy cell

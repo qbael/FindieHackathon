@@ -24,6 +24,27 @@ def tagged_source(tag, path=NOTEBOOK):
 
 
 class OllamaNotebookTests(unittest.TestCase):
+    def test_full_stack_restarts_exited_ollama_before_opening_gateway(self):
+        notebook = INSTALL_NOTEBOOKS[1]
+        install = ast.parse(tagged_source("install", notebook))
+        ensure = next(node for node in install.body if isinstance(node, ast.FunctionDef)
+                      and node.name == "ensure_ollama_ready")
+        with tempfile.TemporaryDirectory() as directory:
+            api = Mock(side_effect=[ConnectionRefusedError(), {"models": []}, {"models": []}])
+            run = Mock()
+            stopped = SimpleNamespace(poll=Mock(return_value=0))
+            scope = {"ollama_api": api, "ollama_process": stopped, "ollama_env": {},
+                     "WORK": Path(directory), "subprocess": run, "time": Mock(),
+                     "NGROK_AUTHTOKEN": "test-ngrok-token"}
+            exec(compile(ast.Module(body=[ensure], type_ignores=[]), "<ollama-startup>", "exec"), scope)
+            startup = tagged_source("gateway-start", notebook)
+            exec(startup.split('\nif "gateway_server"', 1)[0], scope)
+            scope["ensure_ollama_ready"]()
+            run.Popen.assert_called_once()
+            self.assertEqual(run.Popen.call_args.args[0], ["ollama", "serve"])
+            self.assertIs(scope["ollama_process"], run.Popen.return_value)
+            self.assertEqual(api.call_args_list, [call("/api/tags", timeout=1)] * 3)
+
     def test_full_stack_redaction_matches_runtime_fields_prompt_and_options(self):
         root = NOTEBOOK.parents[2]
         source = tagged_source("inference-check", INSTALL_NOTEBOOKS[1])
@@ -95,7 +116,8 @@ class OllamaNotebookTests(unittest.TestCase):
         notebook = INSTALL_NOTEBOOKS[1]
         scope = {}
         exec(tagged_source("qwen-source", notebook), scope)
-        loaded = SimpleNamespace(model_id=scope["MODEL_ID"], digest=scope["MODEL_DIGEST"], dimensions=2048)
+        loaded = SimpleNamespace(model_id=scope["MODEL_ID"], digest=scope["MODEL_DIGEST"], dimensions=2048,
+                                 supports_image_text=True)
         loader = Mock(return_value=loaded)
         scope.update(QwenEmbedding=loader, EMBEDDING_MODEL=loaded.model_id, revisions={})
         source = tagged_source("qwen-load", notebook)
@@ -106,6 +128,10 @@ class OllamaNotebookTests(unittest.TestCase):
         self.assertEqual(scope["revisions"][loaded.model_id], scope["MODEL_DIGEST"])
         scope["MODEL_DIGEST"] = "0" * 64
         with self.assertRaisesRegex(RuntimeError, "không khớp"):
+            exec(source, scope)
+        scope["MODEL_DIGEST"] = loaded.digest
+        loaded.supports_image_text = False
+        with self.assertRaisesRegex(RuntimeError, "Wrapper Qwen cũ"):
             exec(source, scope)
 
     def test_full_stack_exports_qwen_identity_without_credentials(self):

@@ -1,7 +1,7 @@
 import { api, validateImages, writeHeaders, type Item } from "./api.ts";
 import { prepareImage } from "./images.ts";
 
-export type SearchFilters = { area?: string; from?: string; until?: string };
+export type SearchFilters = { area?: string; from?: string; until?: string; lostAt?: string };
 export type SearchResponse = {
   items: { rank: number; item: Item }[];
   mode: "text" | "image" | "combined";
@@ -11,6 +11,10 @@ export type SearchResponse = {
   filtersRelaxed: boolean;
   fallbackUrl: string;
 };
+
+function apiSearchFilters({ lostAt, ...filters }: SearchFilters) {
+  return { ...filters, lostAt: lostAt ? `${lostAt}:00+07:00` : undefined };
+}
 
 export async function searchText(
   text: string,
@@ -27,7 +31,7 @@ export async function searchText(
       ...(await writeHeaders()),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ text, ...filters, limit: 10 }),
+    body: JSON.stringify({ text, ...apiSearchFilters(filters), limit: 10 }),
   });
 }
 
@@ -40,11 +44,11 @@ export async function searchImage(
   const image = await prepareImage(file);
   signal?.throwIfAborted();
   const query = new URLSearchParams({ limit: "10" });
-  for (const [key, value] of Object.entries(filters))
+  for (const [key, value] of Object.entries(apiSearchFilters(filters)))
     if (value?.trim()) query.set(key, value.trim());
   return api<SearchResponse>(`/api/search/image?${query}`, {
     method: "POST",
-    signal,
+    signal: signal ?? AbortSignal.timeout(330000),
     body: image,
     headers: {
       ...(await writeHeaders()),
@@ -77,11 +81,11 @@ export async function searchImages(
   signal?.throwIfAborted();
   if (text) body.append("text", text);
   const query = new URLSearchParams({ limit: "10" });
-  for (const [key, value] of Object.entries(filters))
+  for (const [key, value] of Object.entries(apiSearchFilters(filters)))
     if (value?.trim()) query.set(key, value.trim());
   return api<SearchResponse>(`/api/search/images?${query}`, {
     method: "POST",
-    signal,
+    signal: signal ?? AbortSignal.timeout(960000),
     body,
     headers: await writeHeaders(),
   });
@@ -89,7 +93,9 @@ export async function searchImages(
 
 export function basicSearchUrl(filters: SearchFilters): string | null {
   const query = new URLSearchParams({ mode: "basic" });
-  for (const [key, value] of Object.entries(filters))
-    if (value?.trim()) query.set(key, value.trim());
+  for (const key of ["area", "from", "until"] as const) {
+    const value = filters[key]?.trim();
+    if (value) query.set(key, value);
+  }
   return query.size > 1 ? `/search?${query}` : null;
 }
