@@ -7,6 +7,9 @@ export class PostItemPage extends BasePage {
   // Step 1: Info & Photo
   readonly titleInput: Locator;
   readonly fileInput: Locator;
+  readonly imagePreviews: Locator;
+  readonly previewItems: Locator;
+  readonly removeImageButtons: Locator;
   readonly descriptionInput: Locator;
   readonly areaInput: Locator;
   readonly nextButton: Locator;
@@ -31,6 +34,9 @@ export class PostItemPage extends BasePage {
     // Step 1
     this.titleInput = page.locator('label:has-text("Tên món đồ") input');
     this.fileInput = page.locator('input[type="file"]');
+    this.imagePreviews = page.locator('.image-previews');
+    this.previewItems = page.locator('.image-previews li');
+    this.removeImageButtons = page.locator('.image-previews button');
     this.descriptionInput = page.locator('label:has-text("Mô tả công khai") textarea');
     this.areaInput = page.locator('label:has-text("Khu vực nhặt được") input');
     this.nextButton = page.locator('.form-actions button[type="submit"]');
@@ -49,8 +55,16 @@ export class PostItemPage extends BasePage {
     this.savedPanel = page.locator('.saved-panel');
   }
 
-  async uploadFile(filePath: string) {
+  async uploadFile(filePath: string | string[]) {
     await this.fileInput.setInputFiles(filePath);
+  }
+
+  async expectImagePreviewsCount(count: number) {
+    await expect(this.previewItems).toHaveCount(count);
+  }
+
+  async removeImagePreview(index = 0) {
+    await this.removeImageButtons.nth(index).click();
   }
 
   async clickNext() {

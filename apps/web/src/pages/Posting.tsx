@@ -238,18 +238,20 @@ function PostEditor({
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
                           multiple
+                          disabled={files.length >= 3}
                           required={!files.length}
                           onChange={(event) => {
-                            const selected = Array.from(
+                            const incoming = Array.from(
                               event.target.files ?? [],
                             );
+                            event.target.value = "";
+                            if (!incoming.length) return;
+                            const selected = [...files, ...incoming];
                             try {
                               validatePostImages(selected);
                               setFiles(selected);
                               action.setError(null);
                             } catch (cause) {
-                              setFiles([]);
-                              event.target.value = "";
                               action.setError(cause as Error);
                             }
                           }}
@@ -260,7 +262,15 @@ function PostEditor({
                           </span>
                         )}
                       </label>
-                      <ImagePreviews files={files} />
+                      <ImagePreviews
+                        files={files}
+                        onRemove={(index) => {
+                          setFiles((current) =>
+                            current.filter((_, position) => position !== index),
+                          );
+                          action.setError(null);
+                        }}
+                      />
                       <p className="field-hint">
                         Tin cần ít nhất 1 ảnh kèm mô tả. Ảnh sẽ được xử lý sau
                         khi lưu tin; bạn cần duyệt ảnh trước khi công khai.
