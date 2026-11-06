@@ -37,4 +37,16 @@ test.describe('CUJ-02: Đăng bài nhặt được đồ (Item Ingestion Flow)',
     // 5. Kiểm tra bài đăng đã lưu thành công
     await postItemPage.expectSavedSuccessfully();
   });
+
+  test('Người dùng có thể gỡ ảnh đã chọn bằng dấu x khi đăng tin nhặt được đồ', async ({ page }) => {
+    const postItemPage = new PostItemPage(page);
+    const sampleImagePath = path.resolve(__dirname, '../fixtures/sample-item.jpg');
+
+    await postItemPage.goto('/post');
+    await postItemPage.uploadFile([sampleImagePath, sampleImagePath]);
+    await postItemPage.expectImagePreviewsCount(2);
+
+    await postItemPage.removeImagePreview(0);
+    await postItemPage.expectImagePreviewsCount(1);
+  });
 });

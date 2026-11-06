@@ -1,3 +1,4 @@
+.env
 .env_old
 .env.*
 !.env.example
