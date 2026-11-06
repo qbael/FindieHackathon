@@ -1,4 +1,5 @@
 .env
+.env_old
 .env.*
 !.env.example
 **/node_modules/
@@ -17,3 +18,5 @@ notebooks/colab/outputs/
 .cache/db-backups/
 .cache/rabbitmq/
 *.log
+**/playwright-report/
+**/test-results/

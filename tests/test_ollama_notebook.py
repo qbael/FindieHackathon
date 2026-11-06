@@ -50,13 +50,13 @@ class OllamaNotebookTests(unittest.TestCase):
         source = tagged_source("inference-check", INSTALL_NOTEBOOKS[1])
         scope = {}
         exec(source.split("\n\ndef chunk", 1)[0], scope)
-        image_tree = ast.parse((root / "services/ai/findie_ai/images.py").read_text())
+        image_tree = ast.parse((root / "services/ai/findie_ai/images.py").read_text(encoding="utf-8"))
         region = next(node for node in image_tree.body if isinstance(node, ast.ClassDef) and node.name == "Region")
         labels = next(node.annotation.slice for node in region.body
                       if isinstance(node, ast.AnnAssign) and node.target.id == "label")
         self.assertEqual(scope["REGIONS_SCHEMA"]["$defs"]["Region"]["properties"]["label"]["enum"],
                          list(ast.literal_eval(labels)))
-        ollama_tree = ast.parse((root / "services/ai/findie_ai/ollama.py").read_text())
+        ollama_tree = ast.parse((root / "services/ai/findie_ai/ollama.py").read_text(encoding="utf-8"))
         prompt = next(ast.literal_eval(value.orelse if isinstance(value, ast.IfExp) else value)
                       for node in ast.walk(ollama_tree) if isinstance(node, ast.Dict)
                       for key, value in zip(node.keys, node.values)
