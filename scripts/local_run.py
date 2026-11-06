@@ -81,7 +81,7 @@ def main():
             probe.settimeout(0.3)
             if probe.connect_ex(("127.0.0.1", port)) == 0:
                 raise RuntimeError(f"Port {port} is already in use; stop that service before make local-run.")
-    subprocess.run(["docker", "compose", "up", "-d", "--wait", "db", "rabbitmq"], cwd=ROOT, env=environment, check=True)
+    subprocess.run(["docker", "compose", "up", "-d", "--wait", "db", "rabbitmq", "redis"], cwd=ROOT, env=environment, check=True)
     subprocess.run(["dotnet", "build", "apps/api", "--no-restore", "--verbosity", "quiet"], cwd=ROOT, env=environment, check=True)
     processes = []
 

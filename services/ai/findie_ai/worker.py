@@ -13,20 +13,26 @@ from uuid import UUID
 import aio_pika
 
 from . import images
-from .contracts import IndexImageMetadata, IndexMetadata, Query, RedactMetadata, SearchMetadata, Snapshot
-from .ollama import ModelUnavailable, Ollama
+from .contracts import (ImageEmbeddingMetadata, IndexImageMetadata, IndexMetadata, IndexVectorMetadata,
+                        OriginalEmbedding, Query, RedactMetadata, SearchMetadata, Snapshot)
+from .ollama import EmbeddingInputRejected, ModelUnavailable, OCR_PROFILE, Ollama
 from .store import Store
+from .search_cache import SearchCache
 
 
 log = logging.getLogger(__name__)
 MIMES = {"image/jpeg", "image/png", "image/webp"}
+MAX_INDEX_TEXT_CHARS = 20000
 
 
 class Worker:
     def __init__(self, settings):
         self.settings = settings
         self.ollama = Ollama(settings)
-        self.store = Store(settings.search_dsn, settings.model_id, settings.revision, settings.dimensions)
+        self.store = Store(settings.search_dsn, settings.model_id, settings.revision, settings.dimensions,
+            cache=SearchCache(settings.redis_url, settings.search_cache_ttl_seconds) if settings.redis_url else None,
+            query_identity=(settings.query_instruction, settings.search_profile),
+            semantic_weight=settings.semantic_weight)
         self.connection = self.publisher = self.consumer = None
         self.capacity = asyncio.Semaphore(1)
         self.pending = {}
@@ -43,6 +49,7 @@ class Worker:
         if self.connection:
             await self.connection.close()
         await self.ollama.close()
+        await self.store.close()
 
     @staticmethod
     def drop_body(message):
@@ -52,6 +59,8 @@ class Worker:
     def clear_pending(self):
         for state in self.pending.values():
             state["timer"].cancel()
+            state["vectors"].clear()
+            state["ocr"].clear()
             for message in state["messages"]:
                 self.drop_body(message)
         self.pending.clear()
@@ -61,7 +70,7 @@ class Worker:
         if not self.connected:
             return False
         try:
-            async with asyncio.timeout(4):
+            async with asyncio.timeout(12):
                 await self.store.check()
                 await self.ollama.verify_models()
                 needs_probe = self.last_embedding_success is None or time.monotonic() - self.last_embedding_success > 15
@@ -120,7 +129,7 @@ class Worker:
         revision = self.settings.redaction_revision if redaction else self.settings.revision
         if metadata.modelId != model or metadata.modelRevision != revision:
             raise ValueError("model_configuration_mismatch")
-        if isinstance(metadata, IndexMetadata) and metadata.dimensions != self.settings.dimensions:
+        if isinstance(metadata, (IndexMetadata, ImageEmbeddingMetadata)) and metadata.dimensions != self.settings.dimensions:
             raise ValueError("dimension_configuration_mismatch")
         if isinstance(metadata, SearchMetadata):
             profile = self.settings.search_profile if metadata.mode == "text" else self.settings.image_search_profile
@@ -131,6 +140,19 @@ class Worker:
 
     async def execute(self, kind, metadata, body, content_type="application/json"):
         self.identity(metadata)
+        if kind == "image.embed":
+            if sha256(body).hexdigest() != metadata.sourceSha256:
+                raise ValueError("source_hash_mismatch")
+            normalized = await images.normalize(body, content_type)
+            if not self.settings.image_search_enabled:
+                return None
+            ocr = await self.ollama.read_text(normalized)
+            vector = await self.ollama.embed_image(normalized)
+            self.last_embedding_success = time.monotonic()
+            return OriginalEmbedding(modelId=metadata.modelId, modelRevision=metadata.modelRevision,
+                dimensions=metadata.dimensions, sourceSha256=metadata.sourceSha256, vector=vector,
+                ocr={**ocr, "modelId": self.settings.redaction_model, "modelRevision": self.settings.redaction_revision,
+                     "processingProfile": OCR_PROFILE}).model_dump()
         if kind == "image.redact":
             if sha256(body).hexdigest() != metadata.sourceSha256:
                 raise ValueError("source_hash_mismatch")
@@ -140,9 +162,12 @@ class Worker:
                 query = Query.model_validate_json(body)
                 if metadata.mode != "text" or (query.area, query.from_, query.until) != (metadata.area, metadata.from_, metadata.until):
                     raise ValueError("filter_mismatch")
-                vector = await self.ollama.embed(query.text, query=True)
-                self.last_embedding_success = time.monotonic()
-                candidates = await self.store.search(query.text, vector, query.area, query.from_, query.until, metadata.candidateLimit)
+                async def embed():
+                    vector = await self.ollama.embed(query.text, query=True)
+                    self.last_embedding_success = time.monotonic()
+                    return vector
+                candidates = await self.store.search(query.text, None, query.area, query.from_, query.until,
+                    metadata.candidateLimit, include_images=self.settings.image_search_enabled, embed=embed)
             else:
                 if metadata.mode != "image":
                     raise ValueError("search_modality_mismatch")
@@ -180,17 +205,17 @@ class Worker:
         await self.finish(key, state, TimeoutError("parts_deadline_expired"))
 
     async def collect(self, message, metadata):
-        """Retain only bounded public metadata/vectors and ACK handles between parts."""
+        """Retain only bounded metadata/vectors and ACK handles between parts."""
         key = (metadata.jobId, metadata.leaseToken)
         if self.pending_bytes + len(message.body) > 60 * 1024 * 1024:
             raise ValueError("index_capacity_exhausted")
-        common = metadata.model_dump(exclude={"deadlineAt", "sourceId", "sourceVersion", "sourceSha256", "processingProfile"})
+        common = metadata.model_dump(exclude={"deadlineAt", "sourceId", "sourceVersion", "sourceSha256", "processingProfile", "payloadSha256"})
         state = self.pending.get(key)
         if state is None:
             if len(self.pending) >= 2:
                 raise ValueError("index_capacity_exhausted")
             state = {"common": common, "deadline": metadata.deadlineAt, "manifest": None,
-                     "metadata": None, "parts": {}, "validated_parts": set(), "vectors": {}, "messages": [], "finishing": False,
+                     "metadata": None, "parts": {}, "part_checksums": {}, "validated_parts": set(), "vectors": {}, "ocr": {}, "messages": [], "finishing": False,
                      "correlation": message.correlation_id, "reply_to": message.reply_to}
             self.pending[key] = state
             state["timer"] = asyncio.create_task(self.expire(key, state))
@@ -209,22 +234,39 @@ class Worker:
             if isinstance(metadata, IndexImageMetadata):
                 source_id = str(metadata.sourceId)
                 identity = (metadata.sourceVersion, metadata.sourceSha256, metadata.processingProfile)
-                if sha256(message.body).hexdigest() != metadata.sourceSha256:
+                checksum = metadata.payloadSha256 if isinstance(metadata, IndexVectorMetadata) else metadata.sourceSha256
+                if sha256(message.body).hexdigest() != checksum:
                     raise ValueError("source_hash_mismatch")
+                cached = None
+                if isinstance(metadata, IndexVectorMetadata):
+                    cached = OriginalEmbedding.model_validate_json(message.body)
+                    if (cached.modelId, cached.modelRevision, cached.dimensions) != (
+                            metadata.modelId, metadata.modelRevision, metadata.dimensions):
+                        raise ValueError("cached_embedding_identity_mismatch")
+                    if cached.ocr is not None and (cached.ocr.modelId, cached.ocr.modelRevision) != (
+                            self.settings.redaction_model, self.settings.redaction_revision):
+                        raise ValueError("cached_ocr_identity_mismatch")
                 if source_id in state["parts"]:
-                    if state["parts"][source_id] != identity:
+                    if state["parts"][source_id] != identity or state["part_checksums"][source_id] != checksum:
                         raise ValueError("source_conflict")
                     return
                 if len(state["parts"]) >= 5:
                     raise ValueError("too_many_image_parts")
                 state["parts"][source_id] = identity
+                state["part_checksums"][source_id] = checksum
                 self.validate_parts(state)
-                async with self.capacity:
+                async with asyncio.timeout(metadata.remaining()), self.capacity:
                     metadata.remaining()
-                    normalized = await images.normalize(message.body, message.content_type)
-                    if self.settings.image_search_enabled:
-                        state["vectors"][source_id] = await self.ollama.embed_image(normalized)
-                        self.last_embedding_success = time.monotonic()
+                    if cached is not None:
+                        if self.settings.image_search_enabled:
+                            state["vectors"][source_id] = cached.vector
+                            if cached.ocr is not None:
+                                state["ocr"][source_id] = cached.ocr.text
+                    else:
+                        normalized = await images.normalize(message.body, message.content_type)
+                        if self.settings.image_search_enabled:
+                            state["vectors"][source_id] = await self.ollama.embed_image(normalized)
+                            self.last_embedding_success = time.monotonic()
                 state["validated_parts"].add(source_id)
             else:
                 snapshot = self.snapshot("index.upsert", metadata, message.body)
@@ -232,11 +274,6 @@ class Worker:
                     return
                 state["manifest"], state["metadata"] = snapshot, metadata
                 self.validate_parts(state)
-                async with self.capacity:
-                    metadata.remaining()
-                    vector = await self.ollama.embed(snapshot.embedding_text())
-                self.last_embedding_success = time.monotonic()
-                state["vectors"][str(snapshot.itemId)] = vector
             if self.pending.get(key) is state:
                 await self.finish(key, state)
         except asyncio.CancelledError:
@@ -256,6 +293,19 @@ class Worker:
         if any(expected.get(source_id) != identity for source_id, identity in state["parts"].items()):
             raise ValueError("image_manifest_mismatch")
 
+    async def embed_index_text(self, snapshot, ocr):
+        public_text = snapshot.embedding_text()
+        private_text = "\n".join(text for text in ocr.values() if text.strip())
+        if private_text:
+            prefix = public_text + "\nOCR ảnh:\n"
+            combined = prefix + private_text[:MAX_INDEX_TEXT_CHARS - len(prefix)]
+            try:
+                return await self.ollama.embed(combined)
+            except EmbeddingInputRejected:
+                # Keep full OCR in lexical search when the gateway rejects the semantic input budget.
+                pass
+        return await self.ollama.embed(public_text)
+
     async def finish(self, key, state, error=None):
         if self.pending.get(key) is not state or state["finishing"]:
             return
@@ -264,9 +314,8 @@ class Worker:
             if snapshot is None:
                 return
             images = {str(source.id) for source in snapshot.sources if source.kind == "image"}
-            vectors = {str(source.id) for source in snapshot.sources
-                       if source.kind == "text" or self.settings.image_search_enabled}
-            if state["validated_parts"] != images or set(state["vectors"]) != vectors:
+            image_vectors = images if self.settings.image_search_enabled else set()
+            if state["validated_parts"] != images or set(state["vectors"]) != image_vectors:
                 return
         state["finishing"] = True
         if state["timer"] is not asyncio.current_task():
@@ -277,9 +326,15 @@ class Worker:
                 try:
                     remaining = (state["deadline"] - datetime.now(timezone.utc)).total_seconds()
                     async with asyncio.timeout(max(0, remaining)):
+                        source_ids = [str(source.id) for source in snapshot.sources]
+                        ocr = {source_id: state["ocr"][source_id] for source_id in source_ids if source_id in state["ocr"]}
+                        async with self.capacity:
+                            vector = await self.embed_index_text(snapshot, ocr)
+                        self.last_embedding_success = time.monotonic()
+                        vectors = dict(state["vectors"]) | {str(snapshot.itemId): vector}
                         committed = await self.store.upsert(snapshot.model_dump(mode="json"),
-                            state["metadata"].snapshotSha256, dict(state["vectors"]), state["deadline"],
-                            text_only=not self.settings.image_search_enabled)
+                            state["metadata"].snapshotSha256, vectors, state["deadline"],
+                            text_only=not self.settings.image_search_enabled, **({"ocr": ocr} if ocr else {}))
                         if not committed:
                             raise ValueError("snapshot_superseded")
                 except Exception as failure:
@@ -305,12 +360,13 @@ class Worker:
         finally:
             self.pending.pop(key, None)
             state["vectors"].clear()
+            state["ocr"].clear()
             for message in state["messages"]:
                 self.drop_body(message)
 
     async def handle(self, message, lane):
         kind = message.type
-        durable = lane == "index" and kind in {"index.upsert", "index.remove", "index.source.image"}
+        durable = lane == "index" and kind in {"index.upsert", "index.remove", "index.source.image", "index.source.vector"}
         metadata = None
         failure_reply_allowed = True
         try:
@@ -325,20 +381,24 @@ class Worker:
                     raise ValueError("invalid_reply_route")
             elif not message.reply_to or not message.reply_to.startswith("amq.gen-") or len(message.reply_to) > 255:
                 raise ValueError("invalid_reply_route")
-            image = kind in {"index.source.image", "image.redact", "search.hybrid.image"}
+            image = kind in {"index.source.image", "image.embed", "image.redact", "search.hybrid.image"}
             if not ((durable and (image or message.content_type == "application/json"))
                     or lane == "query" and kind == "search.hybrid" and message.content_type == "application/json"
-                    or lane == "image" and kind in {"image.redact", "search.hybrid.image"}):
+                    or lane == "image" and kind in {"image.embed", "image.redact", "search.hybrid.image"}):
                 raise ValueError("unsupported_operation")
-            if image and message.content_type not in MIMES or not image and len(message.body) > 65536:
+            json_limit = 1024 * 1024 if kind == "index.source.vector" else 65536
+            if image and message.content_type not in MIMES or not image and len(message.body) > json_limit:
                 raise ValueError("invalid_content_type_or_size")
-            model = IndexImageMetadata if kind == "index.source.image" else IndexMetadata if durable else RedactMetadata if kind == "image.redact" else SearchMetadata
+            model = (IndexVectorMetadata if kind == "index.source.vector" else
+                     IndexImageMetadata if kind == "index.source.image" else IndexMetadata if durable else
+                     ImageEmbeddingMetadata if kind == "image.embed" else RedactMetadata if kind == "image.redact" else SearchMetadata)
             metadata = model.model_validate_json(header)
             self.identity(metadata)
-            async with asyncio.timeout(metadata.remaining()):
-                if kind in {"index.upsert", "index.source.image"}:
-                    await self.collect(message, metadata)
-                    return
+            remaining = metadata.remaining()
+            if kind in {"index.upsert", "index.source.image", "index.source.vector"}:
+                await self.collect(message, metadata)
+                return
+            async with asyncio.timeout(remaining):
                 async with self.capacity:
                     metadata.remaining()
                     result = await self.execute(kind, metadata, message.body, message.content_type)
@@ -363,7 +423,7 @@ class Worker:
                         await self.finish(key, state, error)
                         return
                     failure_reply_allowed = False
-            if metadata is not None and kind != "index.source.image" and failure_reply_allowed:
+            if metadata is not None and kind not in {"index.source.image", "index.source.vector"} and failure_reply_allowed:
                 code = "model_unavailable" if isinstance(error, ModelUnavailable) else "processing_failed"
                 try:
                     await self.reply(message, metadata.model_dump(mode="json", by_alias=True), False, {}, code)
@@ -394,7 +454,8 @@ class Worker:
             response["errorCode"] = error_code
         binary = isinstance(result, bytes)
         payload = result if binary else json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode()
-        if len(payload) > (10 * 1024 * 1024 if binary else 262144):
+        limit = 10 * 1024 * 1024 if binary else 1024 * 1024 if message.type == "image.embed" else 262144
+        if len(payload) > limit:
             raise ValueError("response_too_large")
         header = json.dumps(response, separators=(",", ":"))
         if len(header.encode()) > 16384:

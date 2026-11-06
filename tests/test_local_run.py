@@ -30,13 +30,15 @@ class LocalRunTests(unittest.TestCase):
         environment = {"PATH": "/usr/bin", "HOME": "/tmp", "AI_SEARCH_DSN": "search-runtime",
                        "AI_SEARCH_MIGRATION_DSN": "search-admin", "AI_SERVICE_TOKEN": "service-token",
                        "AI_RABBITMQ_URL": "python-broker", "OLLAMA_API_KEY": "private-model",
+                       "AI_REDIS_URL": "redis://cache:secret@127.0.0.1/0", "AI_SEARCH_CACHE_TTL_SECONDS": "60",
                        "ConnectionStrings__Database": "business-runtime", "Storage__SecretAccessKey": "private-r2",
                        "Authentication__Google__ClientSecret": "private-google", "RabbitMq__Uri": "api-broker",
                        "Ai__ServiceToken": "service-token", "POSTGRES_PASSWORD": "admin"}
         ai = module.runtime_environment(environment, "ai")
         api = module.runtime_environment(environment, "api")
         web = module.runtime_environment(environment, "web")
-        self.assertEqual(set(ai), {"PATH", "HOME", "AI_SEARCH_DSN", "AI_SERVICE_TOKEN", "AI_RABBITMQ_URL", "OLLAMA_API_KEY"})
+        self.assertEqual(set(ai), {"PATH", "HOME", "AI_SEARCH_DSN", "AI_SERVICE_TOKEN", "AI_RABBITMQ_URL", "OLLAMA_API_KEY",
+                                   "AI_REDIS_URL", "AI_SEARCH_CACHE_TTL_SECONDS"})
         self.assertEqual(set(api), {"PATH", "HOME", "ConnectionStrings__Database", "Storage__SecretAccessKey",
                                     "Authentication__Google__ClientSecret", "RabbitMq__Uri", "Ai__ServiceToken"})
         self.assertEqual(web, {"PATH": "/usr/bin", "HOME": "/tmp"})

@@ -11,6 +11,7 @@ import {
 } from "../lib/api";
 import { useResource } from "../hooks/hooks";
 import { SearchImages } from "../components/SearchImages";
+import { vietnamLocal } from "../lib/itemForm";
 import {
   basicSearchUrl,
   searchImages,
@@ -30,6 +31,22 @@ import {
   Pagination,
   SafetyNote,
 } from "../components/ui";
+
+function LostTimeInput({ defaultValue, disabled }: { defaultValue?: string; disabled?: boolean }) {
+  return (
+    <label className="search-lost-time">
+      Thời điểm mất ước tính (không bắt buộc)
+      <input
+        name="lostAt"
+        type="datetime-local"
+        defaultValue={defaultValue}
+        max={vietnamLocal(new Date().toISOString())}
+        disabled={disabled}
+      />
+      <span className="field-hint">Giờ Việt Nam · Ưu tiên món được nhặt gần sau thời điểm này.</span>
+    </label>
+  );
+}
 
 export function Home({ signedIn, onImageSearch }: {
   signedIn: boolean;
@@ -64,6 +81,7 @@ export function Home({ signedIn, onImageSearch }: {
           area: String(form.get("area") ?? "").trim() || undefined,
           from: from || undefined,
           until: until || undefined,
+          lostAt: String(form.get("lostAt") ?? "") || undefined,
         } });
       }}>
         <input type="hidden" name="mode" value={query.trim() ? "text" : "basic"} />
@@ -146,6 +164,7 @@ export function Home({ signedIn, onImageSearch }: {
                 onChange={(event) => setUntil(event.target.value)}
               />
             </label>
+            <LostTimeInput disabled={!query.trim() && files.length === 0} />
           </div>
           <div className="search-bottom">
             <button className="button" type="submit">
@@ -222,6 +241,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
             area: query.get("area")?.trim() || undefined,
             from: query.get("from") || undefined,
             until: query.get("until") || undefined,
+            lostAt: query.get("lostAt") || undefined,
           },
         }
       : null),
@@ -245,7 +265,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
     setSuggestions(null);
     const signal = AbortSignal.any([
       controller.signal,
-      AbortSignal.timeout(45000),
+      AbortSignal.timeout(request.files.length ? 960000 : 45000),
     ]);
     const result =
       request.files.length
@@ -288,6 +308,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
         area: String(form.get("area") ?? "").trim() || undefined,
         from: String(form.get("from") ?? "") || undefined,
         until: String(form.get("until") ?? "") || undefined,
+        lostAt: String(form.get("lostAt") ?? "") || undefined,
       },
     });
   }
@@ -379,6 +400,9 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 onChange={(event) => setUntil(event.target.value)}
               />
             </label>
+            {mode !== "basic" && (
+              <LostTimeInput defaultValue={initialRequest?.filters.lostAt ?? query.get("lostAt") ?? undefined} />
+            )}
             <button className="button" type="submit" disabled={searching}>
               <Icon name="search" size={17} />
               {searching ? "Đang tìm kiếm…" : "Tìm kiếm"}
@@ -492,7 +516,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 </EmptyState>
               )}
               {!request && basic.data && (
-                <Pagination page={page} hasMore={basic.data.hasMore} />
+                <Pagination page={basic.data.page} totalPages={basic.data.totalPages} />
               )}
             </>
           )}

@@ -29,7 +29,8 @@ class Metadata(Contract):
         remaining = (self.deadlineAt - datetime.now(timezone.utc)).total_seconds()
         if remaining <= 0:
             raise TimeoutError("deadline_expired")
-        if remaining > (305 if isinstance(self, RedactMetadata) else 35):
+        image_operation = isinstance(self, (RedactMetadata, ImageEmbeddingMetadata)) or isinstance(self, SearchMetadata) and self.mode == "image"
+        if remaining > (305 if image_operation else 35):
             raise ValueError("deadline_too_long")
         return remaining
 
@@ -50,12 +51,48 @@ class IndexImageMetadata(IndexMetadata):
     processingProfile: Literal["image-v1"]
 
 
+class IndexVectorMetadata(IndexImageMetadata):
+    payloadSha256: Digest
+
+
+class ImageEmbeddingMetadata(Metadata):
+    imageId: UUID
+    itemId: UUID
+    sourceVersion: Version
+    sourceSha256: Digest
+    dimensions: Annotated[int, Field(gt=0, le=16000, strict=True)]
+    processingProfile: Literal["image-v1"]
+
+
+class OcrMetadata(Contract):
+    text: str = Field(max_length=3000, strict=True)
+    hasUnclearText: bool = Field(strict=True)
+    modelId: str = Field(min_length=1, max_length=200)
+    modelRevision: str = Field(min_length=1, max_length=200)
+    processingProfile: Literal["ocr-v1"]
+
+
+class OriginalEmbedding(Contract):
+    modelId: str
+    modelRevision: str
+    dimensions: Annotated[int, Field(gt=0, le=16000, strict=True)]
+    sourceSha256: Digest
+    vector: list[Annotated[float, Field(strict=True, allow_inf_nan=False)]] = Field(min_length=1, max_length=16000)
+    ocr: OcrMetadata | None = None
+
+    @model_validator(mode="after")
+    def valid(self):
+        if len(self.vector) != self.dimensions or not any(self.vector):
+            raise ValueError("invalid_original_embedding")
+        return self
+
+
 class RedactMetadata(Metadata):
     imageId: UUID
     itemId: UUID
     sourceVersion: Version
     sourceSha256: Digest
-    processingProfile: Literal["redact-v3"]
+    processingProfile: Literal["redact-v4"]
 
 
 class SearchMetadata(Metadata):

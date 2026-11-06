@@ -21,7 +21,7 @@ local-run:
 	python3 scripts/local_run.py
 
 local-stop:
-	docker compose stop db rabbitmq
+	docker compose stop db rabbitmq redis
 
 local-reindex:
 	python3 scripts/local_reindex.py

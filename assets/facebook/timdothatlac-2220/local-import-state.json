@@ -1,0 +1,14 @@
+{
+  "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+  "fingerprint": "c1649741ace169068e4944b604e57c336e54e736aa40a4ddbc7f1e49486f22b1",
+  "itemId": "02aae6ea-a8fa-4855-8d4c-af9494c5fd22",
+  "images": [
+    {
+      "position": 1,
+      "imageId": "59e6f4f1-5b83-4204-a334-7558080b7a65",
+      "contentVersion": 1,
+      "sha256": "ab074fd7d5c55754a120f9ce91005a144f5ceedfe96ca8fe79fe5b31e8cdf47f",
+      "file": "processed-59e6f4f1-5b83-4204-a334-7558080b7a65.png"
+    }
+  ]
+}

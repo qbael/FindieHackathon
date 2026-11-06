@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import os
+from unittest.mock import AsyncMock
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -11,6 +12,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from findie_ai.store import SnapshotConflict, Store
+from findie_ai.search_cache import SearchCache
 
 
 @pytest.fixture
@@ -54,6 +56,85 @@ def checksum(value):
 
 def deadline():
     return datetime.now(timezone.utc) + timedelta(seconds=30)
+
+
+@pytest.fixture
+def redis_url():
+    url = os.environ.get("AI_TEST_REDIS_URL")
+    if not url:
+        pytest.skip("Set AI_TEST_REDIS_URL to run real Redis search cache checks.")
+    return url
+
+
+def test_redis_cache_branches_and_invalidation_follow_committed_index_changes(store, redis_url):
+    async def run():
+        cache = SearchCache(redis_url, 60)
+        store.cache = cache
+        store._search_channels = AsyncMock(wraps=store._search_channels)
+        cache.put = AsyncMock(wraps=cache.put)
+        embed = AsyncMock(return_value=[1, 0, 0])
+        try:
+            value = snapshot()
+            await put(store, value)
+            first = await store.search("ví E.205", None, embed=embed)
+            assert first[0]["itemId"] == value["itemId"]
+            assert await store.search("ví E.205", None, embed=embed) == first
+            embed.assert_awaited_once()
+            store._search_channels.assert_awaited_once()
+            keys = [call.args[0] for call in cache.put.await_args_list]
+            assert len(keys) == 2 and all([0 < await cache.client.ttl(key) <= 60 for key in keys])
+            for name, expected in (("keyword", (False, True)), ("semantic", (True, False))):
+                await cache.client.delete(next(key for key in keys if f":{name}:" in key))
+                assert await store.search("ví E.205", None, embed=embed) == first
+                assert store._search_channels.await_args.args[-3:-1] == expected
+            assert embed.await_count == 2
+            # Invalid writes roll back the generation alongside the previous projection.
+            invalid = with_images(snapshot(item_id=value["itemId"], version=2), count=1)
+            invalid["sources"][1]["processingProfile"] = "unknown"
+            with pytest.raises(ValueError):
+                await store.upsert(invalid, checksum(invalid), {source["id"]: [1, 0, 0] for source in invalid["sources"]}, deadline())
+            calls = store._search_channels.await_count
+            assert await store.search("ví E.205", None, embed=embed) == first
+            assert store._search_channels.await_count == calls
+            # A writer with no reachable Redis must still invalidate another worker's warm cache.
+            offline = Store(store.dsn, *store.identity[:3], cache=SearchCache("redis://127.0.0.1:1", 60))
+            try:
+                updated = snapshot(item_id=value["itemId"], version=2, description="Ví màu đen đã cập nhật")
+                await put(offline, updated)
+                assert (await offline.search("ví E.205", [1, 0, 0]))[0]["documentVersion"] == 2
+            finally:
+                await offline.close()
+            assert (await store.search("ví E.205", None, embed=embed))[0]["documentVersion"] == 2
+            assert embed.await_count == 3
+            tombstone = {**updated, "kind": "tombstone", "documentVersion": 3, "document": None, "sources": []}
+            await store.remove(tombstone, checksum(tombstone), deadline())
+            assert await store.search("ví E.205", None, embed=embed) == []
+            # Cached empty pools cannot hide an item published later.
+            new = snapshot()
+            await put(store, new)
+            assert (await store.search("ví E.205", None, embed=embed))[0]["itemId"] == new["itemId"]
+        finally:
+            await store.close()
+    asyncio.run(run())
+
+
+def test_redis_ttl_expiry_runs_search_again(store, redis_url):
+    async def run():
+        cache = SearchCache(redis_url, 1)
+        store.cache = cache
+        store._search_channels = AsyncMock(wraps=store._search_channels)
+        embed = AsyncMock(return_value=[1, 0, 0])
+        try:
+            await put(store, snapshot())
+            expected = await store.search("ví", None, embed=embed)
+            assert await store.search("ví", None, embed=embed) == expected
+            embed.assert_awaited_once()
+            await asyncio.sleep(1.1)
+            assert await store.search("ví", None, embed=embed) == expected
+            assert embed.await_count == store._search_channels.await_count == 2
+        finally:
+            await store.close()
+    asyncio.run(run())
 
 
 async def put(store, value, vector=(1.0, 0.0, 0.0)):
@@ -206,6 +287,53 @@ def test_existing_primary_key_upgrade_preserves_text_data_and_is_repeatable(stor
         full = with_images(snapshot(item_id=value["itemId"], version=2))
         await store.upsert(full, checksum(full), {source["id"]: [1, 0, 0] for source in full["sources"]}, deadline())
         assert len(await store.search("", [1, 0, 0], modality="image")) == 1
+    asyncio.run(run())
+
+
+def test_private_ocr_is_searchable_on_the_text_source_and_survives_description_edits(store):
+    async def run():
+        value = with_images(snapshot(title="Thẻ nhặt được", description="Thẻ màu xanh"), count=2)
+        vectors = {value["itemId"]: [1, 0, 0],
+                   value["sources"][1]["id"]: [0, 1, 0], value["sources"][2]["id"]: [0, 1, 0]}
+        image_id = value["sources"][1]["id"]
+        private_text = "MSSV 0012345678"
+        ocr = {image_id: private_text, value["sources"][2]["id"]: private_text}
+        assert await store.upsert(value, checksum(value), vectors, deadline(), ocr=ocr)
+        hits = await store.search("0012345678", [1, 0, 0], strategy="lexical")
+        assert len(hits) == 1 and hits[0]["itemId"] == value["itemId"]
+        assert hits[0]["sourceKind"] == "text"
+        assert hits[0]["sourceId"] == value["itemId"]
+        assert hits[0]["sourceSha256"] == value["sources"][0]["sha256"]
+        assert "0012345678" not in json.dumps(hits) and "ocr" not in hits[0]
+        edited = snapshot(title="Thẻ nhặt được", description="Mô tả đã cập nhật", item_id=value["itemId"], version=2)
+        edited["sources"].extend(value["sources"][1:])
+        assert await store.upsert(edited, checksum(edited), vectors, deadline(), ocr=ocr)
+        hits = await store.search("0012345678", [1, 0, 0], include_images=True, strategy="lexical")
+        assert len(hits) == 1 and hits[0]["documentVersion"] == 2 and hits[0]["sourceKind"] == "text"
+        assert hits[0]["sourceSha256"] == edited["sources"][0]["sha256"]
+        text_hits = await store.search("cập nhật", [1, 0, 0], strategy="lexical")
+        assert text_hits[0]["sourceKind"] == "text"
+        async with await psycopg.AsyncConnection.connect(store.dsn) as db:
+            terms = await (await db.execute("SELECT processing_profile, search_terms::text FROM ai_documents WHERE item_id=%s", (value["itemId"],))).fetchall()
+            assert "0012345678" in next(text for profile, text in terms if profile == "text-v1")
+            assert all(not text for profile, text in terms if profile == "image-v1")
+        tombstone = {**edited, "documentVersion": 3, "kind": "tombstone", "document": None, "sources": []}
+        assert await store.remove(tombstone, checksum(tombstone), deadline())
+        assert await store.search("0012345678", [1, 0, 0], include_images=True) == []
+    asyncio.run(run())
+
+
+def test_ocr_projection_rejects_unbounded_unknown_or_disabled_image_sources(store):
+    async def run():
+        value = with_images(snapshot(), count=1)
+        vectors = {source["id"]: [1, 0, 0] for source in value["sources"]}
+        image_id = value["sources"][1]["id"]
+        for ocr in ({value["itemId"]: "private"}, {str(uuid4()): "unknown"}, {image_id: "x" * 3001}, {image_id: True}):
+            with pytest.raises(ValueError, match="OCR"):
+                await store.upsert(value, checksum(value), vectors, deadline(), ocr=ocr)
+        with pytest.raises(ValueError, match="OCR"):
+            await store.upsert(value, checksum(value), {value["itemId"]: [1, 0, 0]}, deadline(), text_only=True, ocr={image_id: "MSSV"})
+        assert await store.search("private", [1, 0, 0], include_images=True) == []
     asyncio.run(run())
 
 

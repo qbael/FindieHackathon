@@ -2,6 +2,29 @@
 
 **Phiên bản:** 1.4.0 · **Ngày:** 2026-10-23 · **Trạng thái:** Thiết kế đích MVP; Python lưu embedding và thực hiện hybrid search, .NET xử lý nghiệp vụ, giao tiếp RabbitMQ; R2 chỉ lưu ảnh đầu ra, không lưu gốc; chưa triển khai đầy đủ
 
+Cập nhật runtime 05/11/2026: ảnh upload mới có vector riêng từ pixel chưa che và được
+đọc OCR bằng model vision đã ghim. Cache nội bộ giữ vector và OCR có model/profile
+riêng; không giữ bytes gốc, không trả OCR qua DTO hay ghi vào mô tả công khai. Sau
+duyệt, OCR được ghép với tiêu đề, mô tả và khu vực trong vector và từ khóa văn bản.
+Sửa mô tả lập lại nguồn văn bản, dùng lại OCR và vector ảnh đã lưu. Tìm bằng ảnh
+chỉ tạo vector từ ảnh truy vấn trong request tạm, deadline 300 giây. Nguồn cũ chưa
+có OCR hoặc đang dùng vector ảnh/OCR cũ cần tải lại ảnh để tạo cache mới. Cách che `redact-v4`
+giữ nguyên. Không có bộ lọc chính xác số/đuôi số hoặc bảo đảm OCR đọc đúng từng chữ số.
+Ghi chú này thay thế phần tách modality/chưa OCR của cập nhật 04/11 bên dưới; các đoạn
+thiết kế lịch sử còn lại giữ làm bối cảnh, hợp đồng runtime tại
+[AI service](../guides/ai-service.md) và [AMQP](../api/amqp.md).
+
+Cập nhật runtime 04/11/2026: upload mới khi bật capability ảnh tạo embedding từ ảnh chưa
+che qua request tạm `image.embed`, lưu cache vector nội bộ cùng model/revision/chiều/hash
+gốc, chỉ lưu bytes bản che trên R2. Sau duyệt, chỉ mục nhận `index.source.vector` gắn với
+hash/phiên bản bản che; ảnh cũ/không có cache vẫn dùng bytes bản che như trước. Cache bị
+bỏ khi gỡ ảnh/xóa món đồ; đổi model cần tải lại ảnh gốc cho nguồn có cache. Profile
+`redact-v4` giữ khoảng 40% phần cuối theo chiều rộng vùng số CCCD/CMND, điện thoại và
+mã định danh như MSSV; khuôn mặt/địa chỉ/QR/mã vạch vẫn che toàn bộ. Tìm text và ảnh vẫn
+tách theo modality, chưa có OCR hoặc đối chiếu đuôi số chính xác. Các đoạn thiết kế nền
+bên dưới nói về embedding chỉ từ output được thay bằng luồng runtime tại
+[AI service](../guides/ai-service.md) và [hợp đồng AMQP](../api/amqp.md).
+
 Cập nhật runtime 31/10/2026: đã có API nghiệp vụ, AMQP/R2/outbox và worker text/ảnh; Python normalize/che ảnh, index full manifest/parts và tìm ảnh native. Notebook 04 dùng `Qwen/Qwen3-VL-Embedding-2B`/2048 qua Transformers và `qwen3-vl:4b-instruct` qua Ollama, sau gateway ngrok có hợp đồng API Ollama. Các model/chiều trong thiết kế bên dưới là baseline ban đầu; cấu hình thực thi hiện tại ở [AI service](../guides/ai-service.md), [spec local](../specs/003-local-full-stack/spec.md) và [hợp đồng AMQP](../api/amqp.md). Model/Google/R2 thật và chất lượng chưa được coi là đã nghiệm thu chỉ từ test stub.
 [Hiến chương dự án](../../.specify/memory/constitution.md) xác định các nguyên tắc bắt buộc;
 [đặc tả sản phẩm](../product/DAC_TA_FINDIE.md) cung cấp phạm vi,
@@ -207,6 +230,8 @@ Việc .NET bỏ biên nhận cũ **không tự thu hồi vector đã ghi ở kh
 **Python AI service đảm nhận cả lưu embedding và hybrid search trong vector database.** .NET nhận truy vấn từ React, kiểm dữ liệu/bộ lọc và chuyển `search.hybrid` qua RabbitMQ; không lấy vector về để tự tìm. Python trả danh sách ứng viên có thứ hạng, .NET kiểm điều kiện nghiệp vụ hiện tại rồi lấy thông tin món đồ từ database nghiệp vụ để trả giao diện.
 
 Mô tả tiếng Việt không rỗng hoặc ảnh hợp lệ là đầu vào; tìm chỉ bằng mô tả vẫn là quy tắc cốt lõi. Nếu có cả ảnh và mô tả, baseline tiếp tục chọn một chế độ. Hybrid ở đây kết hợp **từ khóa và ngữ nghĩa** khi có văn bản; không tự bật trộn điểm vector text–image hoặc tìm chéo phương thức. Ảnh đơn thuần dùng vector ảnh cùng bộ lọc cấu trúc; không bịa từ khóa/OCR để coi như có nhánh lexical.
+
+Python dùng Redis tùy chọn để cache ứng viên của hai nhánh **từ khóa/vị trí** và **ngữ nghĩa** riêng cho truy vấn văn bản; không cache DTO theo người dùng. Khóa SHA-256 tách theo model, instruction, bộ lọc và UUID chỉ mục trong `ai_search_state`; UUID thay cùng transaction khi upsert/remove. TTL mặc định 60 giây; Redis lỗi thì chạy tìm kiếm trực tiếp. .NET vẫn kiểm nguồn/phiên bản và quyền hiện tại. [Cấu hình, phạm vi và kiểm thử Redis](../guides/ai-service.md#cache-từ-khóa-và-ngữ-nghĩa-bằng-redis).
 
 ### 5.1. Thuật toán hybrid search cơ sở
 

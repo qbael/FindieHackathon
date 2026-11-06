@@ -48,6 +48,27 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             var revision = AiProtocol.Setting(configuration, "RedactionRevision");
             var profile = AiProtocol.Setting(configuration, "RedactionProfile");
             var imageId = Guid.NewGuid();
+            var embeddingMetadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
+                sourceSha256 = request.sha256, modelId = AiProtocol.Setting(configuration, "EmbeddingModelId"),
+                modelRevision = AiProtocol.Setting(configuration, "EmbeddingRevision"), dimensions = AiProtocol.EmbeddingDimensions(configuration),
+                processingProfile = "image-v1", deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json);
+            string? embedding;
+            await using (var embeddingReply = await ai.RequestAsync(new AiCommand("image.embed", embeddingMetadata, bytes, mime!), ct))
+            {
+                try
+                {
+                    AiProtocol.Require(embeddingReply.Metadata, "image.embed");
+                    foreach (var field in new[] { "imageId", "itemId", "sourceVersion", "sourceSha256", "modelId", "modelRevision", "dimensions", "processingProfile" })
+                        if (embeddingReply.Metadata.GetProperty(field).ToString() != embeddingMetadata.GetProperty(field).ToString()) throw new JsonException();
+                    if (embeddingReply.Body.Length > 1048576) throw new JsonException();
+                    using var document = JsonDocument.Parse(embeddingReply.Body);
+                    embedding = document.RootElement.ValueKind == JsonValueKind.Null ? null
+                        : AiProtocol.Embedding(document.RootElement, configuration, request.sha256);
+                    await embeddingReply.CompleteAsync();
+                }
+                catch (Exception error) when (AiProtocol.Malformed(error))
+                { throw new ApiException(502, "AI returned an invalid original image embedding; no image was stored."); }
+            }
             var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
                 sourceSha256 = request.sha256, modelId = model, modelRevision = revision, processingProfile = profile,
                 deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json);
@@ -76,7 +97,7 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
                 value.ValidatedAt = DateTimeOffset.UtcNow;
                 value.ExpiresAt = value.CleanupNextAt = null;
                 var image = new ItemImage { Id = imageId, ItemId = itemId, Position = position, ProcessedObjectId = value.Id,
-                    ProcessedObject = value, ProcessingState = "needs_review", SensitiveRegions = output.Regions,
+                    ProcessedObject = value, ProcessingState = "needs_review", SensitiveRegions = output.Regions, OriginalEmbedding = embedding,
                     RedactionModelId = model, RedactionModelRevision = revision, RedactionProfile = profile };
                 repository.Add(image);
                 item.Images.Add(image);
@@ -122,6 +143,7 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
                 throw new ApiException(409, "The output changed or is no longer reviewable.");
             image.ReviewState = request.Decision;
             image.ProcessingState = request.Decision == "approved" ? "ready" : "rejected";
+            if (request.Decision == "rejected") image.OriginalEmbedding = null;
             image.ReviewedBy = actor;
             image.ReviewedAt = DateTimeOffset.UtcNow;
             if (item.PublicationState == "published" && !item.Images.Any(RecoveryWorkflow.PublicImage))
@@ -150,6 +172,7 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             }
             image.ProcessedObject = null;
             image.ProcessedObjectId = null;
+            image.OriginalEmbedding = null;
             image.ProcessingState = "rejected";
             image.ReviewState = "rejected";
             image.ReviewedBy = actor;
@@ -189,6 +212,37 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
 
 public static class AiProtocol
 {
+    public static string Embedding(JsonElement data, IConfiguration configuration, string? sourceHash = null)
+    {
+        var fields = data.EnumerateObject().Select(property => property.Name).Order().ToArray();
+        var hasOcr = data.TryGetProperty("ocr", out var ocr);
+        if (!fields.SequenceEqual((hasOcr
+            ? new[] { "modelId", "modelRevision", "dimensions", "sourceSha256", "vector", "ocr" }
+            : new[] { "modelId", "modelRevision", "dimensions", "sourceSha256", "vector" }).Order())) throw new JsonException();
+        var model = data.GetProperty("modelId").GetString();
+        var revision = data.GetProperty("modelRevision").GetString();
+        var dimensions = data.GetProperty("dimensions").GetInt32();
+        var hash = data.GetProperty("sourceSha256").GetString();
+        var vector = data.GetProperty("vector").EnumerateArray().Select(value => value.GetDouble()).ToArray();
+        var normSquared = vector.Sum(value => value * value);
+        if (model != Setting(configuration, "EmbeddingModelId") || revision != Setting(configuration, "EmbeddingRevision")
+            || dimensions != EmbeddingDimensions(configuration) || vector.Length != dimensions
+            || hash is not { Length: 64 } || hash.Any(c => c is not (>= '0' and <= '9' or >= 'a' and <= 'f'))
+            || sourceHash is not null && hash != sourceHash || vector.Any(value => !double.IsFinite(value))
+            || !double.IsFinite(normSquared) || normSquared <= 0) throw new JsonException();
+        if (hasOcr)
+        {
+            if (!ocr.EnumerateObject().Select(property => property.Name).Order().SequenceEqual(
+                new[] { "text", "hasUnclearText", "modelId", "modelRevision", "processingProfile" }.Order())
+                || ocr.GetProperty("text").GetString() is not { Length: <= 3000 }
+                || ocr.GetProperty("modelId").GetString() != Setting(configuration, "RedactionModelId")
+                || ocr.GetProperty("modelRevision").GetString() != Setting(configuration, "RedactionRevision")
+                || ocr.GetProperty("processingProfile").GetString() != "ocr-v1") throw new JsonException();
+            _ = ocr.GetProperty("hasUnclearText").GetBoolean();
+            return JsonSerializer.Serialize(new { modelId = model, modelRevision = revision, dimensions, sourceSha256 = hash, vector, ocr }, RecoveryWorkflow.Json);
+        }
+        return JsonSerializer.Serialize(new { modelId = model, modelRevision = revision, dimensions, sourceSha256 = hash, vector }, RecoveryWorkflow.Json);
+    }
     public static int EmbeddingDimensions(IConfiguration configuration) =>
         int.TryParse(configuration["Ai:EmbeddingDimensions"], out var dimensions) && dimensions is > 0 and <= 16000
             ? dimensions : throw new ApiException(503, "AI embedding dimensions must be configured between 1 and 16000.");

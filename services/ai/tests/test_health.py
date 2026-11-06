@@ -26,7 +26,7 @@ def test_unconfigured_internal_status_requires_secret_and_reports_not_ready(monk
         assert response.json()["inferenceReady"] is False
         assert response.json()["embeddingDimensions"] == 2048
         assert response.json()["execution"] == "ollama"
-        assert response.json()["redactionProfileId"] == "redact-v3"
+        assert response.json()["redactionProfileId"] == "redact-v4"
         assert response.json()["capabilities"]["imageSearch"] is False
         assert response.json()["capabilities"]["imageRedaction"] is False
         assert client.get("/health/ready", headers=headers).status_code == 503

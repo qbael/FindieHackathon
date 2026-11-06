@@ -23,11 +23,14 @@ def location_tokens(text: str) -> list[str]:
                    *("hall:" + hall for hall in halls)})
 
 
-def rank_candidates(semantic, lexical, locations, query_locations, limit=200):
+def rank_candidates(semantic, lexical, locations, query_locations, limit=200, *, semantic_weight=0.6):
     """Fuse exact cosine and lexical ranks with a bounded location tie-break."""
     candidates, scores = {}, {}
     # shortcut: location weight is a regression baseline; calibrate it on labelled Findie queries.
-    for channel, weight in ((semantic, 1.0), (lexical, 1.0), (locations, 0.03)):
+    # Keep the primary weight total at two so the location signal retains its scale.
+    for channel, weight in ((semantic, 2 * semantic_weight), (lexical, 2 * (1 - semantic_weight)), (locations, 0.03)):
+        if weight == 0:
+            continue
         for rank, candidate in enumerate(channel, 1):
             item_id = str(candidate["item_id"])
             candidates[item_id] = candidate
@@ -41,6 +44,7 @@ def rank_candidates(semantic, lexical, locations, query_locations, limit=200):
         "itemId": item_id,
         "documentVersion": candidates[item_id]["document_version"],
         "sourceId": str(candidates[item_id]["source_id"]),
+        "sourceKind": "image" if candidates[item_id].get("processing_profile") == "image-v1" else "text",
         "sourceVersion": candidates[item_id]["source_version"],
         "sourceSha256": candidates[item_id]["source_sha256"],
     } for item_id in ordered[:limit]]

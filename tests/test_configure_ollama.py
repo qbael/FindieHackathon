@@ -55,7 +55,7 @@ class ConfigTests(unittest.TestCase):
                 self.assertEqual(parsed[python_field], expected)
                 self.assertEqual(parsed[api_field], expected)
             self.assertEqual(parsed["AI_EMBEDDING_QUERY_INSTRUCTION"], "")
-            self.assertEqual(parsed["Ai__RedactionProfile"], "redact-v3")
+            self.assertEqual(parsed["Ai__RedactionProfile"], "redact-v4")
             self.assertEqual(values["AI_TEXT_SEARCH_PROFILE"], values["Ai__TextSearchProfile"])
             self.assertNotIn("custom-profile", path.read_text())
 

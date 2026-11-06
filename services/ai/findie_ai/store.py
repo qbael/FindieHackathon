@@ -1,6 +1,7 @@
 import asyncio
 import json
 import math
+from hashlib import sha256
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
@@ -15,10 +16,18 @@ class SnapshotConflict(ValueError):
 
 
 class Store:
-    def __init__(self, dsn, model_id, revision, dimensions, processing_profile="text-v1"):
+    def __init__(self, dsn, model_id, revision, dimensions, processing_profile="text-v1", *,
+                 cache=None, query_identity=(), semantic_weight=0.6):
         self.dsn = dsn
         self.identity = (model_id, revision, dimensions, processing_profile)
         self.dimensions = dimensions
+        self.cache = cache
+        self.query_identity = query_identity
+        self.semantic_weight = semantic_weight
+
+    async def close(self):
+        if self.cache:
+            await self.cache.close()
 
     async def migrate(self):
         async with await psycopg.AsyncConnection.connect(self.dsn) as connection:
@@ -27,7 +36,8 @@ class Store:
     async def check(self):
         async with await psycopg.AsyncConnection.connect(self.dsn) as connection:
             await connection.execute("""SELECT d.embedding <=> d.embedding, i.document_version
-                                        FROM ai_documents d JOIN ai_items i USING (item_id) LIMIT 0""")
+                                        FROM ai_documents d JOIN ai_items i USING (item_id)
+                                        CROSS JOIN ai_search_state s LIMIT 0""")
 
     def _vector(self, vector):
         if len(vector) != self.dimensions or any(
@@ -37,7 +47,7 @@ class Store:
             raise ValueError("Embedding must contain the configured number of finite, nonzero values.")
         return json.dumps(vector, allow_nan=False)
 
-    async def upsert(self, snapshot, snapshot_hash, embedding, deadline, *, text_only=False):
+    async def upsert(self, snapshot, snapshot_hash, embedding, deadline, *, text_only=False, ocr=None):
         sources = snapshot["sources"]
         if not isinstance(embedding, dict):
             if len(sources) != 1 or sources[0]["kind"] != "text":
@@ -47,12 +57,18 @@ class Store:
         if len({str(source["id"]) for source in sources}) != len(sources) or set(embedding) != expected:
             raise ValueError("Embedding sources must match the enabled projection of the complete manifest.")
         vectors = {source_id: self._vector(vector) for source_id, vector in embedding.items()}
-        return await self._write(snapshot, snapshot_hash, vectors, deadline)
+        ocr = {} if ocr is None else ocr
+        image_ids = {str(source["id"]) for source in sources if source["kind"] == "image"}
+        if (not isinstance(ocr, dict) or not set(ocr) <= image_ids & set(vectors)
+                or any(not isinstance(value, str) or len(value) > 3000 for value in ocr.values())):
+            raise ValueError("OCR must be bounded text tied to enabled image sources.")
+        return await self._write(snapshot, snapshot_hash, vectors, deadline, ocr=ocr)
 
     async def remove(self, snapshot, snapshot_hash, deadline):
         return await self._write(snapshot, snapshot_hash, None, deadline)
 
-    async def _write(self, snapshot, snapshot_hash, embedding, deadline):
+    async def _write(self, snapshot, snapshot_hash, embedding, deadline, *, ocr=None):
+        ocr = {} if ocr is None else ocr
         remaining = (deadline - datetime.now(timezone.utc)).total_seconds()
         if remaining <= 0:
             raise TimeoutError("Index command deadline expired.")
@@ -82,6 +98,12 @@ class Store:
                     await connection.execute("DELETE FROM ai_documents WHERE item_id = %s", (item_id,))
                 if not tombstone:
                     document = snapshot["document"]
+                    description_terms = normalize_text(document["publicDescription"])
+                    if ocr:
+                        description_terms += " " + " ".join(
+                            normalize_text(ocr[str(source["id"])]) for source in snapshot["sources"]
+                            if str(source["id"]) in ocr
+                        )
                     # A replay may reindex a new model namespace, preserving other current namespaces.
                     await connection.execute(
                         "DELETE FROM ai_documents WHERE item_id = %s AND model_id = %s AND model_revision = %s AND dimensions = %s",
@@ -108,23 +130,27 @@ class Store:
                          document["foundArea"], document.get("foundOn"), document.get("foundFrom"),
                          document.get("foundUntil"),
                          normalize_text(document["title"]) if source["kind"] == "text" else "",
-                         normalize_text(document["publicDescription"]) if source["kind"] == "text" else "",
+                         description_terms if source["kind"] == "text" else "",
                          normalize_text(document["foundArea"]) if source["kind"] == "text" else "",
                          location_tokens(document["title"] + " " + document["publicDescription"]) if source["kind"] == "text" else [],
                          embedding[str(source["id"])]),
                         )
                 if datetime.now(timezone.utc) >= deadline:
                     raise TimeoutError("Index command deadline expired before commit.")
+                # Commit invalidation with the index, including replays that enable image sources.
+                await connection.execute("UPDATE ai_search_state SET version = gen_random_uuid() WHERE singleton")
             return True
 
-    async def search(self, text, vector, area=None, from_date=None, until=None, limit=200, *, strategy="hybrid", modality="text"):
+    async def search(self, text, vector, area=None, from_date=None, until=None, limit=200, *, strategy="hybrid", modality="text", include_images=False, embed=None):
         if not 1 <= limit <= 200:
             raise ValueError("Candidate limit must be between 1 and 200.")
         if strategy not in {"hybrid", "semantic", "lexical"}:
             raise ValueError("Unknown evaluation strategy.")
         if modality not in {"text", "image"}:
             raise ValueError("Unknown search modality.")
-        vector = self._vector(vector)
+        vector = self._vector(vector) if vector is not None else None
+        if vector is None and embed is None:
+            raise ValueError("Search requires a vector or embedding callback.")
         first = date.fromisoformat(from_date) if isinstance(from_date, str) else from_date
         last = date.fromisoformat(until) if isinstance(until, str) else until
         if first and last and first > last:
@@ -136,44 +162,87 @@ class Store:
         lexical_query = " | ".join(dict.fromkeys(normalize_text(text).split())) if modality == "text" else ""
         # Retrieve a bounded pool before the requested output limit so fusion keeps both ranks.
         pool_limit = 200
+        profiles = ["image-v1"] if modality == "image" else ["text-v1", "image-v1"] if include_images else ["text-v1"]
+        channels = {"semantic": [], "lexical": [], "locations": []}
+        need_semantic = modality == "image" or strategy != "lexical"
+        need_keyword = modality == "text" and strategy != "semantic"
+        semantic_key = keyword_key = None
         # shortcut: exact vector scan favors recall; add ANN only after measuring corpus size and recall.
-        async with await psycopg.AsyncConnection.connect(self.dsn, row_factory=dict_row) as connection:
-            cursor = await connection.execute(
-                """WITH eligible AS MATERIALIZED (
-                    SELECT d.* FROM ai_documents d JOIN ai_items i USING (item_id)
-                    WHERE NOT i.tombstone AND d.document_version = i.document_version
-                      AND (d.model_id, d.model_revision, d.dimensions, d.processing_profile) = (%s, %s, %s, %s)
-                      AND (%s::text IS NULL OR strpos(lower(d.found_area), lower(%s)) > 0)
-                      AND (%s::date IS NULL OR d.found_on >= %s OR coalesce(d.found_until, d.found_from) >= %s)
-                      AND (%s::date IS NULL OR d.found_on <= %s OR d.found_from < %s)
-                ), nearest_source AS (
-                    SELECT *, row_number() OVER (PARTITION BY item_id ORDER BY embedding <=> %s::vector, source_id) AS source_rank
-                    FROM eligible
-                ), semantic AS (
-                    SELECT *, row_number() OVER (ORDER BY embedding <=> %s::vector, item_id) AS rank
-                    FROM nearest_source WHERE source_rank = 1 ORDER BY rank LIMIT %s
-                ), lexical AS (
-                    SELECT *, row_number() OVER (ORDER BY ts_rank_cd(search_terms, to_tsquery('simple', %s)) DESC, item_id) AS rank
-                    FROM eligible WHERE %s = 'text' AND search_terms @@ to_tsquery('simple', %s) ORDER BY rank LIMIT %s
-                ), locations AS (
-                    SELECT *, row_number() OVER (ORDER BY ts_rank_cd(search_terms, to_tsquery('simple', %s)) DESC, item_id) AS rank
-                    FROM eligible WHERE %s = 'text' AND location_tokens && %s::text[] ORDER BY rank LIMIT %s
-                )
-                SELECT 'semantic' AS channel, item_id, document_version, source_id, source_version, source_sha256, location_tokens, rank FROM semantic
-                UNION ALL
-                SELECT 'lexical', item_id, document_version, source_id, source_version, source_sha256, location_tokens, rank FROM lexical
-                UNION ALL
-                SELECT 'locations', item_id, document_version, source_id, source_version, source_sha256, location_tokens, rank FROM locations
-                ORDER BY channel, rank""",
-                (*self.identity[:3], "text-v1" if modality == "text" else "image-v1",
-                 area, area, first, first, start, last, last, end, vector, vector, pool_limit,
-                 lexical_query, modality, lexical_query, pool_limit, lexical_query, modality, tokens, pool_limit),
-            )
-            channels = {"semantic": [], "lexical": [], "locations": []}
-            for row in await cursor.fetchall():
-                channels[row["channel"]].append(row)
+        async with await psycopg.AsyncConnection.connect(self.dsn, row_factory=dict_row, autocommit=True) as connection:
+            if self.cache and modality == "text":
+                cursor = await connection.execute("SELECT version FROM ai_search_state WHERE singleton")
+                version = str((await cursor.fetchone())["version"])
+                identity = (sha256(self.dsn.encode()).hexdigest(), version, self.identity, profiles,
+                            area, first.isoformat() if first else None, last.isoformat() if last else None)
+                if need_semantic:
+                    semantic_key = self.cache.key("semantic", (*identity, self.query_identity, text, vector))
+                    cached = await self.cache.get(semantic_key, ("semantic",))
+                    if cached is not None:
+                        channels.update(cached)
+                        need_semantic = False
+                if need_keyword:
+                    keyword_key = self.cache.key("keyword", (*identity, lexical_query, tokens))
+                    cached = await self.cache.get(keyword_key, ("lexical", "locations"))
+                    if cached is not None:
+                        channels.update(cached)
+                        need_keyword = False
+            if need_semantic and vector is None:
+                vector = self._vector(await embed())
+            if need_semantic or need_keyword:
+                fresh = await self._search_channels(connection, profiles, area, first, start, last, end,
+                    vector, lexical_query, tokens, need_semantic, need_keyword, pool_limit)
+                channels.update(fresh)
+                if semantic_key and need_semantic:
+                    await self.cache.put(semantic_key, {"semantic": channels["semantic"]})
+                if keyword_key and need_keyword:
+                    await self.cache.put(keyword_key, {name: channels[name] for name in ("lexical", "locations")})
         if modality == "image":
             return rank_candidates(channels["semantic"], [], [], [], limit)
         if strategy != "hybrid":
             return rank_candidates(channels[strategy], [], [], [], limit)
-        return rank_candidates(channels["semantic"], channels["lexical"], channels["locations"], tokens, limit)
+        return rank_candidates(channels["semantic"], channels["lexical"], channels["locations"], tokens, limit,
+                               semantic_weight=self.semantic_weight)
+
+    async def _search_channels(self, connection, profiles, area, first, start, last, end, vector,
+                               lexical_query, tokens, need_semantic, need_keyword, pool_limit):
+        cursor = await connection.execute(
+            """WITH eligible AS MATERIALIZED (
+                SELECT d.* FROM ai_documents d JOIN ai_items i USING (item_id)
+                WHERE NOT i.tombstone AND d.document_version = i.document_version
+                  AND (d.model_id, d.model_revision, d.dimensions) = (%s, %s, %s)
+                  AND d.processing_profile = ANY(%s::text[])
+                  AND (%s::text IS NULL OR strpos(lower(d.found_area), lower(%s)) > 0)
+                  AND (%s::date IS NULL OR d.found_on >= %s OR coalesce(d.found_until, d.found_from) >= %s)
+                  AND (%s::date IS NULL OR d.found_on <= %s OR d.found_from < %s)
+            ), nearest_source AS (
+                SELECT *, row_number() OVER (PARTITION BY item_id ORDER BY embedding <=> %s::vector, source_id) AS source_rank
+                FROM eligible WHERE %s
+            ), semantic AS (
+                SELECT *, row_number() OVER (ORDER BY embedding <=> %s::vector, item_id) AS rank
+                FROM nearest_source WHERE source_rank = 1 ORDER BY rank LIMIT %s
+            ), lexical_sources AS (
+                SELECT *, ts_rank_cd(search_terms, to_tsquery('simple', %s)) AS lexical_score,
+                    row_number() OVER (PARTITION BY item_id ORDER BY ts_rank_cd(search_terms, to_tsquery('simple', %s)) DESC, source_id) AS lexical_source_rank
+                FROM eligible WHERE %s AND search_terms @@ to_tsquery('simple', %s)
+            ), lexical AS (
+                SELECT *, row_number() OVER (ORDER BY lexical_score DESC, item_id) AS rank
+                FROM lexical_sources WHERE lexical_source_rank = 1 ORDER BY rank LIMIT %s
+            ), locations AS (
+                SELECT *, row_number() OVER (ORDER BY ts_rank_cd(search_terms, to_tsquery('simple', %s)) DESC, item_id) AS rank
+                FROM eligible WHERE %s AND processing_profile = 'text-v1' AND location_tokens && %s::text[] ORDER BY rank LIMIT %s
+            )
+            SELECT 'semantic' AS channel, item_id, document_version, source_id, source_version, source_sha256, processing_profile, location_tokens, rank FROM semantic
+            UNION ALL
+            SELECT 'lexical', item_id, document_version, source_id, source_version, source_sha256, processing_profile, location_tokens, rank FROM lexical
+            UNION ALL
+            SELECT 'locations', item_id, document_version, source_id, source_version, source_sha256, processing_profile, location_tokens, rank FROM locations
+            ORDER BY channel, rank""",
+            (*self.identity[:3], profiles,
+             area, area, first, first, start, last, last, end, vector, need_semantic, vector, pool_limit,
+             lexical_query, lexical_query, need_keyword, lexical_query, pool_limit, lexical_query, need_keyword, tokens, pool_limit),
+        )
+        channels = {name: [] for name in (("semantic",) if need_semantic else ())
+                    + (("lexical", "locations") if need_keyword else ())}
+        for row in await cursor.fetchall():
+            channels[row["channel"]].append(row)
+        return channels

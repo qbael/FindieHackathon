@@ -1,0 +1,53 @@
+{
+  "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+  "fingerprint": "7b219ee9aba8679df97965b4bbe96f1a5eb0d93c4bf8e5f66cdd527ad60070eb",
+  "itemId": "d37eb69e-8c29-4477-85dd-217ac773cdb0",
+  "images": [
+    {
+      "position": 1,
+      "imageId": "98076d8f-acea-43e8-b658-6434979099bb",
+      "contentVersion": 1,
+      "sha256": "50620c57e2f9551a92787c8b56973c1761464e53bdf7fad607ce9f27b2304703",
+      "file": "processed-98076d8f-acea-43e8-b658-6434979099bb.png"
+    }
+  ],
+  "privacyCorrection:e9ddaefc42b553ec2a42c0c1defff8e337fc617348f8eb027d9731c2cf93ade8": {
+    "planHash": "e9ddaefc42b553ec2a42c0c1defff8e337fc617348f8eb027d9731c2cf93ade8",
+    "plan": {
+      "sourceFingerprint": "7b219ee9aba8679df97965b4bbe96f1a5eb0d93c4bf8e5f66cdd527ad60070eb",
+      "actorId": "10689dd1-74d0-41da-8c47-c68fcdcf7c80",
+      "itemId": "d37eb69e-8c29-4477-85dd-217ac773cdb0",
+      "imageId": "875d6a8b-23fd-4545-84cc-a596ef0f56d9",
+      "contentVersion": 1,
+      "sha256": "3147b527223c4d8293c97d2359880662bfd0baff97a99945be429a22cc33a734",
+      "position": 1,
+      "file": "masked-50620c57e2f9551a92787c8b56973c1761464e53bdf7fad607ce9f27b2304703.png",
+      "maskedSha256": "50620c57e2f9551a92787c8b56973c1761464e53bdf7fad607ce9f27b2304703",
+      "regions": [
+        {
+          "label": "address",
+          "bbox": [
+            690,
+            956,
+            967,
+            979
+          ]
+        }
+      ]
+    },
+    "previous": {
+      "position": 1,
+      "imageId": "875d6a8b-23fd-4545-84cc-a596ef0f56d9",
+      "contentVersion": 1,
+      "sha256": "3147b527223c4d8293c97d2359880662bfd0baff97a99945be429a22cc33a734",
+      "file": "processed-875d6a8b-23fd-4545-84cc-a596ef0f56d9.png"
+    },
+    "replacement": {
+      "position": 1,
+      "imageId": "98076d8f-acea-43e8-b658-6434979099bb",
+      "contentVersion": 1,
+      "sha256": "50620c57e2f9551a92787c8b56973c1761464e53bdf7fad607ce9f27b2304703",
+      "file": "processed-98076d8f-acea-43e8-b658-6434979099bb.png"
+    }
+  }
+}

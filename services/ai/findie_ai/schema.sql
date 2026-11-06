@@ -1,5 +1,11 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
+CREATE TABLE IF NOT EXISTS ai_search_state (
+    singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+    version uuid NOT NULL DEFAULT gen_random_uuid()
+);
+INSERT INTO ai_search_state (singleton) VALUES (true) ON CONFLICT DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS ai_items (
     item_id uuid PRIMARY KEY,
     document_version bigint NOT NULL CHECK (document_version > 0),

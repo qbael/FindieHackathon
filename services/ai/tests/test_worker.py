@@ -13,11 +13,12 @@ import pytest
 from PIL import Image
 
 from findie_ai.config import Settings
-from findie_ai.contracts import Query, RedactMetadata, SearchMetadata, Snapshot
+from findie_ai.contracts import ImageEmbeddingMetadata, Query, RedactMetadata, SearchMetadata, Snapshot
+from findie_ai.ollama import EmbeddingInputRejected, ModelUnavailable
 from findie_ai.worker import Worker
 
 
-SETTINGS = Settings(service_token='test', revision='a' * 64, dimensions=2)
+SETTINGS = Settings(service_token='test', revision='a' * 64, redaction_revision='b' * 64, dimensions=2)
 
 
 def encode(value):
@@ -38,7 +39,7 @@ def query_metadata(**extra):
 def test_redaction_accepts_five_minute_deadlines_and_rejects_expired_or_excessive_ones():
     value = metadata(modelId=SETTINGS.redaction_model, modelRevision='b' * 64,
                      imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
-                     sourceSha256='a' * 64, processingProfile='redact-v3')
+                     sourceSha256='a' * 64, processingProfile='redact-v4')
     deadline = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
     assert 299 < RedactMetadata.model_validate(value | {'deadlineAt': deadline}).remaining() <= 300
     with pytest.raises(ValueError, match='processingProfile'):
@@ -49,6 +50,17 @@ def test_redaction_accepts_five_minute_deadlines_and_rejects_expired_or_excessiv
         deadline = (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
         with pytest.raises(error, match=message):
             RedactMetadata.model_validate(value | {'deadlineAt': deadline}).remaining()
+
+
+def test_ocr_image_operations_allow_five_minutes_but_text_and_index_budgets_stay_short():
+    deadline = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    image = metadata(imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
+        sourceSha256="a" * 64, dimensions=2, processingProfile="image-v1", deadlineAt=deadline)
+    assert 299 < ImageEmbeddingMetadata.model_validate(image).remaining() <= 300
+    query = query_metadata(mode="image", processingProfile="image-v1", deadlineAt=deadline)
+    assert 299 < SearchMetadata.model_validate(query).remaining() <= 300
+    with pytest.raises(ValueError, match="deadline_too_long"):
+        SearchMetadata.model_validate(query_metadata(deadlineAt=deadline)).remaining()
 
 
 def snapshot():
@@ -214,6 +226,360 @@ def image_job(*, image_count=2, seconds=25):
     return value, manifest, parts
 
 
+def vector_part(part, *, payload=None):
+    meta = json.loads(part.headers["metadata"])
+    cached = {"modelId": meta["modelId"], "modelRevision": meta["modelRevision"],
+              "dimensions": meta["dimensions"], "sourceSha256": "c" * 64, "vector": [0, 1]}
+    body = encode(cached if payload is None else payload)
+    message = Message("index.source.vector", meta | {"payloadSha256": hashlib.sha256(body).hexdigest()}, body, durable=True)
+    message.correlation_id = part.correlation_id
+    return message
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_original_image_embedding_is_transient_and_never_uses_redacted_pixels(enabled):
+    async def run():
+        from findie_ai.images import normalize
+
+        worker = Worker(replace(SETTINGS, image_search_enabled=enabled))
+        worker.ollama.embed_image = AsyncMock(return_value=[0, 1])
+        worker.ollama.read_text = AsyncMock(return_value={"text": "MSSV 001234", "hasUnclearText": False})
+        worker.ollama.detect_regions = AsyncMock()
+        worker.store.upsert = AsyncMock()
+        worker.reply = AsyncMock()
+        raw = png()
+        meta = metadata(imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
+            sourceSha256=hashlib.sha256(raw).hexdigest(), dimensions=2, processingProfile="image-v1")
+        message = Message("image.embed", meta, raw)
+        message.content_type = "image/png"
+        try:
+            await worker.handle(message, "image")
+            assert message.events == ["ack"] and message.body == b""
+            result = worker.reply.await_args.args
+            assert result[2] is True
+            if enabled:
+                normalized = await normalize(raw, "image/png")
+                worker.ollama.read_text.assert_awaited_once_with(normalized)
+                worker.ollama.embed_image.assert_awaited_once_with(normalized)
+                assert result[3] == {"modelId": SETTINGS.model_id, "modelRevision": SETTINGS.revision,
+                    "dimensions": 2, "sourceSha256": meta["sourceSha256"], "vector": [0, 1],
+                    "ocr": {"text": "MSSV 001234", "hasUnclearText": False,
+                        "modelId": SETTINGS.redaction_model, "modelRevision": SETTINGS.redaction_revision,
+                        "processingProfile": "ocr-v1"}}
+            else:
+                worker.ollama.embed_image.assert_not_awaited()
+                worker.ollama.read_text.assert_not_awaited()
+                assert result[3] is None
+            worker.ollama.detect_regions.assert_not_awaited()
+            worker.store.upsert.assert_not_awaited()
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("failure", ["hash", "dimensions", "model", "inference"])
+def test_original_embedding_failure_drops_raw_bytes_without_persisting_or_redacting(failure):
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.embed_image = AsyncMock(side_effect=RuntimeError("unavailable"))
+        worker.ollama.read_text = AsyncMock(return_value={"text": "", "hasUnclearText": False})
+        worker.reply = AsyncMock(side_effect=RuntimeError("reply unavailable"))
+        raw = png()
+        meta = metadata(imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
+            sourceSha256=hashlib.sha256(raw).hexdigest(), dimensions=2, processingProfile="image-v1")
+        if failure == "hash":
+            meta["sourceSha256"] = "a" * 64
+        elif failure == "dimensions":
+            meta["dimensions"] = 3
+        elif failure == "model":
+            meta["modelRevision"] = "b" * 64
+        message = Message("image.embed", meta, raw)
+        message.content_type = "image/png"
+        try:
+            await worker.handle(message, "image")
+            assert message.events == ["ack"] and message.body == b""
+            assert not worker.pending
+            if failure != "inference":
+                worker.ollama.embed_image.assert_not_awaited()
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_ocr_failure_does_not_silently_lose_searchable_text_on_upload():
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.read_text = AsyncMock(side_effect=RuntimeError("invalid transcription"))
+        worker.ollama.embed_image = AsyncMock()
+        worker.reply = AsyncMock()
+        raw = png()
+        meta = metadata(imageId=str(uuid4()), itemId=str(uuid4()), sourceVersion=1,
+            sourceSha256=hashlib.sha256(raw).hexdigest(), dimensions=2, processingProfile="image-v1")
+        message = Message("image.embed", meta, raw)
+        message.content_type = "image/png"
+        try:
+            await worker.handle(message, "image")
+            assert message.events == ["ack"] and message.body == b""
+            assert worker.reply.await_args.args[2] is False
+            worker.ollama.embed_image.assert_not_awaited()
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("corruption", [None, "profile", "model", "revision", "length", "unclear", "extra"])
+def test_cached_ocr_is_bound_to_approved_image_and_validated_before_indexing(corruption):
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.embed = AsyncMock(return_value=[1, 0])
+        worker.ollama.embed_image = AsyncMock()
+        worker.ollama.read_text = AsyncMock()
+        worker.store.upsert = AsyncMock(return_value=True)
+        worker.reply = AsyncMock()
+        value, manifest, parts = image_job(image_count=1)
+        payload = json.loads(vector_part(parts[0]).body)
+        ocr = {"text": "MSSV 001234", "hasUnclearText": False, "modelId": SETTINGS.redaction_model,
+               "modelRevision": SETTINGS.redaction_revision, "processingProfile": "ocr-v1"}
+        if corruption == "profile":
+            ocr["processingProfile"] = "unknown"
+        elif corruption == "model":
+            ocr["modelId"] = "other"
+        elif corruption == "revision":
+            ocr["modelRevision"] = "c" * 64
+        elif corruption == "length":
+            ocr["text"] = "x" * 3001
+        elif corruption == "unclear":
+            ocr["hasUnclearText"] = "false"
+        elif corruption == "extra":
+            ocr["privateInstructions"] = "unexpected"
+        part = vector_part(parts[0], payload=payload | {"ocr": ocr})
+        try:
+            await worker.handle(manifest, "index")
+            worker.ollama.embed.assert_not_awaited()
+            await worker.handle(part, "index")
+            worker.ollama.embed_image.assert_not_awaited()
+            worker.ollama.read_text.assert_not_awaited()
+            assert worker.reply.await_args.args[2] is (corruption is None)
+            if corruption is None:
+                assert worker.store.upsert.await_args.kwargs == {"text_only": False,
+                    "ocr": {value["sources"][1]["id"]: "MSSV 001234"}}
+                worker.ollama.embed.assert_awaited_once_with(
+                    Snapshot.model_validate(value).embedding_text() + "\nOCR ảnh:\nMSSV 001234")
+            else:
+                worker.ollama.embed.assert_not_awaited()
+                worker.store.upsert.assert_not_awaited()
+            assert not worker.pending and part.body == b""
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("error", [None, EmbeddingInputRejected, ModelUnavailable])
+def test_index_combines_ocr_in_manifest_order_and_retries_only_rejected_input(error):
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.embed = AsyncMock(side_effect=[error("test"), [1, 0]] if error else None, return_value=[1, 0])
+        worker.ollama.embed_image = AsyncMock()
+        worker.store.upsert = AsyncMock(return_value=True)
+        worker.reply = AsyncMock()
+        value, manifest, parts = image_job()
+        texts = ["MSSV 001234", "CCCD 00008765"]
+        for index, part in enumerate(parts):
+            payload = json.loads(vector_part(part).body)
+            payload["ocr"] = {"text": texts[index], "hasUnclearText": False,
+                              "modelId": SETTINGS.redaction_model, "modelRevision": SETTINGS.redaction_revision,
+                              "processingProfile": "ocr-v1"}
+            parts[index] = vector_part(part, payload=payload)
+        try:
+            await worker.handle(parts[1], "index")
+            await worker.handle(manifest, "index")
+            worker.ollama.embed.assert_not_awaited()
+            await worker.handle(parts[0], "index")
+            public_text = Snapshot.model_validate(value).embedding_text()
+            expected_inputs = [public_text + "\nOCR ảnh:\n" + "\n".join(texts)]
+            if error is EmbeddingInputRejected:
+                expected_inputs.append(public_text)
+            assert [call.args[0] for call in worker.ollama.embed.await_args_list] == expected_inputs
+            worker.ollama.embed_image.assert_not_awaited()
+            if error is ModelUnavailable:
+                worker.store.upsert.assert_not_awaited()
+                assert worker.reply.await_args.args[2] is False
+            else:
+                worker.store.upsert.assert_awaited_once()
+                assert list(worker.store.upsert.await_args.kwargs["ocr"].values()) == texts
+                assert worker.store.upsert.await_args.args[2] == {
+                    value["itemId"]: [1, 0], **{source["id"]: [0, 1] for source in value["sources"][1:]},
+                }
+                assert worker.reply.await_args.args[2] is True
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_index_caps_only_the_appended_ocr_at_the_gateway_character_limit():
+    async def run():
+        worker = Worker(SETTINGS)
+        worker.ollama.embed = AsyncMock(return_value=[1, 0])
+        public_text = "mô tả " * 850
+        document = SimpleNamespace(embedding_text=lambda: public_text)
+        ocr = {str(uuid4()): "a" * 3000 for _ in range(5)}
+        try:
+            await worker.embed_index_text(document, ocr)
+            combined = worker.ollama.embed.await_args.args[0]
+            assert combined.startswith(public_text + "\nOCR ảnh:\n")
+            assert len(combined) == 20000 and sum(map(len, ocr.values())) == 15000
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_text_query_includes_image_vector_sources_only_when_image_capability_is_enabled():
+    async def run():
+        for enabled in (False, True):
+            worker = Worker(replace(SETTINGS, image_search_enabled=enabled))
+            worker.ollama.embed = AsyncMock(return_value=[1, 0])
+            worker.store.search = AsyncMock(return_value=[])
+            try:
+                await worker.execute("search.hybrid", SearchMetadata.model_validate(query_metadata()),
+                    encode({"text": "MSSV 001234"}))
+                kwargs = worker.store.search.await_args.kwargs
+                assert kwargs["include_images"] is enabled
+                worker.ollama.embed.assert_not_awaited()
+                assert await kwargs["embed"]() == [1, 0]
+                worker.ollama.embed.assert_awaited_once_with("MSSV 001234", query=True)
+            finally:
+                await worker.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_index_reuses_original_vectors_and_binds_them_to_approved_display_sources(enabled):
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=enabled))
+        worker.ollama.embed = AsyncMock(return_value=[1, 0])
+        worker.ollama.embed_image = AsyncMock()
+        worker.store.upsert = AsyncMock(return_value=True)
+        worker.reply = AsyncMock()
+        value, manifest, parts = image_job(image_count=1)
+        part = vector_part(parts[0])
+        duplicate = vector_part(parts[0])
+        try:
+            await worker.handle(part, "index")
+            await worker.handle(duplicate, "index")
+            assert part.body == duplicate.body == b"" and not part.processed
+            await worker.handle(manifest, "index")
+            worker.ollama.embed_image.assert_not_awaited()
+            embeddings = worker.store.upsert.await_args.args[2]
+            assert embeddings[value["itemId"]] == [1, 0]
+            if enabled:
+                assert embeddings[value["sources"][1]["id"]] == [0, 1]
+            else:
+                assert len(embeddings) == 1
+            assert worker.store.upsert.await_args.kwargs == {"text_only": not enabled}
+            assert worker.reply.await_args.args[2] is True
+            assert manifest.events == part.events == duplicate.events == ["ack"]
+            assert not worker.pending
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("corruption", ["checksum", "source", "model", "dimensions", "nan", "zero", "bool", "extra"])
+def test_invalid_cached_vector_parts_never_commit_a_projection(corruption):
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.embed = AsyncMock(return_value=[1, 0])
+        worker.ollama.embed_image = AsyncMock()
+        worker.store.upsert = AsyncMock()
+        worker.reply = AsyncMock()
+        _, manifest, parts = image_job(image_count=1)
+        part = vector_part(parts[0])
+        payload = json.loads(part.body)
+        if corruption == "model":
+            payload["modelRevision"] = "b" * 64
+        elif corruption == "dimensions":
+            payload["dimensions"] = 3
+        elif corruption == "nan":
+            payload["vector"] = [float("nan"), 1]
+        elif corruption == "zero":
+            payload["vector"] = [0, 0]
+        elif corruption == "bool":
+            payload["vector"] = [True, 1]
+        elif corruption == "extra":
+            payload["privateText"] = "not allowed"
+        part = vector_part(parts[0], payload=payload)
+        if corruption == "checksum":
+            part.body += b" "
+        elif corruption == "source":
+            meta = json.loads(part.headers["metadata"])
+            part.headers["metadata"] = encode(meta | {"sourceSha256": "d" * 64})
+        try:
+            await worker.handle(manifest, "index")
+            await worker.handle(part, "index")
+            worker.store.upsert.assert_not_awaited()
+            worker.ollama.embed_image.assert_not_awaited()
+            assert worker.reply.await_args.args[2] is False
+            assert manifest.events == part.events == ["ack"]
+            assert not worker.pending and part.body == b""
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_conflicting_original_vector_duplicate_fails_instead_of_replacing_first_vector():
+    async def run():
+        worker = Worker(replace(SETTINGS, image_search_enabled=True))
+        worker.ollama.embed = AsyncMock(return_value=[1, 0])
+        worker.store.upsert = AsyncMock()
+        worker.reply = AsyncMock()
+        _, manifest, parts = image_job(image_count=2)
+        first = vector_part(parts[0])
+        payload = json.loads(first.body)
+        second = vector_part(parts[0], payload=payload | {"vector": [1, 0]})
+        try:
+            await worker.handle(manifest, "index")
+            await worker.handle(first, "index")
+            await worker.handle(second, "index")
+            worker.store.upsert.assert_not_awaited()
+            assert worker.reply.await_args.args[2] is False
+            assert manifest.events == first.events == second.events == ["ack"]
+            assert not worker.pending
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_max_dimension_original_vectors_fit_reply_and_index_parts():
+    async def run():
+        settings = replace(SETTINGS, dimensions=16000, image_search_enabled=True)
+        worker = Worker(settings)
+        vector = [0.0078125] * settings.dimensions
+        worker.ollama.embed = AsyncMock(return_value=vector)
+        worker.store.upsert = AsyncMock(return_value=True)
+        worker.publisher = SimpleNamespace(default_exchange=SimpleNamespace(publish=AsyncMock()))
+        value, manifest, parts = image_job(image_count=1)
+        meta = json.loads(manifest.headers["metadata"]) | {"dimensions": settings.dimensions}
+        manifest.headers["metadata"] = encode(meta)
+        part_meta = json.loads(parts[0].headers["metadata"]) | {"dimensions": settings.dimensions}
+        parts[0].headers["metadata"] = encode(part_meta)
+        payload = {"modelId": settings.model_id, "modelRevision": settings.revision,
+                   "dimensions": settings.dimensions, "sourceSha256": "c" * 64, "vector": vector}
+        part = vector_part(parts[0], payload=payload)
+        assert 65536 < len(part.body) < 1024 * 1024
+        try:
+            request = Message("image.embed", {}, png())
+            await worker.reply(request, {}, True, payload)
+            published = worker.publisher.default_exchange.publish.await_args.args[0]
+            assert json.loads(published.body) == payload
+            await worker.handle(manifest, "index")
+            await worker.handle(part, "index")
+            assert worker.store.upsert.await_args.args[2][value["sources"][1]["id"]] == vector
+            assert manifest.events == part.events == ["ack"]
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
 def test_complete_image_manifest_is_atomic_with_out_of_order_parts_and_duplicate_parts():
     async def run():
         worker = Worker(replace(SETTINGS, image_search_enabled=True))
@@ -367,6 +733,7 @@ def test_image_query_keeps_raw_bytes_out_of_storage_and_redaction_returns_only_o
         settings = replace(SETTINGS, image_search_enabled=True, redaction_revision="b" * 64)
         worker = Worker(settings)
         worker.ollama.embed_image = AsyncMock(return_value=[0, 1])
+        worker.ollama.read_text = AsyncMock()
         worker.ollama.detect_regions = AsyncMock(return_value=[{"label": "face", "bbox": [0, 0, 500, 500]}])
         worker.store.search = AsyncMock(return_value=[])
         worker.store.upsert = AsyncMock()
@@ -380,10 +747,12 @@ def test_image_query_keeps_raw_bytes_out_of_storage_and_redaction_returns_only_o
             assert message.events == ["ack"] and message.body == b""
             assert worker.store.search.await_args.args[0] == ""
             assert worker.store.search.await_args.kwargs == {"modality": "image"}
+            assert worker.ollama.embed_image.await_args.kwargs == {}
+            worker.ollama.read_text.assert_not_awaited()
             worker.store.upsert.assert_not_awaited()
             message = Message("image.redact", metadata(modelId=settings.redaction_model,
                 modelRevision=settings.redaction_revision, imageId=str(uuid4()), itemId=str(uuid4()),
-                sourceVersion=1, sourceSha256=hashlib.sha256(raw).hexdigest(), processingProfile="redact-v3"), raw)
+                sourceVersion=1, sourceSha256=hashlib.sha256(raw).hexdigest(), processingProfile="redact-v4"), raw)
             message.content_type = "image/png"
             await worker.handle(message, "image")
             response = worker.reply.await_args
@@ -402,15 +771,16 @@ def test_deadline_during_inference_and_orphan_parts_release_each_delivery_once()
         async def slow(*_args):
             await asyncio.sleep(0.2)
             return [1, 0]
-        worker.ollama.embed = slow
+        worker.ollama.embed = AsyncMock(side_effect=slow)
         worker.ollama.embed_image = AsyncMock(return_value=[0, 1])
         worker.store.upsert = AsyncMock(return_value=True)
         worker.reply = AsyncMock()
         try:
-            _, manifest, _ = image_job(image_count=1, seconds=0.02)
+            _, manifest, parts = image_job(image_count=1, seconds=0.04)
             await worker.handle(manifest, "index")
-            await asyncio.sleep(0.01)
-            assert manifest.events == ["ack"] and not worker.pending
+            await worker.handle(parts[0], "index")
+            worker.ollama.embed.assert_awaited_once()
+            assert manifest.events == parts[0].events == ["ack"] and not worker.pending
             assert worker.reply.await_count == 1 and worker.reply.await_args.args[2] is False
             worker.reply.reset_mock()
             _, _, parts = image_job(image_count=1, seconds=0.02)
@@ -419,6 +789,35 @@ def test_deadline_during_inference_and_orphan_parts_release_each_delivery_once()
             assert parts[0].events == ["reject"] and not worker.pending
             worker.reply.assert_not_awaited()
             worker.store.upsert.assert_not_awaited()
+        finally:
+            await worker.close()
+    asyncio.run(run())
+
+
+def test_cold_readiness_allows_remote_dependencies_to_complete_within_twelve_seconds(monkeypatch):
+    async def run():
+        worker = Worker(SETTINGS)
+        worker.connection = worker.publisher = worker.consumer = SimpleNamespace(is_closed=False)
+        worker.connection.close = AsyncMock()
+        loop = asyncio.get_running_loop()
+        clock = [loop.time()]
+        completed = []
+
+        async def dependency(name, seconds, result=None):
+            clock[0] += seconds
+            await asyncio.sleep(0)
+            completed.append(name)
+            return result
+
+        worker.store.check = lambda: dependency("database", 1.25)
+        worker.ollama.verify_models = lambda: dependency("models", 4)
+        worker.ollama.embed = lambda *_args, **_kwargs: dependency("embedding", 3.25, [1, 0])
+        try:
+            with monkeypatch.context() as patch:
+                patch.setattr(loop, "time", lambda: clock[0])
+                assert await worker.probe()
+            assert completed == ["database", "models", "embedding"]
+            assert worker.last_embedding_success is not None
         finally:
             await worker.close()
     asyncio.run(run())

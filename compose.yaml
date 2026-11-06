@@ -20,6 +20,17 @@ services:
       retries: 20
       start_period: 10s
 
+  redis:
+    image: redis:8.2.3-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   rabbitmq:
     image: rabbitmq:4.3.2-management@sha256:76412b1ed2865b88ed01b4a504f72e888842f2089a7527743d325ce7c9d3a43b
     hostname: rabbitmq

@@ -31,10 +31,10 @@ jobs:
       - name: TypeScript typecheck
         run: npm run typecheck --prefix apps/web
 
-      - name: Setup .NET 9 SDK
+      - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Build .NET solution
         run: dotnet build Findie.sln --no-incremental
@@ -75,7 +75,7 @@ jobs:
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Build API for smoke tests
         run: dotnet build apps/api/Findie.Api.csproj
@@ -93,10 +93,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9 SDK
+      - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Restore dotnet tools
         run: dotnet tool restore

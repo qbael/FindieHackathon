@@ -118,7 +118,7 @@ class LocalDoctorTest(unittest.TestCase):
             if url.endswith("/v1/status"):
                 return {"inferenceReady": True, "capabilities": {"textSearch": True, "imageSearch": True, "imageRedaction": True},
                         "models": {"embedding": "model", "redaction": "vision"}, "modelRevision": "a" * 64,
-                        "redactionRevision": "b" * 64, "redactionProfileId": "redact-v3",
+                        "redactionRevision": "b" * 64, "redactionProfileId": "redact-v4",
                         "embeddingDimensions": 768, "searchProfileId": "text-description-v1",
                         "imageSearchProfileId": "image-only-v1"}
             if url.endswith("/api/system/status"):
@@ -128,7 +128,7 @@ class LocalDoctorTest(unittest.TestCase):
             self.assertEqual(local_doctor.run(values, "http://127.0.0.1:5080"), 0)
             values["Ai__RedactionProfile"] = "redact-v2"
             self.assertEqual(local_doctor.run(values, "http://127.0.0.1:5080"), 1)
-            values["Ai__RedactionProfile"] = "redact-v3"
+            values["Ai__RedactionProfile"] = "redact-v4"
             values["AI_EMBEDDING_MODEL"] = values["Ai__EmbeddingModelId"] = "changed-after-worker-start"
             self.assertEqual(local_doctor.run(values, "http://127.0.0.1:5080"), 1)
 

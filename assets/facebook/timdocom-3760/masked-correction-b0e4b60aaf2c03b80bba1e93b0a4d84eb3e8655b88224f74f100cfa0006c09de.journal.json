@@ -1,0 +1,17 @@
+{
+  "planSha256": "b0e4b60aaf2c03b80bba1e93b0a4d84eb3e8655b88224f74f100cfa0006c09de",
+  "oldImage": {
+    "position": 1,
+    "imageId": "6c832518-613a-46db-88f4-e54a777a1f43",
+    "contentVersion": 1,
+    "sha256": "6f0ae92719bb519539eec18ee8cb6c248ebd05bde83da63444a80360f7ecf6a9",
+    "file": "processed-6c832518-613a-46db-88f4-e54a777a1f43.png"
+  },
+  "newImage": {
+    "position": 1,
+    "imageId": "6ea7c933-4ba8-4fcd-b11e-3c8ca0a292e4",
+    "contentVersion": 1,
+    "sha256": "2fcced1035b34f6202efdb4467b50ccd32804bcce3d583851f45b71358d75d77",
+    "file": "processed-6ea7c933-4ba8-4fcd-b11e-3c8ca0a292e4.png"
+  }
+}

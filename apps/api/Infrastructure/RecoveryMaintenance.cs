@@ -61,6 +61,7 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
             await transaction.CommitAsync(ct);
         }
         var images = new List<AiPart>();
+        string? cacheError = null;
         try
         {
             var kind = job.EventKind == "snapshot" ? "index.upsert" : "index.remove";
@@ -81,6 +82,34 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
                 { await Finish("obsolete", null); return true; }
                 foreach (var image in item.Images.Where(RecoveryWorkflow.PublicImage).OrderBy(image => image.Position))
                 {
+                    if (image.OriginalEmbedding is { } cached)
+                    {
+                        byte[] body;
+                        try
+                        {
+                            using var document = JsonDocument.Parse(cached);
+                            var data = document.RootElement;
+                            if (data.GetProperty("modelId").GetString() != model || data.GetProperty("modelRevision").GetString() != revision
+                                || data.GetProperty("dimensions").GetInt32() != dimensions
+                                || data.TryGetProperty("ocr", out var ocr) && (ocr.GetProperty("modelId").GetString() != AiProtocol.Setting(configuration, "RedactionModelId")
+                                    || ocr.GetProperty("modelRevision").GetString() != AiProtocol.Setting(configuration, "RedactionRevision")))
+                            {
+                                cacheError = "original_embedding_requires_reupload";
+                                throw new ApiException(502, "The original image embedding or OCR model changed; upload the image again.");
+                            }
+                            body = Encoding.UTF8.GetBytes(AiProtocol.Embedding(data, configuration));
+                        }
+                        catch (Exception error) when (AiProtocol.Malformed(error))
+                        { throw new ApiException(502, "Invalid cached original image embedding."); }
+                        var vectorMetadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, jobId = job.Id, job.LeaseToken,
+                            job.ItemId, job.DocumentVersion, snapshotSha256 = job.PayloadSha256, sourceId = image.Id,
+                            sourceVersion = image.ContentVersion, sourceSha256 = image.ProcessedObject!.Sha256,
+                            payloadSha256 = RecoveryWorkflow.Hash(body), modelId = model, modelRevision = revision,
+                            processingProfile = "image-v1", dimensions, deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
+                        images.Add(new AiPart(vectorMetadata, body, "application/json", "index.source.vector"));
+                        continue;
+                    }
+                    // shortcut: legacy uploads have no original vector; reupload to replace their masked-image embeddings.
                     var bytes = await storage.ReadAsync(image.ProcessedObject!, ct);
                     if (RecoveryWorkflow.Hash(bytes) != image.ProcessedObject!.Sha256 || bytes.Length != image.ProcessedObject.ByteSize)
                     { Array.Clear(bytes); throw new ApiException(502, "Invalid stored output."); }
@@ -100,7 +129,7 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
         catch (ApiException error)
         {
             var terminal = job.Attempts >= job.MaxAttempts || error.StatusCode == 502;
-            await Finish(terminal ? "failed" : "retry", error.StatusCode == 502 ? "invalid_result" : "dependency_unavailable");
+            await Finish(terminal ? "failed" : "retry", cacheError ?? (error.StatusCode == 502 ? "invalid_result" : "dependency_unavailable"));
         }
         finally { foreach (var image in images) Array.Clear(image.Body); }
         return true;

@@ -21,6 +21,19 @@ spec.loader.exec_module(init_rabbitmq)
 
 
 class BootstrapTest(unittest.TestCase):
+    def test_redis_defaults_use_custom_port_and_preserve_existing_cache_url(self):
+        for existing in ("", "AI_REDIS_URL=rediss://custom.example/2\n"):
+            with self.subTest(existing=existing), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / ".env.example").write_text((ROOT / ".env.example").read_text())
+                (root / ".env").write_text("REDIS_PORT=6385\n" + existing)
+                self.assertTrue(init_env.initialize(root))
+                expected = "rediss://custom.example/2" if existing else "redis://127.0.0.1:6385/0"
+                result = subprocess.run(["sh", "-c", '. "$1"; test "$AI_REDIS_URL" = "$2" && test "$AI_SEARCH_CACHE_TTL_SECONDS" = 60',
+                                         "sh", str(root / ".env"), expected], capture_output=True)
+                self.assertEqual(result.returncode, 0)
+                self.assertFalse(init_env.initialize(root))
+
     def test_env_has_private_unique_secrets_and_preserves_existing_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
