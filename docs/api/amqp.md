@@ -17,7 +17,7 @@ Không log URI/credential, ảnh, query, OCR, answer hoặc message body.
 | --- | --- |
 | `findie.ai.commands` | Ops tạo durable quorum, persistent index commands/vector parts hoặc output parts cũ, TTL 30 giây, DLX/retention hữu hạn |
 | `findie.api.results` | Ops tạo durable quorum, persistent index receipts, TTL hữu hạn và DLX; .NET kiểm queue tồn tại khi kết nối |
-| `findie.ai.image` | Python tạo non-durable/exclusive/auto-delete, nonpersistent raw input/query, TTL tối đa 300 giây cho embedding/OCR, che và tìm ảnh, trần byte/số message; **không DLX/alternate routing/tracing body** |
+| `findie.ai.image` | Python tạo non-durable/exclusive/auto-delete, nonpersistent raw input/query, TTL queue tối đa 940 giây; TTL từng message 300 giây cho embedding/OCR, che và ảnh đơn, 940 giây cho nhóm ảnh; trần 4 message/32 MiB; **không DLX/alternate routing/tracing body** |
 | `findie.ai.query` | Python tạo queue text query tạm, non-durable/exclusive/auto-delete, TTL hữu hạn |
 | Reply queue do broker sinh | .NET tạo exclusive/non-durable/auto-delete cho output ảnh/query; TTL 60 giây, tối đa 64 message/32 MiB; không DLX |
 
@@ -46,12 +46,20 @@ metadata, không original/query image. Vector và OCR từ ảnh gốc chỉ dù
 
 `BasicProperties`: `Type` là operation bên dưới, `CorrelationId` UUID do .NET tạo,
 `ReplyTo` queue do .NET chỉ định, `ContentType`, `Persistent`, `Expiration:"300000"` cho
-`image.embed`, `image.redact`, `search.hybrid.image`; `Expiration:"30000"` cho các operation khác.
-Header `metadata` là **bytes JSON UTF-8**, tối đa 16 KiB. Body ảnh nhị phân tối đa 10 MiB;
+`image.embed`, `image.redact`, `search.hybrid.image`; `Expiration:"940000"` cho
+`search.hybrid.images`; `Expiration:"30000"` cho các operation khác.
+Header `metadata` là **bytes JSON UTF-8**, tối đa 16 KiB. Body ảnh nhị phân tối đa 10 MiB,
+riêng nhóm ảnh `search.hybrid.images` tối đa 30 MiB;
 body text/snapshot/ứng viên JSON UTF-8, không base64. Body vector JSON tối đa 1 MiB,
 không đưa vector vào header metadata. Tối đa 32 waiter AI đang chờ;
-deadline 300 giây cho ba operation ảnh trên, 30 giây cho text/index; không giữ DB
+deadline 300 giây cho ảnh đơn, 940 giây cho nhóm ảnh, 30 giây cho text/index; không giữ DB
 transaction khi gọi broker hoặc model/R2.
+
+Broker local đặt `max_message_size=33554432` (32 MiB) trong `scripts/rabbitmq.conf`
+để nhận nhóm ảnh 30 MiB; broker triển khai riêng cần cùng giới hạn. RabbitMQ mặc định
+giới hạn message 16 MiB theo [tài liệu cấu hình](https://www.rabbitmq.com/docs/configure#config-items).
+Sau khi cập nhật cấu hình broker local đang chạy, khởi động lại service `rabbitmq`;
+khởi động lại API và worker cùng phiên bản để dùng hợp đồng nhóm ảnh mới.
 
 Metadata request chung: `schemaVersion:1`, `deadlineAt` ISO UTC, định danh model/version
 và profile tùy operation. Worker kiểm deadline trước suy luận và trước commit.
@@ -142,8 +150,12 @@ chưa có benchmark/phân loại profile theo độ đặc thù query.
 Khi capability ảnh bật, text query xét cả vector mô tả đã ghép OCR và vector ảnh riêng,
 hợp nhất với từ khóa trên nguồn văn bản. Tìm ảnh dùng vector ảnh; không
 thêm điều kiện chính xác theo số hoặc đuôi số. OCR/embedding vẫn có thể nhận sai ký tự.
+Hybrid text dùng weighted RRF `weight / (60 + rank)` với hệ số mặc định 1.2 ngữ nghĩa,
+0.8 từ khóa (tỷ trọng 60/40, cấu hình `AI_SEARCH_SEMANTIC_WEIGHT`) và 0.03 vị trí.
+`area` là ưu tiên, không lọc ứng viên trong Python. .NET cộng 5% điểm một lần cho món
+có `foundArea` chứa khu vực yêu cầu, không phân biệt hoa thường; `from/until` vẫn lọc cứng.
 
-Response metadata echo model/profile, thêm kind/succeeded. Body tối đa 256 KiB:
+Response metadata echo model/profile, thêm kind/succeeded. Body tối đa 1 MiB:
 
 ```json
 {
@@ -160,12 +172,92 @@ Response metadata echo model/profile, thêm kind/succeeded. Body tối đa 256 K
 }
 ```
 
-Tối đa 200 candidate, thứ tự là rank đã tính tại Python; không trả vector cho .NET.
+Tối đa 200 candidate trả cho .NET, thứ tự là rank đã tính tại Python; không trả vector.
+`candidateLimit` hợp lệ từ 1–200; API yêu cầu 200 để cộng ưu tiên khu vực trước khi cắt
+kết quả cuối còn `limit=1..10`. Các pool truy hồi nội bộ cũng tối đa 200 mỗi kênh.
 Python có thể thêm hạng/điểm dense/keyword/RRF để chẩn đoán, API hiện chỉ xuất rank.
-.NET kiểm lại toàn bộ eligibility, document/source version/hash và bộ lọc trước DTO;
+.NET kiểm lại toàn bộ eligibility, document/source version/hash và bộ lọc ngày trước DTO;
 `sourceKind:"text"|"image"` xác định nguồn thật, độc lập với chế độ query, để text query
-trúng OCR vẫn được đối chiếu hash/phiên bản ảnh đã duyệt. Không tự nới lọc hoặc refill
-vô hạn. Không coi RRF/cosine là xác suất sở hữu.
+trúng OCR vẫn được đối chiếu hash/phiên bản ảnh đã duyệt. Không tự nới ngày hoặc refill
+vô hạn. HTTP `filtersRelaxed:true` chỉ khi kết quả hiển thị có món ngoài `area` đã yêu cầu.
+Không coi RRF/cosine là xác suất sở hữu.
+
+## search.hybrid.images
+
+Một RPC cho nhóm 1–3 ảnh và mô tả tùy chọn. Route `findie.ai.image`, nonpersistent,
+`ContentType:application/octet-stream`, deadline/TTL 940 giây. Body là bytes các ảnh
+nối liên tiếp theo thứ tự `images`; mỗi ảnh tối đa 10 MiB, tổng tối đa 30 MiB.
+Không base64, tệp tạm, R2 hoặc outbox. Metadata bổ sung:
+
+```json
+{
+  "schemaVersion": 1,
+  "modelId": "<configured embedding model>",
+  "modelRevision": "<pinned revision>",
+  "processingProfile": "multimodal-v1",
+  "searchProfileId": "multimodal-fusion-v1",
+  "searchProfileVersion": 1,
+  "mode": "combined",
+  "area": null,
+  "from": null,
+  "until": null,
+  "limit": 10,
+  "candidateLimit": 400,
+  "deadlineAt": "<UTC timestamp>",
+  "cacheScope": "<actor UUID>",
+  "text": "Ví màu đen",
+  "images": [{"contentType": "image/jpeg", "length": 12345}]
+}
+```
+
+Không có mô tả: `mode:image`, `searchProfileId:image-fusion-v1`. `candidateLimit` hợp lệ
+1–800; API yêu cầu `200 * (số ảnh + số nhánh text)` để giữ toàn bộ pool đã gộp trước bonus.
+Ví dụ trên có một ảnh và một nhánh text nên yêu cầu 400. Worker kiểm số ảnh,
+MIME/length từng phần và tổng length khớp body trước suy luận. Python tìm từng ảnh
+tuần tự với deadline 300 giây/ảnh, chạy text hybrid tối đa 30 giây nếu có mô tả,
+rồi gộp weighted RRF: mỗi ảnh có hệ số 1, nhánh text có hệ số 0.5, đóng góp
+`weight / (60 + rank)` với rank bắt đầu từ 1. Một món chỉ góp điểm một lần trong mỗi
+danh sách và xuất hiện một lần trong kết quả. Một nhánh lỗi làm cả request thất bại.
+`imageScore` là tổng đóng góp từ các nhánh truy vấn ảnh, `textScore` là đóng góp từ
+nhánh truy vấn text; `score = imageScore + textScore`. Phân nhóm theo nhánh truy vấn,
+độc lập với `sourceKind` của nguồn đã trúng.
+
+Thứ tự nhóm: có cả `imageScore > 0` và `textScore > 0` trước, chỉ ảnh tiếp theo,
+chỉ text cuối cùng. Trong từng nhóm xếp giảm dần theo `score`, `imageScore` hoặc
+`textScore` tương ứng. .NET giữ thứ tự nhóm, chỉ điều chỉnh điểm trong nhóm bằng
+bonus khu vực và thời điểm mất trước khi giới hạn kết quả.
+
+Response metadata echo cấu hình, thêm `kind:search.hybrid.images,succeeded`; không
+echo `text`, `images` hoặc `cacheScope`. Body JSON tối đa 1 MiB; mỗi danh sách truy hồi
+nội bộ giữ tối đa 200 ứng viên, nên union sau fusion tối đa `200 * số nhánh`, không quá
+800. Trả toàn bộ pool này để cộng ưu tiên khu vực trước khi cắt kết quả cuối ở .NET:
+
+```json
+{
+  "candidates": [{
+    "itemId": "<uuid>",
+    "score": 0.02459016393442623,
+    "imageScore": 0.01639344262295082,
+    "textScore": 0.00819672131147541,
+    "sources": [{
+      "documentVersion": 5,
+      "sourceId": "<itemId hoặc imageId>",
+      "sourceKind": "image",
+      "sourceVersion": 2,
+      "sourceSha256": "<64 lowercase hex>"
+    }]
+  }]
+}
+```
+
+`sources` chứa mọi nguồn đã góp điểm, được bỏ ref trùng, tối đa số nhánh (4).
+Mỗi ref giữ cả document version để không dùng đóng góp từ snapshot cũ. .NET kiểm
+các điểm hữu hạn/không âm, tổng điểm dương bằng điểm ảnh cộng điểm text, thứ tự nhóm
+và provenance, rồi đọc dữ liệu nghiệp vụ để kiểm từng nguồn. Nếu bất kỳ nguồn góp
+điểm không còn hợp lệ, loại cả ứng viên. .NET không tính lại RRF; điểm Python được
+nhân với `(1 + bonusKhuVuc) * (1 + bonusThoiGian)` trong từng nhóm, sau đó giới hạn 1–10 kết quả
+và dựng DTO HTTP chỉ chứa rank. Bonus khu vực tối đa 5%, áp dụng một lần mỗi món;
+ngày vẫn lọc cứng. Không refill; input bị bỏ khi thành công, lỗi hoặc hủy.
 
 ## index.upsert, index.source.vector, index.source.image và index.remove
 

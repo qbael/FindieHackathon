@@ -8,6 +8,9 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 
+from .images import ReviewedRegion
+
+
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Version = Annotated[int, Field(gt=0, strict=True)]
 SchemaVersion = Annotated[int, Field(ge=1, le=1, strict=True)]
@@ -22,6 +25,7 @@ class Metadata(Contract):
     modelId: str
     modelRevision: str
     deadlineAt: AwareDatetime
+    cacheScope: UUID | None = Field(default=None, exclude=True)
 
     def remaining(self):
         if self.deadlineAt.tzinfo is None:
@@ -30,7 +34,7 @@ class Metadata(Contract):
         if remaining <= 0:
             raise TimeoutError("deadline_expired")
         image_operation = isinstance(self, (RedactMetadata, ImageEmbeddingMetadata)) or isinstance(self, SearchMetadata) and self.mode == "image"
-        if remaining > (305 if image_operation else 35):
+        if remaining > (945 if isinstance(self, BatchSearchMetadata) else 305 if image_operation else 35):
             raise ValueError("deadline_too_long")
         return remaining
 
@@ -62,6 +66,8 @@ class ImageEmbeddingMetadata(Metadata):
     sourceSha256: Digest
     dimensions: Annotated[int, Field(gt=0, le=16000, strict=True)]
     processingProfile: Literal["image-v1"]
+    omitOcr: bool = Field(default=False, strict=True)
+    coarsePreview: bool = Field(default=False, strict=True)
 
 
 class OcrMetadata(Contract):
@@ -93,6 +99,14 @@ class RedactMetadata(Metadata):
     sourceVersion: Version
     sourceSha256: Digest
     processingProfile: Literal["redact-v4"]
+    coarsePreview: bool = Field(default=False, strict=True)
+    reviewedRegions: list[ReviewedRegion] | None = Field(default=None, max_length=32)
+
+    @model_validator(mode="after")
+    def valid_masks(self):
+        if self.coarsePreview and self.reviewedRegions is not None:
+            raise ValueError("conflicting_redaction_modes")
+        return self
 
 
 class SearchMetadata(Metadata):
@@ -110,6 +124,34 @@ class SearchMetadata(Metadata):
     @model_validator(mode="after")
     def valid(self):
         if self.processingProfile != ("text-v1" if self.mode == "text" else "image-v1"):
+            raise ValueError("search_modality_mismatch")
+        if self.from_ == date.min or self.until == date.max or self.from_ and self.until and self.from_ > self.until:
+            raise ValueError("invalid_date_range")
+        return self
+
+
+class SearchImage(Contract):
+    contentType: Literal["image/jpeg", "image/png", "image/webp"]
+    length: Annotated[int, Field(ge=1, le=10 * 1024 * 1024, strict=True)]
+
+
+class BatchSearchMetadata(Metadata):
+    processingProfile: Literal["multimodal-v1"]
+    searchProfileId: Literal["image-fusion-v1", "multimodal-fusion-v1"]
+    searchProfileVersion: SchemaVersion
+    mode: Literal["image", "combined"]
+    area: str | None = Field(default=None, max_length=200)
+    from_: date | None = Field(default=None, alias="from")
+    until: date | None = None
+    limit: Annotated[int, Field(ge=1, le=10, strict=True)]
+    candidateLimit: Annotated[int, Field(ge=1, le=800, strict=True)]
+    text: str | None = Field(default=None, max_length=2000, strict=True, exclude=True)
+    images: list[SearchImage] = Field(min_length=1, max_length=3, exclude=True)
+
+    @model_validator(mode="after")
+    def valid(self):
+        self.text = self.text.strip() or None if self.text is not None else None
+        if (self.mode, self.searchProfileId) != (("combined", "multimodal-fusion-v1") if self.text else ("image", "image-fusion-v1")):
             raise ValueError("search_modality_mismatch")
         if self.from_ == date.min or self.until == date.max or self.from_ and self.until and self.from_ > self.until:
             raise ValueError("invalid_date_range")

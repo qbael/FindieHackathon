@@ -61,8 +61,8 @@ Colab có quota/thời lượng và hạn chế proxy/web services, nhất là t
 | `AI_SERVICE_TOKEN` / `Ai__ServiceToken` | Token riêng local .NET↔FastAPI, không gửi lên Colab |
 | `AI_SEARCH_DSN` | Role runtime `findie_search_app`, không có quyền DB nghiệp vụ |
 | `AI_SEARCH_MIGRATION_DSN` | Role migration riêng cho bước DDL; không dùng cho worker |
-| `AI_REDIS_URL` | Redis cache ứng viên; mặc định local `redis://127.0.0.1:6379/0`, để rỗng để tắt; ngoài loopback cần `rediss://` |
-| `AI_SEARCH_CACHE_TTL_SECONDS` | TTL cho cả hai cache, mặc định 60 giây, hợp lệ 1–3600 |
+| `AI_REDIS_URL` | Redis cache ứng viên từ khóa/vị trí; mặc định local `redis://127.0.0.1:6379/0`, để rỗng để tắt; ngoài loopback cần `rediss://` |
+| `AI_SEARCH_CACHE_TTL_SECONDS` | TTL cho cache từ khóa/vị trí, mặc định 60 giây, hợp lệ 1–3600 |
 | `AI_SEARCH_SEMANTIC_WEIGHT` | Tỷ trọng ngữ nghĩa của hybrid search, mặc định `0.6` (60% ngữ nghĩa / 40% từ khóa), hợp lệ 0–1; từ khóa bằng `1 - giá trị`. Sửa trong `.env` rồi khởi động lại worker. |
 | `REDIS_PORT` | Cổng Redis Compose chỉ bind loopback, mặc định 6379 |
 | `AI_RABBITMQ_URL` / `RabbitMq__Uri` | Hai tài khoản runtime broker tách biệt |
@@ -77,8 +77,9 @@ Chỉ một Python process, không dùng nhiều Uvicorn workers với queue exc
 
 Web chờ tối đa 11 phút (660 giây) cho toàn bộ upload. `image.embed` đọc OCR và tạo vector
 riêng từ ảnh chưa che, có deadline 300 giây; `image.redact` có deadline riêng 300 giây.
-Tìm một ảnh có deadline AI 300 giây; text/index vẫn 30 giây. Tìm nhiều ảnh/mô tả có
-ngân sách AI chung 940 giây, web chờ 960 giây.
+Tìm một ảnh có deadline AI 300 giây; text/index vẫn 30 giây. Tìm nhiều ảnh/mô tả dùng
+một RPC `search.hybrid.images`, ngân sách AI chung 940 giây, web chờ 960 giây.
+Python chạy tuần tự từng ảnh (tối đa 300 giây/ảnh), mô tả (tối đa 30 giây), rồi gộp RRF.
 Việc ghép OCR với mô tả diễn ra trong worker local. Nếu gateway đang hoạt động thì chỉ
 cần khởi động lại worker sau khi cập nhật Findie.
 Nếu URL ngrok thay đổi, tải JSON mới và import lại bằng `scripts/configure_ollama.py`;
@@ -95,14 +96,11 @@ kiểm model/capability và embedding kiểm tra khi cần. API chờ tối đa 
 health của worker; doctor chờ tối đa 20 giây cho HTTP để không cắt lượt kiểm hợp lệ.
 Các giới hạn này dành cho health, không thay deadline của upload, tìm kiếm hay lập chỉ mục.
 
-## Cache từ khóa và ngữ nghĩa bằng Redis
+## Cache từ khóa bằng Redis
 
-Python cache riêng hai nhánh của truy vấn văn bản trước khi hợp nhất RRF:
+Python dùng khóa `findie:search:v1:keyword:<sha256>` để lưu ứng viên FTS và vị trí trước khi hợp nhất thứ hạng bằng RRF. Khóa dùng từ khóa tiếng Việt đã chuẩn hóa và tách theo database, model, phiên bản chỉ mục, bộ lọc ngày và nguồn text/image được phép. Cache lưu tối đa 200 ứng viên cho mỗi danh sách FTS và vị trí, kể cả kết quả rỗng. Mỗi lượt tra cache đọc UUID phiên bản chỉ mục từ PostgreSQL.
 
-- `findie:search:v1:keyword:<sha256>` lưu thứ hạng FTS và tín hiệu vị trí. Khóa dùng từ khóa tiếng Việt đã chuẩn hóa có/không dấu như truy vấn FTS.
-- `findie:search:v1:semantic:<sha256>` lưu thứ hạng vector. Khóa giữ sự khác biệt của văn bản gốc, model/revision/số chiều, query instruction và search profile; không gộp các câu chỉ vì chúng giống nhau sau bỏ dấu.
-
-Cả hai khóa còn tách theo database, phiên bản chỉ mục, bộ lọc ngày/khu vực và nguồn text/image được phép. Cache pool tối đa 200 ứng viên mỗi nhánh, áp dụng limit khi hợp nhất; kết quả rỗng cũng được cache. Khi cả hai trúng, không tạo lại embedding hoặc chạy truy vấn xếp hạng; nếu chỉ một nhánh thiếu, chỉ tính lại nhánh đó. Mỗi lượt vẫn đọc một UUID phiên bản chỉ mục từ PostgreSQL. Tìm bằng ảnh vẫn đi theo luồng cũ.
+Khi trúng cache từ khóa, worker dùng lại hai danh sách này và vẫn chạy truy vấn xếp hạng vector cho nhánh ngữ nghĩa. Tìm bằng ảnh đi thẳng qua nhánh vector.
 
 `ai_search_state` giữ một UUID, thay trong cùng transaction với mỗi upsert/remove chỉ mục, kể cả replay bổ sung vector ảnh. Khóa cũ mất hiệu lực sau commit và tự hết TTL; rollback giữ phiên bản cũ. Cách này vẫn vô hiệu hóa đúng khi Redis bị ngắt, khi nhiều worker dùng chung cache hoặc khi truy vấn cũ hoàn thành sau một lần cập nhật. Không dùng `FLUSHDB` hay quét xóa khóa toàn Redis.
 
@@ -128,7 +126,7 @@ uv run --project services/ai --locked pytest services/ai/tests/test_search_cache
 make ai-integration
 ```
 
-Runner tích hợp tự tạo/dọn PostgreSQL, RabbitMQ và Redis riêng với cổng ngẫu nhiên; kiểm TTL thật, hai nhánh hit/miss riêng, bỏ qua embedding, invalidation sau update/tombstone, rollback và Redis mất kết nối. Model là HTTP stub.
+Runner tích hợp tự tạo/dọn PostgreSQL, RabbitMQ và Redis riêng với cổng ngẫu nhiên; kiểm TTL thật, hit/miss của cache từ khóa, xếp hạng vector khi trúng cache từ khóa, vô hiệu hóa sau update/tombstone, rollback và Redis mất kết nối. Model là HTTP stub.
 
 ## Luồng ảnh và tìm kiếm
 
@@ -169,9 +167,22 @@ Bước này giảm tải truyền ảnh; API trực tiếp và kiểm tra serve
    tải lại ảnh gốc để bổ sung OCR còn thiếu hoặc thay vector ảnh/OCR cũ bằng vector ảnh riêng.
 6. Text dùng semantic + PostgreSQL FTS + tín hiệu vị trí; khi capability ảnh bật, xét
    cả nguồn mô tả có OCR `text-v1` và nguồn ảnh riêng `image-v1`. Tìm bằng ảnh chỉ tạo
-   vector từ ảnh truy vấn. Mô tả tìm kiếm bổ sung vẫn là một nhánh text riêng
-   khi hợp nhất nhiều ảnh. Mỗi ứng viên có `sourceKind` để .NET kiểm đúng nguồn text/ảnh,
-   phiên bản và hash. Bộ lọc chạy trước limit; nhiều ảnh cùng món được dedupe.
+   vector từ ảnh truy vấn. Mô tả tìm kiếm bổ sung vẫn là một nhánh text riêng.
+   Với nhóm 1–3 ảnh và mô tả tùy chọn, Python gộp các danh sách bằng weighted RRF:
+   mỗi nhánh ảnh hệ số 1, nhánh mô tả hệ số 0.5, nhánh text bên trong vẫn ngữ nghĩa/từ khóa
+   mặc định 60/40. Món được cả nhánh ảnh và mô tả tìm thấy xếp trước, rồi chỉ ảnh,
+   cuối cùng chỉ mô tả; từng nhóm xếp giảm dần theo tổng điểm/điểm ảnh/điểm mô tả tương ứng.
+   Phân nhóm theo nhánh truy vấn, không phải loại nguồn tài liệu; mỗi món chỉ xuất hiện một lần.
+   Python giữ tối đa 200 ứng viên mỗi nhánh và trả toàn bộ pool đã gộp, tối đa
+   `200 * số nhánh` (không quá 800), cùng ba điểm nội bộ và toàn bộ nguồn góp điểm;
+   text/ảnh đơn trả tối đa 200 ứng viên. Body ứng viên AMQP giới hạn 1 MiB.
+   API nhận đủ pool để cộng ưu tiên khu vực trước khi cắt kết quả cuối còn tối đa 10 món.
+   .NET kiểm nghiệp vụ, bộ lọc ngày và document/source version/hash của từng nguồn;
+   nguồn nào không hợp lệ thì loại cả ứng viên. `area` là khu vực ưu tiên cho tìm text/ảnh,
+   không lọc cứng: món khớp chuỗi khu vực không phân biệt hoa thường được cộng 5% điểm một lần.
+   Bonus khu vực và `lostAt` chỉ đổi thứ tự trong nhóm bằng hệ số `(1 + bonusKhuVuc) * (1 + bonusThoiGian)`.
+   HTTP giữ DTO chỉ có rank; `filtersRelaxed:true` khi có món hiển thị ngoài khu vực ưu tiên.
+   Khoảng ngày luôn lọc cứng; `GET /api/items?area=...` vẫn lọc cứng khu vực.
    Chưa có điều kiện đối chiếu chính xác toàn bộ số hoặc đuôi CCCD/MSSV: OCR có thể sai,
    và thứ hạng semantic không chứng minh số giấy tờ trùng khớp.
 
@@ -199,7 +210,7 @@ make local-seed STAFF_EMAIL=dia-chi-google-cua-ban
 
 CLI Development cấp quyền nhận/trả tại Hub demo cho tài khoản Google đã tồn tại, không đổi hồ sơ hoặc tạo auth bypass. Dùng Google thứ hai để thử claim → duyệt → chat → trao trả; thử riêng intake pending → nhân viên nhận thực tế → trao trả. Dashboard admin đầy đủ và SignalR ngoài phạm vi MVP này.
 
-Để kiểm nhánh ảnh thật: đăng tin có ảnh, kiểm bản che và duyệt, công khai, tìm bằng cả mô tả và ảnh với bộ lọc, rồi gỡ ảnh/ẩn tin và xác nhận kết quả cũ không xuất hiện. Kiểm bucket chỉ có output private, không có original. Đây cũng là bước kiểm credential Google/R2 và model thật.
+Để kiểm nhánh ảnh thật: đăng tin có ảnh, kiểm bản che và duyệt, công khai, tìm bằng cả mô tả và ảnh với khu vực ưu tiên và bộ lọc ngày, rồi gỡ ảnh/ẩn tin và xác nhận kết quả cũ không xuất hiện. Kiểm bucket chỉ có output private, không có original. Đây cũng là bước kiểm credential Google/R2 và model thật.
 
 ## Đổi model và lập lại chỉ mục
 

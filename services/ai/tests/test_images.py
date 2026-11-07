@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image, ImageDraw, PngImagePlugin
 import pytest
 
-from findie_ai.images import MAX_BYTES, Regions, normalize, redact
+from findie_ai.images import MAX_BYTES, Regions, coarse_preview, normalize, redact, reviewed_mask
 
 
 def encoded(format="PNG", *, size=(80, 60), **options):
@@ -16,6 +16,22 @@ def encoded(format="PNG", *, size=(80, 60), **options):
     with Image.new("RGB", size, "white") as image:
         image.save(buffer, format=format, **options)
     return buffer.getvalue()
+
+
+def test_coarse_preview_accepts_uniform_tiles_and_rejects_hidden_detail():
+    with Image.new("RGB", (12, 4), "white") as grid:
+        grid.putpixel((1, 1), (0, 42, 85))
+        with grid.resize((192, 64), Image.Resampling.NEAREST) as image:
+            valid = BytesIO()
+            image.save(valid, format="PNG")
+            output, metadata = coarse_preview(valid.getvalue(), "image/png")
+            assert metadata["sha256"] == sha256(output).hexdigest()
+            assert (metadata["width"], metadata["height"], metadata["sensitiveRegions"]) == (192, 64, [])
+            image.putpixel((17, 17), (1, 2, 3))
+            detailed = BytesIO()
+            image.save(detailed, format="PNG")
+            with pytest.raises(ValueError, match="invalid_coarse_preview"):
+                coarse_preview(detailed.getvalue(), "image/png")
 
 
 class Detector:
@@ -294,3 +310,24 @@ def test_model_error_does_not_return_raw_input_as_output():
 
     with pytest.raises(RuntimeError, match="model_unavailable"):
         asyncio.run(redact(BrokenDetector(), encoded(), "image/png"))
+
+
+def test_reviewed_masks_cover_complete_fields_without_changing_surrounding_pixels():
+    regions = [{"label": "identity_number", "bbox": [250, 250, 750, 750]}]
+    output, metadata = reviewed_mask(encoded(size=(400, 240)), "image/png", regions)
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[60:180, 100:300] == 0).all()
+        assert (pixels[:50] == 255).all()
+        assert (pixels[:, :90] == 255).all()
+        assert image.size == (400, 240) and not image.info
+    assert metadata["sha256"] == sha256(output).hexdigest()
+    assert metadata["sensitiveRegions"] == regions
+    empty, _ = reviewed_mask(encoded(), "image/png", [])
+    assert empty == encoded()
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded(), "image/png", [{"label": "face", "bbox": [750, 0, 250, 1000]}])
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded("JPEG"), "image/jpeg", regions)
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded(), "image/png", regions * 33)

@@ -1,0 +1,33 @@
+{
+  "sourceId": "timdocom-13755",
+  "sourceUrl": "https://timdo24h.com/13755",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:04.352316+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/37ffdc1a-1a4b-4312-a0bc-564c37a0b8e6.webp"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "645ff97349316fe6544eff2ccefe4878ab77a1dc637fdbe9da8bff038fdd05c7",
+    "metadataChanged": false,
+    "sourceSha256": "577c0048a488853452d300a69ebc457947f809b50fb864f1bc627508b03a7e9b",
+    "sha256": "577c0048a488853452d300a69ebc457947f809b50fb864f1bc627508b03a7e9b"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

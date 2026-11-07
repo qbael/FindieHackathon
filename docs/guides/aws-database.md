@@ -24,7 +24,7 @@ Các kiểm tra tại thời điểm chuyển:
 | Database nghiệp vụ có dữ liệu | `findie_frontend` |
 | Database tìm kiếm | `findie_search`, gồm pgvector và các bảng tìm kiếm hiện có |
 | Role runtime | `findie_app` cho nghiệp vụ; `findie_search_app` cho tìm kiếm |
-| Kết nối | TCP `5432`, TLS xác minh chứng chỉ và hostname, security group giới hạn IP máy ứng dụng `/32` |
+| Kết nối | TCP `5432`, TLS xác minh chứng chỉ và hostname, security group cho phép mọi IPv4 `0.0.0.0/0` từ 07/11/2026 |
 | Security group | `findie-postgres-client` — `sg-09b9d228f04045e51` |
 | Mật khẩu quản trị | RDS quản lý qua AWS Secrets Manager |
 
@@ -63,9 +63,11 @@ Các lệnh quản trị local có giới hạn cần nhớ:
 
 Kiểm tra `/health/ready` của API sau khi khởi động lại, rồi kiểm tra đăng nhập, danh sách tin và ảnh. Trạng thái AI còn phụ thuộc phiên model và RabbitMQ; giữ nguyên model/revision để dùng các vector đã chuyển.
 
-## Khi IP Internet của máy thay đổi
+## Truy cập từ mọi IPv4
 
-Kết nối timeout sau khi đổi mạng hoặc VPN có thể do IP public không còn khớp rule `/32`. Mở **RDS → findie-postgres → Connectivity & security → VPC security groups**, chọn **findie-postgres-client (`sg-09b9d228f04045e51`)**, rồi **Edit inbound rules**: cập nhật source của rule PostgreSQL TCP `5432` thành IP public mới `/32`, kiểm tra kết nối và gỡ IP cũ khi không còn dùng. Giữ phạm vi ở các máy cần truy cập; không mở `0.0.0.0/0`. Xem [cách security group kiểm soát truy cập RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.RDSSecurityGroups.html).
+Ngày **07/11/2026**, theo yêu cầu của chủ project, security group **findie-postgres-client (`sg-09b9d228f04045e51`)** đã được thêm inbound rule **`sgr-05012ba7aae957015`**: PostgreSQL TCP `5432`, source **`0.0.0.0/0`**. Instance đã bật `PubliclyAccessible` và dùng `NetworkType=IPV4`; rule này cho phép mọi IPv4 kết nối đến cổng database, kể cả sau khi máy đổi mạng hoặc VPN. Kết nối vẫn cần credential hợp lệ và ứng dụng tiếp tục xác minh TLS. Cổng database hiện phơi ra Internet và có thể bị dò quét hoặc thử mật khẩu.
+
+Để quay lại giới hạn IP, mở **RDS → findie-postgres → Connectivity & security → VPC security groups → findie-postgres-client → Edit inbound rules**, thêm các rule `/32` cho máy cần truy cập rồi xóa rule `sgr-05012ba7aae957015` có source `0.0.0.0/0`. Các rule `/32` cũ đã được xóa ngày 07/11/2026. Xem [cách security group kiểm soát truy cập RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.RDSSecurityGroups.html).
 
 ## Quay lại database local
 

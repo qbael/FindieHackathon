@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdothatlac-832",
+  "sourceUrl": "https://timdothatlac.vn/post/832",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:46:44.768851+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn báo mất mô tả giấy tờ. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả giấy tờ. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1779691818236-zftqwgrsssl.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "c99162df9571f3d580638ab7d712afc9f825a618f3ad78c2d4f0457f89bbb30f",
+    "metadataChanged": false,
+    "sourceSha256": "359cb4cdd2cf6208739174a589b62ac8f4ac097086db38d9b28d0346d413e611",
+    "sha256": "359cb4cdd2cf6208739174a589b62ac8f4ac097086db38d9b28d0346d413e611"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-10"
+  }
+}

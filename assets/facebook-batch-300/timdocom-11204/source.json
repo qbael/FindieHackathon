@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-11204",
+  "sourceUrl": "https://timdo24h.com/11204",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:54.880944+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/0f1ac586-dbd1-4af3-9552-3688ca008d42.webp"
+  ],
+  "itemType": "driver-license",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "89bbfb7e02911f2cd85f4ebb1fdb9454d99fe0223f0e7b6ea87204a3ca624318",
+    "metadataChanged": false,
+    "sourceSha256": "8375fb5da3960460672cb93f0257c17a3d84a379115d785c3bb063ae1632a339",
+    "sha256": "8375fb5da3960460672cb93f0257c17a3d84a379115d785c3bb063ae1632a339"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-03"
+  }
+}

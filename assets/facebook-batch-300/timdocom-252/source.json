@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-252",
+  "sourceUrl": "https://timdo24h.com/252",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:34.967435+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/78ba8ce3-e542-4bb6-ab97-7095eaa779be.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "2d7ba152d3de1b2eb45ca93f94861fabe8c797032651d9ac39721952d9c84fc6",
+    "metadataChanged": true,
+    "sourceSha256": "6bec1005f4d21f0d21d390e95746decc7d22fa7a3cc2d4a2721754a4b70a8b1b",
+    "sha256": "24c650597605a3b7362bf1ef2ffc5fa6f439980e7721d6f8af6f041882bacfe2"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-01"
+  }
+}

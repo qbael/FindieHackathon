@@ -68,10 +68,8 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
             var model = AiProtocol.Setting(configuration, "EmbeddingModelId");
             var revision = AiProtocol.Setting(configuration, "EmbeddingRevision");
             var dimensions = AiProtocol.EmbeddingDimensions(configuration);
-            var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, jobId = job.Id,
-                job.LeaseToken, job.ItemId, job.DocumentVersion, snapshotSha256 = job.PayloadSha256,
-                modelId = model, modelRevision = revision, dimensions,
-                deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
+            Guid? cacheScope = null;
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
             var canonical = RecoveryWorkflow.CanonicalJson(job.Payload);
             if (RecoveryWorkflow.Hash(canonical) != job.PayloadSha256) throw new ApiException(502, "Invalid outbox checksum.");
             if (job.EventKind == "snapshot")
@@ -80,6 +78,7 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
                 var item = await repository.ItemAsync(job.ItemId, false, ct);
                 if (item is null || !RecoveryWorkflow.Public(item) || item.DocumentVersion != job.DocumentVersion)
                 { await Finish("obsolete", null); return true; }
+                cacheScope = item.PostedBy;
                 foreach (var image in item.Images.Where(RecoveryWorkflow.PublicImage).OrderBy(image => image.Position))
                 {
                     if (image.OriginalEmbedding is { } cached)
@@ -105,7 +104,7 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
                             job.ItemId, job.DocumentVersion, snapshotSha256 = job.PayloadSha256, sourceId = image.Id,
                             sourceVersion = image.ContentVersion, sourceSha256 = image.ProcessedObject!.Sha256,
                             payloadSha256 = RecoveryWorkflow.Hash(body), modelId = model, modelRevision = revision,
-                            processingProfile = "image-v1", dimensions, deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
+                            processingProfile = "image-v1", dimensions, cacheScope, deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
                         images.Add(new AiPart(vectorMetadata, body, "application/json", "index.source.vector"));
                         continue;
                     }
@@ -116,11 +115,14 @@ public sealed class RecoveryMaintenance(IServiceScopeFactory scopes, IAiGateway 
                     var partMetadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, jobId = job.Id, job.LeaseToken,
                         job.ItemId, job.DocumentVersion, snapshotSha256 = job.PayloadSha256, sourceId = image.Id,
                         sourceVersion = image.ContentVersion, sourceSha256 = image.ProcessedObject.Sha256,
-                        modelId = model, modelRevision = revision, processingProfile = "image-v1", dimensions,
+                        modelId = model, modelRevision = revision, processingProfile = "image-v1", dimensions, cacheScope,
                         deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
                     images.Add(new AiPart(partMetadata, bytes, image.ProcessedObject.ContentType!));
                 }
             }
+            var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, jobId = job.Id,
+                job.LeaseToken, job.ItemId, job.DocumentVersion, snapshotSha256 = job.PayloadSha256,
+                modelId = model, modelRevision = revision, dimensions, cacheScope, deadlineAt = deadline }, RecoveryWorkflow.Json);
             await using var reply = await ai.RequestAsync(new AiCommand(kind, metadata, Encoding.UTF8.GetBytes(canonical), "application/json", true, images), ct);
             using var receiptScope = scopes.CreateScope();
             await receiptScope.ServiceProvider.GetRequiredService<IndexReceiptService>().AcceptAsync(reply.Metadata, ct);

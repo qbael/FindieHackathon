@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-276",
+  "sourceUrl": "https://timdo24h.com/276",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:43.079783+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/3a026843-5881-49d3-aaaa-d7783b01e584.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "5c47e595955f17ce236a0d0d21543e81bb0b650587df04aaa5707dac436681c0",
+    "metadataChanged": true,
+    "sourceSha256": "094e9525b8be9c807184952a1d5ba943dabd97abe13731b3da26b66772f3a06d",
+    "sha256": "20c496ab3ff9b77543f025abd61e222eacf09b74f4f417bb06c3a1fd22bde590"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-02T14:45:00+07:00",
+    "foundUntil": "2026-07-02T16:00:00+07:00"
+  }
+}

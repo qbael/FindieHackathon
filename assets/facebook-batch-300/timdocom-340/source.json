@@ -1,0 +1,41 @@
+{
+  "sourceId": "timdocom-340",
+  "sourceUrl": "https://timdo24h.com/340",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:42.264803+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu đen kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví màu đen kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Đặc điểm được nguồn nhắc đến: chất liệu da. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví màu đen kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Đặc điểm được nguồn nhắc đến: chất liệu da. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/0eb7fc78-5f4c-4eb7-a3dc-ca05c710ffb8.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "3959c6787bc684f7189500cc2925c60751a1c739f89e3352943801418a08679f",
+    "metadataChanged": false,
+    "sourceSha256": "62b2561ba4287fe71105a3bbe05e04d6d075e2f7c3d52fa22d849a7b77c21f0e",
+    "sha256": "62b2561ba4287fe71105a3bbe05e04d6d075e2f7c3d52fa22d849a7b77c21f0e"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-19"
+  }
+}

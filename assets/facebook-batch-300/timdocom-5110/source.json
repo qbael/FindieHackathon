@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-5110",
+  "sourceUrl": "https://timdo24h.com/5110",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:14.753326+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại iPhone",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/712f9606-25a8-49f2-b2b1-49156e393b45.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "90462e161896ba9bc87939c080e5c1cae778cdc19b53d6e56987f695c83444d5",
+    "metadataChanged": true,
+    "sourceSha256": "cf7e6fa43c69fed3f98caa536dd7917ebc6db4ea54727ac31c5936c7446a4ddf",
+    "sha256": "c1d0456c406061797d5c213ac9960b57a470c69b29c251e942fda585634c2d81"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, Đà Nẵng (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-21"
+  }
+}

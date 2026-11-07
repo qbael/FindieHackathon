@@ -32,7 +32,7 @@ public sealed class ProcessedStorage : IProcessedStorage, IDisposable
             || uri.UserInfo.Length != 0 || uri.Query.Length != 0 || uri.Fragment.Length != 0)
             throw new InvalidOperationException("R2 requires an HTTPS endpoint, bucket and server credentials.");
         client = new AmazonS3Client(new BasicAWSCredentials(accessKey, secret), new AmazonS3Config
-        { ServiceURL = endpoint, ForcePathStyle = true, AuthenticationRegion = "auto", MaxErrorRetry = 2, Timeout = TimeSpan.FromSeconds(10) });
+        { ServiceURL = endpoint, ForcePathStyle = true, AuthenticationRegion = "auto", MaxErrorRetry = 2, Timeout = TimeSpan.FromSeconds(60) });
     }
     IAmazonS3 Client => client ?? throw new ApiException(503, "Processed image storage is not configured.");
     public async Task PutAsync(StoredObject value, byte[] bytes, CancellationToken ct)

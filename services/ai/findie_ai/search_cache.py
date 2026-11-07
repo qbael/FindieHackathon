@@ -1,4 +1,4 @@
-"""Short-lived candidate caches; query text and embeddings never enter Redis."""
+"""Short-lived keyword and location candidates for text search."""
 
 import asyncio
 from hashlib import sha256
@@ -37,11 +37,11 @@ class SearchCache:
         self.ttl = ttl
 
     @staticmethod
-    def key(channel, identity):
+    def key(identity):
         digest = sha256(json.dumps(identity, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
-        return f"findie:search:v1:{channel}:{digest}"
+        return f"findie:search:v1:keyword:{digest}"
 
-    async def get(self, key, channels):
+    async def get(self, key):
         try:
             async with asyncio.timeout(0.3):
                 value = await self.client.get(key)
@@ -50,9 +50,9 @@ class SearchCache:
             if len(value) > 1024 * 1024:
                 raise ValueError("Oversized cache entry")
             value = json.loads(value)
-            if not isinstance(value, dict) or set(value) != set(channels):
+            if not isinstance(value, dict) or set(value) != {"lexical", "locations"}:
                 raise ValueError("Invalid cached channels")
-            return {channel: ROWS.dump_python(ROWS.validate_python(value[channel]), mode="json") for channel in channels}
+            return {channel: ROWS.dump_python(ROWS.validate_python(rows), mode="json") for channel, rows in value.items()}
         except (RedisError, TimeoutError, ValueError):
             log.warning("Search cache read unavailable or invalid; using PostgreSQL.")
             return None

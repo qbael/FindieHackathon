@@ -55,6 +55,70 @@ class FacebookSamplesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside"):
             samples.load_dataset(self.folder)
 
+    def test_scenarios_cover_all_custody_and_time_precisions_without_claiming_source_facts(self):
+        times = [
+            {"foundTimePrecision": "unknown"},
+            {"foundTimePrecision": "date", "foundOn": "2026-01-01"},
+            {"foundTimePrecision": "exact", "foundFrom": "2026-01-01T00:05:00+07:00"},
+            {"foundTimePrecision": "range", "foundFrom": "2025-12-31T23:00:00+07:00",
+             "foundUntil": "2026-01-01T01:00:00+07:00"},
+        ]
+        custodians = [
+            {"kind": "person"},
+            {"kind": "point", "pointId": "fd000000-0000-0000-0000-000000000002", "confirmedPhysicalReceipt": True},
+            {"kind": "external", "name": "Quầy giả định", "address": "Địa chỉ local giả định"},
+        ]
+        for custody in custodians:
+            for found in times:
+                with self.subTest(custody=custody["kind"], precision=found["foundTimePrecision"]):
+                    self.record["scenario"] = found | {"custody": custody}
+                    self.write_source()
+                    post = samples.prepare(self.source)
+                    self.assertTrue(post["syntheticScenario"])
+                    self.assertEqual(post["payload"]["custody"], custody)
+                    self.assertEqual(post["payload"]["content"]["foundTimePrecision"], found["foundTimePrecision"])
+                    self.assertIn("KỊCH BẢN GIẢ ĐỊNH", post["payload"]["content"]["publicDescription"])
+                    self.assertIn(self.record["sourceUrl"], post["payload"]["content"]["publicDescription"])
+                    self.assertEqual(json.loads(self.source.read_text())["originalKind"], "lost")
+
+    def test_scenarios_export_canonical_values_for_dotnet_json(self):
+        self.record["scenario"] = {"foundTimePrecision": "exact", "foundFrom": "2026-01-01 00:05:00+07:00",
+                                   "custody": {"kind": "point", "pointId": "fd000000000000000000000000000002",
+                                               "confirmedPhysicalReceipt": True}}
+        self.write_source()
+        post = samples.prepare(self.source)
+        self.assertEqual(post["payload"]["content"]["foundFrom"], "2026-01-01T00:05:00+07:00")
+        self.assertEqual(post["payload"]["custody"]["pointId"], "fd000000-0000-0000-0000-000000000002")
+        self.assertEqual(self.record["scenario"]["custody"]["pointId"], "fd000000000000000000000000000002")
+        self.record["scenario"] = {"foundTimePrecision": "date", "foundOn": "20260101", "custody": {"kind": "person"}}
+        self.write_source()
+        self.assertEqual(samples.prepare(self.source)["payload"]["content"]["foundOn"], "2026-01-01")
+
+    def test_scenarios_reject_invalid_dates_custody_and_source_verification(self):
+        invalid = [
+            {"foundTimePrecision": "date", "foundOn": "2999-01-01"},
+            {"foundTimePrecision": "unknown", "foundTimezone": "invalid-zone"},
+            {"foundTimePrecision": "exact", "foundFrom": "2026-01-01T00:05:00"},
+            {"foundTimePrecision": "range", "foundFrom": "2026-01-02T00:00:00+07:00",
+             "foundUntil": "2026-01-01T00:00:00+07:00"},
+            {"foundTimePrecision": "unknown", "foundOn": "2026-01-01"},
+            {"foundTimePrecision": "unknown", "custody": {"kind": "point", "pointId": "not-a-uuid", "confirmedPhysicalReceipt": True}},
+            {"foundTimePrecision": "unknown", "custody": {"kind": "point", "pointId": "fd000000-0000-0000-0000-000000000002"}},
+            {"foundTimePrecision": "unknown", "custody": {"kind": "person", "name": "unexpected"}},
+            {"foundTimePrecision": "unknown", "custody": {"kind": "external", "name": "Quầy"}},
+        ]
+        for scenario in invalid:
+            with self.subTest(scenario=scenario):
+                self.record["scenario"] = {"custody": {"kind": "person"}} | scenario
+                self.write_source()
+                with self.assertRaises(ValueError):
+                    samples.prepare(self.source)
+        self.record.update(originalKind="found", foundDateVerified=True, foundOn="2026-01-01",
+                           scenario={"foundTimePrecision": "unknown", "custody": {"kind": "person"}})
+        self.write_source()
+        with self.assertRaisesRegex(ValueError, "cannot be marked as verified"):
+            samples.prepare(self.source)
+
     def test_duplicate_source_ids_are_rejected(self):
         duplicate = self.folder / "duplicate"
         duplicate.mkdir()
@@ -83,7 +147,7 @@ class FacebookSamplesTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("dotnet"), ".NET SDK is required for the local import guard check")
     def test_service_import_is_refused_in_production_before_reading_input_or_database(self):
-        for mode in ([], ["--sync-titles"], ["--review-only"], ["--replace-masked"]):
+        for mode in ([], ["--sync-titles"], ["--sync-source-urls"], ["--review-only"], ["--replace-masked"], ["--embed-originals"]):
             with self.subTest(mode=mode):
                 result = subprocess.run(["dotnet", "run", "--project", str(ROOT / "apps/api"), "--no-restore", "--no-launch-profile", "--",
                                          "--import-public-samples", "nonexistent-prepared.json", "--actor-email", "existing@example.test", *mode],

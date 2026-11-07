@@ -138,16 +138,22 @@ Cookie + CSRF; không yêu cầu Idempotency-Key vì không lưu query/job nghi�
 }
 ```
 
-`text` 1–2000 sau trim, bắt buộc; `area` tùy chọn tối đa 200;
-`from/until` tùy chọn, ngày bao gồm hai đầu; `limit=1..10`, mặc định 10.
+`text` 1–2000 sau trim, bắt buộc; `area` tùy chọn tối đa 200, là khu vực ưu tiên,
+không loại món ở khu vực khác. `from/until` là bộ lọc ngày bắt buộc tuân thủ khi có,
+bao gồm hai đầu; `limit=1..10`, mặc định 10. Quy tắc này áp dụng cho cả ba endpoint AI;
+`GET /api/items?area=...` vẫn lọc cứng theo khu vực.
 `lostAt` là thời điểm mất ước tính, tùy chọn, dùng ISO 8601 kèm múi giờ.
 Giá trị sai hoặc nằm trong tương lai trả **400**.
 Không bắt ảnh. Gửi JSON tới Python qua AMQP `search.hybrid`; Python chọn thuật toán
-ngữ nghĩa/từ khóa theo profile cấu hình. .NET không đọc vector/search database.
-Python cache riêng ứng viên FTS/vị trí và vector trong Redis cho truy vấn văn bản;
-TTL mặc định 60 giây, vô hiệu hóa theo phiên bản chỉ mục trong cùng transaction.
-Cache hit vẫn đi qua kiểm tra nghiệp vụ của .NET. Redis lỗi thì tìm trực tiếp;
-xem [cấu hình và kiểm thử Redis](../guides/ai-service.md#cache-từ-khóa-và-ngữ-nghĩa-bằng-redis).
+ngữ nghĩa/từ khóa theo profile cấu hình. Hybrid text dùng weighted RRF với tỷ trọng
+ngữ nghĩa/từ khóa mặc định 60/40 (`AI_SEARCH_SEMANTIC_WEIGHT=0.6`), cộng tín hiệu vị trí
+nhỏ có hệ số 0.03; hệ số hai nhánh chính lần lượt là 1.2 và 0.8, cộng `weight / (60 + rank)`.
+.NET không đọc vector/search database.
+Python cache ứng viên FTS/vị trí trong Redis cho truy vấn văn bản, với TTL mặc định
+60 giây và vô hiệu hóa theo phiên bản chỉ mục cập nhật trong cùng transaction.
+Nhánh ngữ nghĩa vẫn xếp hạng vector trong PostgreSQL. Khi trúng cache, .NET vẫn
+kiểm tra nghiệp vụ. Khi Redis lỗi, Python tìm trực tiếp trong PostgreSQL.
+Xem [cấu hình và kiểm thử Redis](../guides/ai-service.md#cache-từ-khóa-bằng-redis).
 Nhánh text tìm trên tiêu đề/mô tả/khu vực và OCR của ảnh đã duyệt thuộc bài công khai.
 Khi capability ảnh bật, nhánh này cũng xét vector ảnh riêng. OCR không được trả trong DTO hay
 ghi lại vào mô tả công khai. Ảnh cũ chưa có OCR cần tải lại để bổ sung. Không có điều
@@ -170,13 +176,19 @@ Response **200**:
 
 `rank` là vị trí gợi ý sau kiểm tra nghiệp vụ, không phải xác suất sở hữu. Response
 thực tế `item` là object ItemResponse. .NET kiểm lại published/active, document/source
-version/hash, model/profile và bộ lọc hiện tại, bỏ ứng viên cũ/trùng.
+version/hash, model/profile và bộ lọc ngày hiện tại, bỏ ứng viên cũ/trùng.
+Khi `foundArea` chứa `area` (không phân biệt hoa thường), .NET cộng 5% điểm một lần;
+đây là ưu tiên nhỏ, không đưa mọi món cùng khu vực lên trước món giống hơn ở nơi khác.
 Khi có `lostAt`, .NET cộng tối đa 5% điểm cho giờ nhặt gần sau giờ mất,
 giảm dần về 0 trong 24 giờ. Khoảng giờ nhặt có thể khớp được tối đa 2,5%.
 Tin chỉ ghi ngày nhặt được cộng 2% nếu cùng ngày theo múi giờ của tin.
-Thời điểm mất chỉ ảnh hưởng thứ hạng. Các bộ lọc khu vực và khoảng ngày vẫn áp dụng riêng.
-Tối đa 200 ứng viên, không refill tự động; `partial:true` khi bỏ ứng viên khiến kết quả
-chưa đủ limit. Không tự nới bộ lọc. Kết quả hợp lệ rỗng là **200** với `items:[]`.
+Thời điểm mất và khu vực chỉ ảnh hưởng thứ hạng; điểm được nhân với
+`(1 + bonusKhuVuc) * (1 + bonusThoiGian)`. Bộ lọc ngày luôn được giữ nguyên.
+`filtersRelaxed:true` chỉ khi có `area` và danh sách trả về có món ngoài khu vực ưu tiên;
+không có nghĩa là đã nới ngày. Tìm text hoặc ảnh đơn nhận tối đa 200 ứng viên từ Python;
+.NET cộng ưu tiên khu vực trước khi cắt kết quả cuối còn `limit=1..10`, tránh bỏ sót món
+có thể tăng hạng nhờ bonus. Không refill ngoài pool này; `partial:true` khi bỏ ứng viên
+khiến kết quả chưa đủ limit. Kết quả hợp lệ rỗng là **200** với `items:[]`.
 
 Input rỗng/khoảng ngày sai (kể cả from=0001-01-01 hoặc until=9999-12-31) **400**; response AI sai schema/model **502**;
 broker/model/search store thiếu hoặc timeout 30 giây **503**. Lúc lỗi dùng
@@ -214,8 +226,9 @@ Query `area`, `from`, `until`, `lostAt`, `limit` giống tìm text. Các phần 
 
 Tổng request tối đa 30 MiB cộng 64 KiB cho form/header; không nhận trường khác.
 .NET dùng `MultipartReader`, đọc stream vào RAM, không `IFormFile` hoặc tệp tạm.
-Kiểm xong toàn bộ ảnh, mô tả và bộ lọc mới gọi AI. Mỗi ảnh gửi riêng qua
-`search.hybrid.image`; mô tả có nội dung gửi qua `search.hybrid`.
+Kiểm xong toàn bộ ảnh, mô tả và bộ lọc mới gọi AI. .NET gửi một lệnh
+`search.hybrid.images` chứa cả nhóm ảnh và mô tả tùy chọn. Python tìm từng ảnh,
+chạy nhánh text hybrid nếu có mô tả rồi hợp nhất thứ hạng trước khi trả ứng viên.
 Thời gian xử lý AI chung tối đa **940 giây**, trình duyệt chờ tối đa
 **960 giây**, gồm tối đa ba nhánh ảnh 300 giây và một nhánh text 30 giây; một nhánh lỗi thì cả
 request lỗi, không trả kết quả thành công thiếu nhánh.
@@ -231,12 +244,28 @@ curl -b cookies.txt -H 'X-CSRF-TOKEN: <token>' \
 
 Response **200** cùng `SearchResponse`: `mode:"image"` khi không có mô tả,
 `mode:"combined"` khi có mô tả; `searchProfileId` tương ứng `image-fusion-v1` hoặc
-`multimodal-fusion-v1`, `searchProfileVersion:1`. Hợp nhất thứ hạng bằng reciprocal
-rank fusion (mỗi nguồn đóng góp `1 / (60 + rank)`, rank bắt đầu từ 1), mỗi món chỉ
-đóng góp một lần trong mỗi nguồn; giữ tối đa `limit` món, đánh lại rank từ 1.
-Không trộn điểm similarity giữa model. Sau khi nhận đủ phản hồi AI, .NET kiểm lại
-publication/lifecycle, source/version/hash, document version và bộ lọc như endpoint cũ.
-`partial`, `filtersRelaxed`, `fallbackUrl` giữ nguyên ý nghĩa.
+`multimodal-fusion-v1`, `searchProfileVersion:1`. Python hợp nhất bằng weighted
+reciprocal rank fusion: mỗi danh sách ảnh đóng góp `1 / (60 + rank)`, nhánh mô tả
+đóng góp `0.5 / (60 + rank)`, rank bắt đầu từ 1. Mỗi món đóng góp một lần trong mỗi
+danh sách và chỉ xuất hiện một lần trong kết quả; không trộn điểm similarity giữa model.
+Nhánh mô tả vẫn dùng hybrid text 60/40 bên trong.
+
+Khi có cả ảnh và mô tả, kết quả chia theo nguồn truy vấn đã góp điểm: nhóm được cả
+nhánh ảnh và nhánh mô tả tìm thấy trước, rồi nhóm chỉ nhánh ảnh tìm thấy, cuối cùng
+nhóm chỉ nhánh mô tả tìm thấy. Trong mỗi nhóm, xếp giảm dần theo tổng điểm, điểm ảnh
+hoặc điểm mô tả tương ứng. Nhóm tính theo nhánh truy vấn, không theo `sourceKind`;
+nhánh mô tả vẫn có thể tìm thấy nguồn ảnh. Bonus khu vực 5% và bonus `lostAt` chỉ
+điều chỉnh thứ tự bên trong từng nhóm, không chuyển món sang nhóm khác.
+
+Python trả toàn bộ pool đã gộp: tối đa 200 ứng viên mỗi nhánh truy vấn, tức tối đa
+`200 * (số ảnh + số nhánh mô tả)` và không quá 800 ứng viên. Mỗi ứng viên kèm điểm tổng,
+điểm ảnh, điểm mô tả và provenance của mọi nguồn góp điểm; các điểm này chỉ trao đổi nội bộ
+qua AMQP, HTTP vẫn chỉ trả rank. Body ứng viên AMQP tối đa 1 MiB cho cả ba endpoint.
+Trả đủ pool để cộng ưu tiên khu vực trước khi cắt kết quả cuối.
+.NET kiểm lại publication/lifecycle, document/source version/hash và bộ lọc ngày hiện tại;
+chỉ một nguồn góp điểm không còn hợp lệ cũng khiến cả ứng viên bị loại. .NET không gộp
+lại; dùng điểm Python cùng các bonus, giữ tối đa `limit` món và đánh lại rank từ 1.
+`partial`, `filtersRelaxed`, `fallbackUrl` giữ ý nghĩa như tìm text.
 
 Thiếu ảnh, quá ba ảnh, ảnh rỗng, text/form/bộ lọc sai **400**; sai MIME **415**;
 quá byte **413**; phản hồi AI sai **502**; AI/broker/timeout **503**. Ảnh query

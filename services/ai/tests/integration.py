@@ -155,11 +155,11 @@ async def checks(broker_url, dsn, ollama_url):
             correlation = str(uuid4())
             waiter = asyncio.get_running_loop().create_future()
             waiters[correlation] = waiter
-            seconds = 300 if kind in {"image.embed", "image.redact", "search.hybrid.image"} else 30
+            seconds = 940 if kind == "search.hybrid.images" else 300 if kind in {"image.embed", "image.redact", "search.hybrid.image"} else 30
             header = {"schemaVersion": 1, "deadlineAt": (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat(),
                       "modelId": MODEL, "modelRevision": REVISION, **metadata}
             route = "findie.ai.commands" if persistent else (
-                "findie.ai.image" if content_type.startswith("image/") else "findie.ai.query")
+                "findie.ai.image" if kind == "search.hybrid.images" or content_type.startswith("image/") else "findie.ai.query")
             try:
                 async def publish(operation, payload, fields, mime):
                     await channel.default_exchange.publish(aio_pika.Message(
@@ -213,7 +213,7 @@ async def checks(broker_url, dsn, ollama_url):
 
         search_metadata = {"processingProfile": "text-v1", "searchProfileId": "text-description-v1",
                            "searchProfileVersion": 1, "mode": "text", "area": CAMPUS,
-                           "from": None, "until": None, "limit": 10, "candidateLimit": 200}
+                           "from": None, "until": None, "limit": 10, "candidateLimit": 15}
 
         async def search(text, **filters):
             metadata = search_metadata | filters
@@ -227,23 +227,23 @@ async def checks(broker_url, dsn, ollama_url):
         room_id, hall_id, other_id = (str(UUID(int=value)) for value in (3, 1, 2))
         room = snapshot(room_id, "Ví da đen nhặt được tại phòng học E.205.")
         hall = snapshot(hall_id, "Ví da đen nhặt được tại sảnh hội trường A.")
-        other = snapshot(other_id, "Ví da đen nhặt được tại phòng học E.205.", "Trường Đại học Khác")
+        other = snapshot(other_id, "Ví da đen nhặt được tại phòng học E.206.", "Trường Đại học Khác")
         for value in (hall, other, room):
             await index(value)
 
         candidates = await search("ví da đen tại phòng E.205")
         assert candidates and candidates[0]["itemId"] == room_id, "exact classroom must rank before a different location"
-        assert all(hit["itemId"] != other_id for hit in candidates), "campus filter must exclude another university"
+        assert other_id in {hit["itemId"] for hit in candidates}, "area preference must retain another university"
         requests = OllamaStub.embedding_requests
         assert await search("ví da đen tại phòng E.205") == candidates
-        assert OllamaStub.embedding_requests == requests, "Redis hits must bypass query embedding across AMQP"
+        assert OllamaStub.embedding_requests == requests + 1, "Redis keyword hits must still rank vector candidates"
         for hit in candidates:
-            source = room["sources"][0] if hit["itemId"] == room_id else hall["sources"][0]
+            source = next(value["sources"][0] for value in (room, hall, other) if value["itemId"] == hit["itemId"])
             assert hit["documentVersion"] == 1 and hit["sourceId"] == hit["itemId"]
             assert hit["sourceKind"] == "text"
             assert hit["sourceVersion"] == source["version"] and hit["sourceSha256"] == source["sha256"]
         assert (await search("ví da đen tại sảnh hội trường A"))[0]["itemId"] == hall_id
-        assert not await search("ví da đen", area="Khu vực không tồn tại"), "area filters must not be relaxed"
+        assert await search("ví da đen", area="Khu vực không tồn tại"), "a mistaken area must not hide relevant items"
         assert not await search("ví da đen", **{"from": "2026-10-25"}), "date filters must run before candidate limits"
 
         from findie_ai.config import Settings
@@ -251,7 +251,7 @@ async def checks(broker_url, dsn, ollama_url):
         report = await evaluate([
             Case(text="ví đen phòng E.205", area=CAMPUS, relevantItemIds=[room_id]),
             Case(text="ví đen sảnh hội trường A", area=CAMPUS, relevantItemIds=[hall_id]),
-            Case(text="mũ bảo hiểm", area="Khu vực không tồn tại", relevantItemIds=[]),
+            Case(text="mũ bảo hiểm", **{"from": "2026-10-25"}, relevantItemIds=[]),
         ], Settings(service_token="test", search_dsn=dsn, ollama_base_url=ollama_url,
                     model_id=MODEL, revision=REVISION, dimensions=DIMENSIONS))
         assert set(report["results"]) == {"semantic", "lexical", "hybrid"}
@@ -323,8 +323,23 @@ async def checks(broker_url, dsn, ollama_url):
         assert hits[0]["sourceKind"] == "image"
         assert hits[0]["sourceSha256"] == digest(output) and hits[0]["documentVersion"] == 2
         assert OCR_TEXT not in json.dumps(hits)
-        assert not await image_search(area="Other campus")
+        assert (await image_search(area="Other campus"))[0]["itemId"] == room_id
         assert not await image_search(**{"from": "2026-10-25"})
+        batch_metadata = search_metadata | {
+            "mode": "combined", "processingProfile": "multimodal-v1", "searchProfileId": "multimodal-fusion-v1",
+            "text": "ví E.205", "images": [{"contentType": "image/png", "length": len(raw_image)}] * 2,
+        }
+        response, body = await request("search.hybrid.images", raw_image * 2, batch_metadata,
+                                       content_type="application/octet-stream")
+        assert response["succeeded"] and "text" not in response and "images" not in response
+        fused = json.loads(body)["candidates"]
+        assert fused[0]["itemId"] == room_id and fused[0]["score"] > 2 / 61
+        assert {source["sourceKind"] for source in fused[0]["sources"]} == {"text", "image"}
+        assert all(source["documentVersion"] == 2 for source in fused[0]["sources"])
+        assert OCR_TEXT not in json.dumps(fused)
+        response, _ = await request("search.hybrid.images", raw_image, batch_metadata,
+                                    content_type="application/octet-stream")
+        assert not response["succeeded"], "batch framing must match all declared image lengths"
         async with await psycopg.AsyncConnection.connect(dsn) as db:
             cursor = await db.execute("SELECT data_type FROM information_schema.columns WHERE table_name IN ('ai_items', 'ai_documents')")
             assert all(row[0] != "bytea" for row in await cursor.fetchall()), "raw/output/query bytes have no persistence column"
@@ -338,7 +353,7 @@ async def checks(broker_url, dsn, ollama_url):
         await index(full, parts=parts, expect_success=False)
         assert not await image_search(), "old image manifests cannot resurrect a tombstone"
         assert all(hit["itemId"] != room_id for hit in await search("ví da đen tại phòng E.205"))
-        print("PASS: Python worker with real PostgreSQL/RabbitMQ/Redis: separate keyword/semantic caches, embedding bypass, private description and OCR index, image-only vectors, legacy image parts, atomic receipts, filters, model mismatch and tombstone replay")
+        print("PASS: Python worker with real PostgreSQL/RabbitMQ/Redis: keyword cache, vector ranking, private description and OCR index, image-only vectors, legacy image parts, atomic receipts, filters, model mismatch and tombstone replay")
 
 
 def run():
@@ -361,7 +376,7 @@ def run():
             "--publish", "127.0.0.1::5432", "pgvector/pgvector:0.8.2-pg17-trixie"], env=environment, check=True, capture_output=True)
         subprocess.run(["docker", "run", "--detach", "--rm", "--name", broker_name,
             "--env", "RABBITMQ_DEFAULT_USER", "--env", "RABBITMQ_DEFAULT_PASS",
-            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2", "--publish", "127.0.0.1::5672",
+            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2 -rabbit max_message_size 33554432", "--publish", "127.0.0.1::5672",
             "rabbitmq@sha256:76412b1ed2865b88ed01b4a504f72e888842f2089a7527743d325ce7c9d3a43b"],
             env=environment, check=True, capture_output=True)
 

@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-10455",
+  "sourceUrl": "https://timdo24h.com/10455",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:58.116933+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/29b323f3-c682-4f7d-bbe7-3fd2a9959597.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8b1ce4c12903830504bd07481abd3a9aa4c24ad6cb709f3e5cd904199dadbd27",
+    "metadataChanged": true,
+    "sourceSha256": "7df4caf49651459eb29fa19fd484551cb9989bbfce9b1b0e13454f920fbf8f1e",
+    "sha256": "ffaba02224b3f833e0b3053311387e15d34bc31631a3cb7801b658e10f57628b"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-11-02T16:55:00+07:00",
+    "foundUntil": "2026-11-02T17:25:00+07:00"
+  }
+}

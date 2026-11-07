@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-281",
+  "sourceUrl": "https://timdo24h.com/281",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:30.328736+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.png"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/93ecb362-2459-4456-aa1a-951ebd019458.png"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "afe1a618159eb43b38f8161263b20d2cec1e49448edf6fb450086e1041d1d9e0",
+    "metadataChanged": true,
+    "sourceSha256": "f201867347cb7d9d4160b4d426718dffd0fcee5b6aa13208651554a7a10c621a",
+    "sha256": "d046836754a4f255ae2751a000661bd0004a7cfac629fcba615fd39a8b0ac7a9"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy trực cửa hàng (giả định)",
+      "address": "Quầy phục vụ gần cửa vào, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi với người trực ca chiều; cung cấp thời điểm và đặc điểm nhận dạng."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-16T09:05:00+07:00"
+  }
+}

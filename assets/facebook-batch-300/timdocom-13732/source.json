@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-13732",
+  "sourceUrl": "https://timdo24h.com/13732",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:44:41.720344+00:00",
+  "sourceVisibility": "public",
+  "title": "Balo hoặc túi xách",
+  "sourceText": "Bài nguồn báo mất mô tả balo hoặc túi xách. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả balo hoặc túi xách. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/4b1ddc0d-83e2-40e9-b1f1-446ebc98212d.jpeg"
+  ],
+  "itemType": "bag",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "72466b8fe85fcaf264daa984792d4c85b3b89ad2850547f3dce8676fde6d0b7a",
+    "metadataChanged": true,
+    "sourceSha256": "9b1d8a15c0b0e090dd38c8bea48d198eacd0605344dbe80685f1d6d8ca900c8d",
+    "sha256": "b6ebf4bae354ae00d09f30ee648482538927af2bf266db43e1971f27bfe2e15f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-20T23:45:00+07:00"
+  }
+}

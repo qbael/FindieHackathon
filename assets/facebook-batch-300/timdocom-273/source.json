@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-273",
+  "sourceUrl": "https://timdo24h.com/273",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:32.774872+00:00",
+  "sourceVisibility": "public",
+  "title": "Chìa khóa",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/ec128cd4-f219-40dd-a75d-10dc943c5fc7.jpeg"
+  ],
+  "itemType": "keys",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "3cb6afd95beae8f9b3b31e02e0470567bd3d027e26abbfac25e2af109e91ce73",
+    "metadataChanged": true,
+    "sourceSha256": "06ec858e330c896ebe79510f24bb78e53983fcef48f9f21d22ebf5a2cffcabd3",
+    "sha256": "58bd5eefa73cdb96b9e79fe6c0247ae9b1dd364dd29d014d92b7daee664a43ed"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-20"
+  }
+}

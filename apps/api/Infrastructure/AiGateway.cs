@@ -144,7 +144,8 @@ public sealed class RabbitMqGateway(IConfiguration configuration, ILogger<Rabbit
         var waiter = new TaskCompletionSource<AiReply>(TaskCreationOptions.RunContinuationsAsynchronously);
         pending[correlation] = waiter;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var timeoutSeconds = command.Kind is "image.embed" or "image.redact" or "search.hybrid.image" ? 300 : 30;
+        var timeoutSeconds = command.Kind == "search.hybrid.images" ? 940
+            : command.Kind is "image.embed" or "image.redact" or "search.hybrid.image" ? 300 : 30;
         deadline.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
         try
         {
@@ -153,7 +154,7 @@ public sealed class RabbitMqGateway(IConfiguration configuration, ILogger<Rabbit
             {
                 var channel = publish ?? throw new ApiException(503, "AI broker is unavailable.");
                 var route = command.Persistent ? configuration["RabbitMq:IndexQueue"] ?? "findie.ai.commands"
-                    : command.ContentType.StartsWith("image/") ? configuration["RabbitMq:ImageQueue"] ?? "findie.ai.image"
+                    : command.Kind == "search.hybrid.images" || command.ContentType.StartsWith("image/") ? configuration["RabbitMq:ImageQueue"] ?? "findie.ai.image"
                     : configuration["RabbitMq:QueryQueue"] ?? "findie.ai.query";
                 await Publish(command.Kind, command.Metadata, command.Body, command.ContentType);
                 foreach (var image in command.Images ?? [])
@@ -162,7 +163,8 @@ public sealed class RabbitMqGateway(IConfiguration configuration, ILogger<Rabbit
                 async Task Publish(string kind, JsonElement metadata, byte[] body, string contentType)
                 {
                     var header = JsonSerializer.SerializeToUtf8Bytes(metadata);
-                    if (header.Length > 16384 || body.Length > BoundedImage.MaxBytes) throw new ApiException(400, "AI message exceeds configured limits.");
+                    if (header.Length > 16384 || body.Length > (kind == "search.hybrid.images" ? 3 : 1) * BoundedImage.MaxBytes)
+                        throw new ApiException(400, "AI message exceeds configured limits.");
                     var properties = new BasicProperties { CorrelationId = correlation,
                         ReplyTo = command.Persistent ? configuration["RabbitMq:ResultQueue"] ?? "findie.api.results" : replyQueue,
                         Type = kind, ContentType = contentType, Persistent = command.Persistent, Expiration = (timeoutSeconds * 1000).ToString(),

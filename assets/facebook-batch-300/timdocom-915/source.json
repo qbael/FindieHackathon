@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-915",
+  "sourceUrl": "https://timdo24h.com/915",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:40.185632+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ màu đen kèm thẻ ngân hàng, thẻ căn cước, giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ màu đen kèm thẻ ngân hàng, thẻ căn cước, giấy đăng ký xe. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ màu đen kèm thẻ ngân hàng, thẻ căn cước, giấy đăng ký xe. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/5bd99af4-46a0-44c5-9105-e0f95834a284.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Thẻ căn cước",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "28053f1c541763b51e50af5715dbccc5f500ad32c423e9e574969abd1d3c053a",
+    "metadataChanged": false,
+    "sourceSha256": "3965d12d8fb22f934615366fd422dbcee9a47e10d589efb2ff9d06a3bcb20256",
+    "sha256": "3965d12d8fb22f934615366fd422dbcee9a47e10d589efb2ff9d06a3bcb20256"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-18"
+  }
+}

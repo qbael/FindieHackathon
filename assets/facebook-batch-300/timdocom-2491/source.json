@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdocom-2491",
+  "sourceUrl": "https://timdo24h.com/2491",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:39.567528+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ ngân hàng, thẻ căn cước, thẻ bảo hiểm y tế",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ ngân hàng, thẻ căn cước, thẻ bảo hiểm y tế. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ ngân hàng, thẻ căn cước, thẻ bảo hiểm y tế. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/011f2592-4b5a-41ef-b494-451cd6b68141.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Thẻ căn cước",
+    "Thẻ bảo hiểm y tế"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "e287e740526be4d5e77150b51e0b70120df9653b5a40f72e98afda6627c02858",
+    "metadataChanged": false,
+    "sourceSha256": "49916c3f9a6345d66eb41dcdef33c047afed170ecb683b8d43e2f0ce82b61e29",
+    "sha256": "49916c3f9a6345d66eb41dcdef33c047afed170ecb683b8d43e2f0ce82b61e29"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-12T11:35:00+07:00",
+    "foundUntil": "2026-09-12T12:05:00+07:00"
+  }
+}

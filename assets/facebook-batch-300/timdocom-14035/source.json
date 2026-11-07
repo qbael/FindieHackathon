@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-14035",
+  "sourceUrl": "https://timdo24h.com/14035",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:47.928285+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ kèm thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả giấy tờ kèm thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả giấy tờ kèm thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/bacdc335-24ce-4423-b31f-68c8595bd7c5.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "e8a9a01711d9173c990a87cb5e5b728038f6e4e23f9f83a87b9126694394244d",
+    "metadataChanged": true,
+    "sourceSha256": "d13bdb91d506d6db12be39e0c438f836bd998981373d564ef155f44f83f759ec",
+    "sha256": "590d444b922c7af4fe8a9c4acf2a48a6b04e35446f64e85063761e1bfd24da37"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

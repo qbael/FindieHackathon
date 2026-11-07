@@ -1,0 +1,40 @@
+{
+  "sourceId": "timdocom-11303",
+  "sourceUrl": "https://timdo24h.com/11303",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:32.813972+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm giấy phép lái xe, giấy đăng ký xe. Đặc điểm được nguồn nhắc đến: chất liệu da. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm giấy phép lái xe, giấy đăng ký xe. Đặc điểm được nguồn nhắc đến: chất liệu da. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/56d93ec0-d3e5-4586-ad69-3ff51a07c756.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8c9752a552262a5f5dd539501794a40bef77eddf449e9b6a25693829afb46828",
+    "metadataChanged": false,
+    "sourceSha256": "daf8d476b274e78251b8b0e7096d755b69e435f223b3571f92f96673ce670886",
+    "sha256": "daf8d476b274e78251b8b0e7096d755b69e435f223b3571f92f96673ce670886"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, Đà Nẵng (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-23"
+  }
+}

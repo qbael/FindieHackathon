@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-6859",
+  "sourceUrl": "https://timdo24h.com/6859",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:13.106875+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ ngân hàng kèm thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ ngân hàng kèm thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ ngân hàng kèm thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/89d664cb-05b5-493d-89c9-1d70419d0f01.jpeg"
+  ],
+  "itemType": "bank-card",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "dad6c160815678689896cf31d0258da967def10510929026312eaf05140eddcd",
+    "metadataChanged": true,
+    "sourceSha256": "4cffb85794d974ec8e80efec9e3fcffc15e406fd26c51535c594cfcb0ebd522c",
+    "sha256": "8662a5b432ab6b5dad4d168b4f574fd0d388d6f98b649a4db347d56931ecc0a9"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

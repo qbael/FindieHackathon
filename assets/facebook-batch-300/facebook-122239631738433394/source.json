@@ -1,0 +1,38 @@
+{
+  "sourceId": "facebook-122239631738433394",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=122239631738433394&set=a.122220343250433394",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "found",
+  "originalKindInferred": true,
+  "title": "Thẻ ngân hàng",
+  "sourceText": "Bài đăng Facebook công khai về thẻ ngân hàng. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Thẻ ngân hàng được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=122239631738433394&set=a.122220343250433394"
+    }
+  ],
+  "sourceImageSha256": "47ebddcce95a57c502f18c86c2792c2f49d6d91cd3971d4d8be0def7771fdcee",
+  "sourceImageSize": [
+    526,
+    933
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy bảo vệ tòa nhà (giả định)",
+      "address": "Quầy bảo vệ, sảnh chính, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi trong khung 07:00–19:00; mô tả món đồ và thời điểm thất lạc."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-15T20:10:00+07:00"
+  }
+}

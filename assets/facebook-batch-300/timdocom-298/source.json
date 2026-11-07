@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-298",
+  "sourceUrl": "https://timdo24h.com/298",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:28.777388+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/5c75ee41-a28a-4790-b456-812f4d5666f3.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "1113d02f5b172eea3d0409924d98a8d52f79f5c4b479518a29b5f892c97ab927",
+    "metadataChanged": false,
+    "sourceSha256": "27a52e38e0fd780aadf6b71097c5423063c9ec609a0cc67d5fe5ccd290d1c68f",
+    "sha256": "27a52e38e0fd780aadf6b71097c5423063c9ec609a0cc67d5fe5ccd290d1c68f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-26T12:20:00+07:00",
+    "foundUntil": "2026-08-26T13:35:00+07:00"
+  }
+}

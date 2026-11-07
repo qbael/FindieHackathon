@@ -182,7 +182,8 @@ static class ImageSearchChecks
         results = await Send(seeker, HttpMethod.Post, "/api/search", new { text = "wallet" }, 200);
         Check(results.GetProperty("items").GetArrayLength() == 1 && results.GetProperty("partial").GetBoolean(), "hidden and stale candidates are removed at response time");
         results = await Send(seeker, HttpMethod.Post, "/api/search", new { text = "wallet", area = "Different district" }, 200);
-        Check(results.GetProperty("items").GetArrayLength() == 0 && !results.GetProperty("filtersRelaxed").GetBoolean(), "business filters are rechecked without silently widening them");
+        Check(results.GetProperty("items").GetArrayLength() == 1 && results.GetProperty("filtersRelaxed").GetBoolean(),
+            "a wrong area retains matching published items and reports results outside the preferred area");
         ai.Handler = command => SearchReply(command, []);
         results = await Send(seeker, HttpMethod.Post, "/api/search", new { text = "missing" }, 200);
         Check(results.GetProperty("items").GetArrayLength() == 0, "successful empty search differs from unavailable worker");
@@ -219,6 +220,7 @@ static class ImageSearchChecks
         ai.Handler = command => SearchReply(command, [firstCandidate]);
         await Binary(ocrSeeker, "/api/search/image", original, "image/png", 502);
         ai.Handler = command => {
+            Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 200, "single-image requests retain the bounded candidate pool before API ranking");
             Check(command.Kind == "search.hybrid.image" && !command.Persistent && command.Body.SequenceEqual(original), "image query uses transient binary transport");
             var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
             Check(remaining.TotalSeconds is > 295 and <= 300, "image queries allow five minutes for image embedding");
@@ -283,7 +285,153 @@ static class ImageSearchChecks
         await CheckOutbox(maintenance);
         await CheckUploadLimit();
         await CheckLostTimeRanking();
+        await CheckSoftAreaAndGroups();
+        await CheckOriginalEmbeddingRestoration();
         Console.WriteLine($"PASS: {checks} image/search/outbox checks (output-only storage, review, stale results, bounded retry and cleanup)");
+
+        async Task CheckSoftAreaAndGroups()
+        {
+            using var poster = await User("soft-area-owner");
+            using var browser = await User("soft-area-seeker");
+            var remote = await Publish("Remote matching bottle", "Chợ Quán");
+            var local = await Publish("Nearby matching bottle", "Đường Quang Trung");
+            var weak = await Publish("Nearby weaker match", "Đường Quang Trung");
+            var imageOnly = await Publish("Image-only match", "Elsewhere");
+            var textOnly = await Publish("Description-only match", "Elsewhere");
+            object[] candidates = [
+                Fused(0.016, 0.008, remote.Image, remote.Text), Fused(0.0155, 0.008, local.Image, local.Text),
+                Fused(0.01, 0.005, weak.Image, weak.Text), Fused(1d / 61, 0, imageOnly.Image),
+                Fused(0.016, 0, remote.Image), Fused(0, 0.008, textOnly.Image), Fused(0, 0.007, remote.Text)];
+            ai.Handler = command => SearchReply(command, candidates);
+            const string query = "/api/search/images?area=quang%20trung";
+            var result = await Multipart(browser, query, [original], "white bottle", 200);
+            Check(Ids(result).SequenceEqual([local.Id, remote.Id, weak.Id, imageOnly.Id, textOnly.Id]),
+                "results group combined matches before image-only and text-only matches, boost nearby matches and deduplicate items across groups");
+            Check(result.GetProperty("filtersRelaxed").GetBoolean() && !result.GetProperty("partial").GetBoolean(),
+                "out-of-area results are reported and duplicate matches do not make the response partial");
+            var limited = await Multipart(browser, query + "&limit=1", [original], "white bottle", 200);
+            Check(Ids(limited).SequenceEqual([local.Id]) && !limited.GetProperty("filtersRelaxed").GetBoolean(),
+                "area ranking considers later candidates before limiting and flags only displayed out-of-area results");
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(Fused(0.016, 0.008, remote.Image, remote.Text), 15)
+                .Append(Fused(0.0155, 0.008, local.Image, local.Text)).ToArray());
+            limited = await Multipart(browser, query + "&limit=1", [original], "white bottle", 200);
+            Check(Ids(limited).SequenceEqual([local.Id]), "area boosting considers candidates beyond the old fifteen-candidate cutoff");
+            ai.Handler = command => SearchReply(command, candidates);
+            var unfiltered = await Multipart(browser, "/api/search/images", [original], "white bottle", 200);
+            Check(Ids(unfiltered).SequenceEqual([remote.Id, local.Id, weak.Id, imageOnly.Id, textOnly.Id]),
+                "without an area preference each group keeps descending relevance scores");
+            ai.Handler = command => SearchReply(command, [Fused(0.016, 0.008, remote.Image, remote.Text), Fused(0.01, 0.005, weak.Image, weak.Text)]);
+            result = await Multipart(browser, query, [original], "white bottle", 200);
+            Check(Ids(result).SequenceEqual([remote.Id, weak.Id]), "a bounded area boost cannot bury a much stronger out-of-area match");
+            result = await Multipart(browser, query + "&from=2026-01-02", [original], "white bottle", 200);
+            Check(!Ids(result).Any(), "soft area ranking keeps date filters strict");
+
+            ai.Handler = command => SearchReply(command, [remote.Image, local.Image]);
+            result = await Binary(browser, "/api/search/image?area=quang%20trung", original, "image/png", 200);
+            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "single-image search boosts the preferred area while retaining remote matches");
+            ai.Handler = command => SearchReply(command, [remote.Text, local.Text]);
+            result = await Send(browser, HttpMethod.Post, "/api/search", new { text = "white bottle", area = "quang trung" }, 200);
+            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "text search boosts the preferred area while retaining remote matches");
+
+            foreach (var (field, invalid) in new (string, object?)[] {
+                ("imageScore", -0.001), ("imageScore", 1d), ("textScore", -0.001), ("textScore", 0.01),
+                ("score", 0.001), ("imageScore", "not-a-score"), ("textScore", null) })
+            {
+                var candidate = (Dictionary<string, object?>)Fused(0.016, 0.008, remote.Image, remote.Text);
+                candidate[field] = invalid;
+                ai.Handler = command => SearchReply(command, [candidate]);
+                await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+            }
+            var missing = (Dictionary<string, object?>)Fused(0.016, 0.008, remote.Image, remote.Text);
+            missing.Remove("imageScore");
+            ai.Handler = command => SearchReply(command, [missing]);
+            await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+            ai.Handler = command => SearchReply(command, [Fused(0.016, 0, imageOnly.Image), Fused(0.01, 0.005, remote.Image, remote.Text)]);
+            await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+            ai.Handler = command => SearchReply(command, [Fused(0.016, 0.0000000000001, imageOnly.Image)]);
+            await Multipart(browser, "/api/search/images", [original], null, 502);
+
+            async Task<(Guid Id, object Text, object Image)> Publish(string title, string area)
+            {
+                var created = await Send(poster, HttpMethod.Post, "/api/items", new {
+                    content = new { title, publicDescription = "White bottle", foundArea = area,
+                        foundTimePrecision = "date", foundOn = "2026-01-01" }, custody = new { kind = "person" } }, 201);
+                var id = created.GetProperty("id").GetGuid();
+                await PublicationImageFixture.EnsureAsync(factory, id);
+                await Send(poster, HttpMethod.Put, $"/api/items/{id}/publication", new { rowVersion = 1, state = "published" }, 200);
+                return (id, await Candidate(id, false), await Candidate(id, true));
+            }
+            static IEnumerable<Guid> Ids(JsonElement response) => response.GetProperty("items").EnumerateArray()
+                .Select(hit => hit.GetProperty("item").GetProperty("id").GetGuid());
+        }
+
+        async Task CheckOriginalEmbeddingRestoration()
+        {
+            using var browser = await User("original-vector-owner");
+            var created = await Send(browser, HttpMethod.Post, "/api/items", Create("Original vector restore"), 201);
+            var id = created.GetProperty("id").GetGuid();
+            await PublicationImageFixture.EnsureAsync(factory, id);
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+            var originalItem = await db.Items.AsNoTracking().Include(value => value.Images).ThenInclude(value => value.ProcessedObject).SingleAsync(value => value.Id == id);
+            var image = originalItem.Images.Single();
+            var service = scope.ServiceProvider.GetRequiredService<IImageService>();
+            var config = factory.Services.GetRequiredService<IConfiguration>();
+            var sourceHash = RecoveryWorkflow.Hash("native original image source");
+            var vector = new double[AiProtocol.EmbeddingDimensions(config)]; vector[0] = 1;
+            var payload = new Dictionary<string, object?> { ["modelId"] = AiProtocol.Setting(config, "EmbeddingModelId"),
+                ["modelRevision"] = AiProtocol.Setting(config, "EmbeddingRevision"), ["dimensions"] = vector.Length,
+                ["sourceSha256"] = sourceHash, ["vector"] = vector };
+            var key = Guid.NewGuid();
+            async Task Reject(Guid actor, long version, string hash, JsonElement data, int status)
+            {
+                try
+                {
+                    await service.RestoreOriginalEmbeddingAsync(actor, Guid.NewGuid(), id, image.Id, version, hash, sourceHash, data, default);
+                    throw new InvalidOperationException("Original embedding restoration should have been rejected.");
+                }
+                catch (ApiException error) when (error.StatusCode == status) { Check(true, "original vector restoration rejects unauthorized or stale input"); }
+            }
+            var valid = JsonSerializer.SerializeToElement(payload);
+            await Reject(Guid.NewGuid(), 1, image.ProcessedObject!.Sha256!, valid, 403);
+            await Reject(originalItem.PostedBy, 2, image.ProcessedObject.Sha256!, valid, 409);
+            await Reject(originalItem.PostedBy, 1, new string('f', 64), valid, 409);
+            var wrong = new Dictionary<string, object?>(payload) { ["sourceSha256"] = new string('e', 64) };
+            await Reject(originalItem.PostedBy, 1, image.ProcessedObject.Sha256!, JsonSerializer.SerializeToElement(wrong), 400);
+            wrong = new Dictionary<string, object?>(payload) { ["ocr"] = new { text = PrivateOcr } };
+            await Reject(originalItem.PostedBy, 1, image.ProcessedObject.Sha256!, JsonSerializer.SerializeToElement(wrong), 400);
+            var puts = storage.Puts;
+            await service.RestoreOriginalEmbeddingAsync(originalItem.PostedBy, key, id, image.Id, 1, image.ProcessedObject.Sha256!, sourceHash, valid, default);
+            var after = await db.Items.AsNoTracking().Include(value => value.Images).SingleAsync(value => value.Id == id);
+            Check(after.DocumentVersion == originalItem.DocumentVersion + 1 && after.ContentVersion == originalItem.ContentVersion
+                && after.CustodyVersion == originalItem.CustodyVersion && after.PublicationState == originalItem.PublicationState,
+                "restoring a native vector reindexes without changing display content, custody or publication");
+            using var stored = JsonDocument.Parse(after.Images.Single().OriginalEmbedding!);
+            Check(stored.RootElement.GetProperty("sourceSha256").GetString() == sourceHash && !stored.RootElement.TryGetProperty("ocr", out _)
+                && after.Images.Single().ContentVersion == 1 && storage.Puts == puts,
+                "native source vector changes without storing original bytes or replacing the processed image");
+            await service.RestoreOriginalEmbeddingAsync(originalItem.PostedBy, key, id, image.Id, 1, image.ProcessedObject.Sha256!, sourceHash, valid, default);
+            Check((await db.Items.AsNoTracking().SingleAsync(value => value.Id == id)).DocumentVersion == after.DocumentVersion,
+                "native-vector restoration replay does not enqueue another version");
+            var priorHandler = ai.Handler;
+            ai.Handler = command =>
+            {
+                Check(command.Kind == "image.redact" && command.Body.SequenceEqual(Output),
+                    "verified native vector reuse sends only the processed display input for redaction");
+                return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(ImageMetadata(command)), Output.ToArray()));
+            };
+            await using var processedInput = new MemoryStream(Output, writable: false);
+            var reused = await service.UploadAsync(originalItem.PostedBy, Guid.NewGuid(), id, 2, "image/png", processedInput,
+                Output.Length, default, omitOcr: true, reviewedRegions: JsonSerializer.SerializeToElement(Array.Empty<object>()),
+                originalEmbedding: (valid, sourceHash));
+            var reusedCache = await db.ItemImages.AsNoTracking().Where(value => value.Id == reused.Id).Select(value => value.OriginalEmbedding).SingleAsync();
+            using var reusedData = JsonDocument.Parse(reusedCache!);
+            Check(reusedData.RootElement.GetProperty("sourceSha256").GetString() == sourceHash && storage.Puts == puts + 1,
+                "reviewed display replacement reuses the verified native source vector and stores only processed image bytes");
+            ai.Handler = priorHandler;
+            await service.RetireAsync(originalItem.PostedBy, Guid.NewGuid(), id, image.Id, new Findie.Api.Contracts.RetireImageRequest(1), default);
+            await Reject(originalItem.PostedBy, 1, image.ProcessedObject.Sha256!, valid, 409);
+        }
 
         async Task CheckLostTimeRanking()
         {
@@ -295,9 +443,15 @@ static class ImageSearchChecks
             var near = await Publish("Found five minutes later", "exact", "2026-01-02T09:05:00+07:00");
             var before = await Publish("Found one minute before", "exact", "2026-01-02T08:59:00+07:00");
             var unknown = await Publish("Found at an unknown time", "unknown");
-            ai.Handler = command => command.Kind == "search.hybrid.image"
-                ? SearchReply(command, [later.Image, overlap.Image, near.Image, before.Image, unknown.Image])
-                : SearchReply(command, [later.Text, overlap.Text, near.Text, before.Text, unknown.Text]);
+            ai.Handler = command => command.Kind switch
+            {
+                "search.hybrid.image" => SearchReply(command, [later.Image, overlap.Image, near.Image, before.Image, unknown.Image]),
+                "search.hybrid.images" => SearchReply(command, [
+                    Fused(1d / 61, 0.5 / 61, later.Image, later.Text), Fused(1d / 62, 0.5 / 62, overlap.Image, overlap.Text),
+                    Fused(1d / 63, 0.5 / 63, near.Image, near.Text), Fused(1d / 64, 0.5 / 64, before.Image, before.Text),
+                    Fused(1d / 65, 0.5 / 65, unknown.Image, unknown.Text)]),
+                _ => SearchReply(command, [later.Text, overlap.Text, near.Text, before.Text, unknown.Text])
+            };
 
             var baseline = await Send(browser, HttpMethod.Post, "/api/search", new { text }, 200);
             Check(Ids(baseline).SequenceEqual([later.Id, overlap.Id, near.Id, before.Id, unknown.Id]),
@@ -315,6 +469,9 @@ static class ImageSearchChecks
             var combined = await Multipart(browser, "/api/search/images" + query, [original], text, 200);
             Check(Ids(image).First() == near.Id && Ids(combined).First() == near.Id,
                 "loss time ranks image and combined results as well as text results");
+            ai.Handler = command => SearchReply(command, [Fused(0.016, 0.008, later.Image, later.Text), Fused(0.01, 0.005, near.Image, near.Text)]);
+            combined = await Multipart(browser, "/api/search/images" + query, [original], text, 200);
+            Check(Ids(combined).SequenceEqual([later.Id, near.Id]), "loss time uses Python fusion scores rather than replacing them with reciprocal final ranks");
 
             var beforeInvalidRequests = ai.Calls;
             await Send(browser, HttpMethod.Post, "/api/search", new { text, lostAt = "invalid" }, 400);
@@ -444,73 +601,116 @@ static class ImageSearchChecks
 
             using var browser = await User("multipart-seeker");
             var buffers = new List<byte[]>();
-            var imageQueries = 0;
-            var textQueries = 0;
+            var batchQueries = 0;
             item = await Get(owner, $"/api/items/{secondId}");
             await Send(owner, HttpMethod.Put, $"/api/items/{secondId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
             var secondText = await Candidate(secondId, false);
             var firstText = await Candidate(itemId, false);
             ai.Handler = command =>
             {
+                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 800, "batch requests retain every bounded branch candidate before API ranking");
                 Check(!command.Persistent && command.Metadata.GetProperty("area").GetString() == "Campus"
                     && command.Metadata.GetProperty("from").GetString() == "2026-01-01"
-                    && command.Metadata.GetProperty("until").GetString() == "2026-01-01", "each search input receives identical filters through transient AI transport");
-                if (command.Kind == "search.hybrid.image")
-                {
-                    Check(command.Body.SequenceEqual(inputs[imageQueries++]) && command.ContentType == "image/png", "all three query images reach the image search worker");
-                    buffers.Add(command.Body);
-                    return SearchReply(command, [imageCandidate, imageCandidate]);
-                }
-                using var body = JsonDocument.Parse(command.Body);
-                Check(command.Kind == "search.hybrid" && body.RootElement.GetProperty("text").GetString() == "ví màu đen", "description contributes its own text search ranking");
-                textQueries++;
-                return SearchReply(command, [secondText, firstText]);
+                    && command.Metadata.GetProperty("until").GetString() == "2026-01-01", "batch search receives filters through transient AI transport");
+                Check(command.Kind == "search.hybrid.images" && command.ContentType == "application/octet-stream"
+                    && command.Body.SequenceEqual(inputs.SelectMany(value => value)), "one binary RPC carries all three images to the Python fusion worker");
+                var descriptors = command.Metadata.GetProperty("images").EnumerateArray().ToArray();
+                Check(descriptors.Length == 3 && descriptors.Select(value => value.GetProperty("length").GetInt32()).SequenceEqual(inputs.Select(value => value.Length))
+                    && descriptors.All(value => value.GetProperty("contentType").GetString() == "image/png")
+                    && command.Metadata.GetProperty("text").GetString() == "ví màu đen", "batch metadata preserves exact image boundaries and trimmed description");
+                var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
+                Check(remaining.TotalSeconds is > 935 and <= 940, "Python receives the complete multimodal search deadline");
+                buffers.Add(command.Body);
+                batchQueries++;
+                return SearchReply(command, [Fused(0.035, 0.005, imageCandidate, firstText), Fused(0, 0.005, secondText)]);
             };
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
             var objects = await db.StoredObjects.CountAsync();
             var outbox = await db.IndexOutbox.CountAsync();
             var combined = await Multipart(browser, "/api/search/images?area=Campus&from=2026-01-01&until=2026-01-01&limit=2", inputs, "  ví màu đen  ", 200);
-            Check(imageQueries == 3 && textQueries == 1 && combined.GetProperty("mode").GetString() == "combined"
+            Check(batchQueries == 1 && combined.GetProperty("mode").GetString() == "combined"
                 && combined.GetProperty("searchProfileId").GetString() == "multimodal-fusion-v1", "three images plus description return the combined search contract");
             Check(combined.GetProperty("items").GetArrayLength() == 2
                 && combined.GetProperty("items")[0].GetProperty("item").GetProperty("id").GetGuid() == itemId
                 && combined.GetProperty("items")[1].GetProperty("rank").GetInt32() == 2,
-                "fusion combines all rankings, deduplicates items and honors result limit");
+                "API preserves Python fusion ranking and honors result limit");
             Check(buffers.All(value => value.All(part => part == 0)) && storage.Puts == putCount
                 && await db.StoredObjects.CountAsync() == objects && await db.IndexOutbox.CountAsync() == outbox,
                 "multipart raw image buffers are cleared and query input creates no storage or outbox records");
-            ai.Handler = command => SearchReply(command, [imageCandidate]);
+            ai.Handler = command => SearchReply(command, [Fused(1d / 61, 0, imageCandidate)]);
             var imageOnly = await Multipart(browser, "/api/search/images?limit=1", [original], "  ", 200);
             Check(imageOnly.GetProperty("mode").GetString() == "image" && imageOnly.GetProperty("searchProfileId").GetString() == "image-fusion-v1"
                 && imageOnly.GetProperty("items").GetArrayLength() == 1, "optional blank description supports image-only multipart search");
             var filtered = await Multipart(browser, "/api/search/images?area=Other", [original], null, 200);
-            Check(filtered.GetProperty("items").GetArrayLength() == 0 && filtered.GetProperty("partial").GetBoolean()
-                && !filtered.GetProperty("filtersRelaxed").GetBoolean(), "multipart image search rechecks area filters without relaxation");
+            Check(filtered.GetProperty("items").GetArrayLength() == 1 && !filtered.GetProperty("partial").GetBoolean()
+                && filtered.GetProperty("filtersRelaxed").GetBoolean(), "multipart image search retains results outside the preferred area");
             filtered = await Multipart(browser, "/api/search/images?from=2026-01-02", [original], null, 200);
             Check(filtered.GetProperty("items").GetArrayLength() == 0, "multipart image search rechecks date filters");
             var failedBuffers = new List<byte[]>();
             ai.Handler = command =>
             {
                 failedBuffers.Add(command.Body);
-                return failedBuffers.Count == 1 ? SearchReply(command, [imageCandidate]) : throw new ApiException(503, "Second image worker unavailable.");
+                throw new ApiException(503, "Python multimodal search unavailable.");
             };
             await Multipart(browser, "/api/search/images", inputs, "wallet", 503);
-            Check(failedBuffers.Count == 2 && failedBuffers.All(value => value.All(part => part == 0)), "upstream failure fails the whole search and clears every dispatched raw image");
+            Check(failedBuffers.Count == 1 && failedBuffers.All(value => value.All(part => part == 0)), "upstream failure fails the whole search and clears the dispatched image batch");
             ai.Handler = command => Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), "{\"candidates\":[{}]}"u8.ToArray()));
             await Multipart(browser, "/api/search/images", [original], null, 502);
             ai.Handler = async command =>
             {
-                if (command.Kind == "search.hybrid.image") return await SearchReply(command, [imageCandidate]);
                 var live = await Get(owner, $"/api/items/{itemId}");
                 await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = live.GetProperty("rowVersion").GetInt64(), state = "hidden" }, 200);
-                return await SearchReply(command, [firstText]);
+                return await SearchReply(command, [Fused(0.016, 0.008, imageCandidate, firstText)]);
             };
             var stale = await Multipart(browser, "/api/search/images", [original], "wallet", 200);
-            Check(stale.GetProperty("items").GetArrayLength() == 0 && stale.GetProperty("partial").GetBoolean(), "fusion rechecks publication after all AI replies rather than leaking an earlier valid item");
+            Check(stale.GetProperty("items").GetArrayLength() == 0 && stale.GetProperty("partial").GetBoolean(), "API rechecks publication after Python fusion rather than leaking a stale item");
             item = await Get(owner, $"/api/items/{itemId}");
             await Send(owner, HttpMethod.Put, $"/api/items/{itemId}/publication", new { rowVersion = item.GetProperty("rowVersion").GetInt64(), state = "published" }, 200);
             imageCandidate = await Candidate(itemId, true);
+            firstText = await Candidate(itemId, false);
+            using var provenanceBrowser = await User("fusion-provenance-seeker");
+            foreach (var field in new[] { "documentVersion", "sourceVersion", "sourceSha256" })
+            {
+                var invalid = JsonSerializer.SerializeToElement(imageCandidate).EnumerateObject()
+                    .ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+                invalid[field] = field == "sourceSha256" ? new string('0', 64)
+                    : JsonSerializer.SerializeToElement(imageCandidate).GetProperty(field).GetInt64() + 1;
+                ai.Handler = command => SearchReply(command, [Fused(0.016, 0.008, firstText, invalid)]);
+                stale = await Multipart(provenanceBrowser, "/api/search/images", [original], "wallet", 200);
+                Check(stale.GetProperty("items").GetArrayLength() == 0 && stale.GetProperty("partial").GetBoolean(),
+                    "a valid text source cannot keep a fused candidate whose other contributing source is stale");
+            }
+            foreach (var score in new[] { 0d, -1d, 1d })
+            {
+                ai.Handler = command => SearchReply(command, [Fused(score, 0, imageCandidate)]);
+                await Multipart(provenanceBrowser, "/api/search/images", [original], null, 502);
+            }
+            foreach (var sourceCount in new[] { 0, 2 })
+            {
+                var fused = (Dictionary<string, object?>)Fused(1d / 61, 0, imageCandidate);
+                fused["sources"] = Enumerable.Repeat(((object[])fused["sources"]!)[0], sourceCount).ToArray();
+                ai.Handler = command => SearchReply(command, [fused]);
+                await Multipart(provenanceBrowser, "/api/search/images", [original], null, 502);
+            }
+            var malformedSource = JsonSerializer.SerializeToElement(imageCandidate).EnumerateObject()
+                .ToDictionary(property => property.Name, property => (object?)property.Value.Clone());
+            malformedSource["sourceKind"] = "unknown";
+            ai.Handler = command => SearchReply(command, [Fused(1d / 61, 0, malformedSource)]);
+            await Multipart(provenanceBrowser, "/api/search/images", [original], null, 502);
+            using var limitBrowser = await User("candidate-limit-seeker");
+            ai.Handler = command =>
+            {
+                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 200, "text requests retain the bounded candidate pool before API ranking");
+                return SearchReply(command, Enumerable.Repeat(firstText, 200).ToArray());
+            };
+            await Send(limitBrowser, HttpMethod.Post, "/api/search", new { text = "wallet" }, 200);
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(firstText, 201).ToArray());
+            await Send(limitBrowser, HttpMethod.Post, "/api/search", new { text = "wallet" }, 502);
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(imageCandidate, 201).ToArray());
+            await Binary(limitBrowser, "/api/search/image", original, "image/png", 502);
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(Fused(1d / 61, 0, imageCandidate), 201).ToArray());
+            await Multipart(limitBrowser, "/api/search/images", [original], null, 502);
             ai.Handler = command => SearchReply(command, [imageCandidate]);
         }
         async Task CheckOutbox(RecoveryMaintenance worker)
@@ -697,6 +897,14 @@ static class ImageSearchChecks
     }
     static Task<AiReply> SearchReply(AiCommand command, object[] candidates) => Task.FromResult(new AiReply(
         JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)), JsonSerializer.SerializeToUtf8Bytes(new { candidates })));
+    static object Fused(double imageScore, double textScore, params object[] sources)
+    {
+        var values = sources.Select(value => JsonSerializer.SerializeToElement(value)).ToArray();
+        return new Dictionary<string, object?> { ["itemId"] = values[0].GetProperty("itemId").GetGuid(), ["score"] = imageScore + textScore,
+            ["imageScore"] = imageScore, ["textScore"] = textScore,
+            ["sources"] = values.Select(value => (object)value.EnumerateObject().Where(property => property.Name != "itemId")
+                .ToDictionary(property => property.Name, property => (object?)property.Value.Clone())).ToArray() };
+    }
     static object Content(string title, string publicDescription = "Safe public description") => new { title, publicDescription, foundArea = "Campus", foundTimePrecision = "date", foundOn = "2026-01-01" };
     static object Create(string title) => new { content = Content(title), custody = new { kind = "person" } };
     static Task<JsonElement> Get(HttpClient client, string path) => Send(client, HttpMethod.Get, path, null, 200);

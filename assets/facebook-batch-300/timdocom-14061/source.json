@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-14061",
+  "sourceUrl": "https://timdo24h.com/14061",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:47.138894+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu đen kèm hộ chiếu",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu đen kèm hộ chiếu. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu đen kèm hộ chiếu. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/9d4094d8-ce4f-4c5f-904a-31c9122d14da.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Hộ chiếu"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "193950ca8aa8457100c235f81e3058c6f312c6c9803221fb75aa444e2cdc0b87",
+    "metadataChanged": false,
+    "sourceSha256": "82ddf4141619515c23ecf20895b85fae5402a0c08a28cb58fe96fdedc894da5e",
+    "sha256": "82ddf4141619515c23ecf20895b85fae5402a0c08a28cb58fe96fdedc894da5e"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-24T20:10:00+07:00"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceId": "facebook-122114370561456034",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=122114370561456034&set=gm.1583346452814636&idorvanity=849004839582138",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "found",
+  "originalKindInferred": true,
+  "title": "Thẻ sinh viên",
+  "sourceText": "Bài đăng Facebook công khai về thẻ sinh viên. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Thẻ sinh viên được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Trường Đại học Công nghệ Thông tin, TP.HCM",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=122114370561456034&set=gm.1583346452814636&idorvanity=849004839582138"
+    }
+  ],
+  "sourceImageSha256": "2c05acaa8b5924d878a01c170567fec891e9f7c61ded2c2d953aa4be00de9838",
+  "sourceImageSize": [
+    526,
+    701
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000004",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-26"
+  }
+}

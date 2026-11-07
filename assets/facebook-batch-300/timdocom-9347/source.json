@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-9347",
+  "sourceUrl": "https://timdo24h.com/9347",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:01.429808+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hà Tĩnh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hà Tĩnh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Tĩnh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/118afe33-29d8-42d2-ba5b-ed90be634a09.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "0ea98bae1675de3555ce86b3a7b7c97a22d7e8be3c8cba8ceedfa4da24091139",
+    "metadataChanged": true,
+    "sourceSha256": "f547f8077354b5ccce6a4a8be5bb63695139301d27df3516f64c29ca8bdbfb4b",
+    "sha256": "87808595de29587b41da6d796cae5367cd5a10192b415c3c1a32395a54142667"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, Hà Tĩnh (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-22T18:30:00+07:00",
+    "foundUntil": "2026-08-22T19:00:00+07:00"
+  }
+}

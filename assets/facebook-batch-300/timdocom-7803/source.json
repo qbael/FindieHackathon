@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-7803",
+  "sourceUrl": "https://timdo24h.com/7803",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:34.523088+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước kèm giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước kèm giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước kèm giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/acd1e42e-9215-43eb-832e-67822cf0bdf3.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "df02e91d9446c3b516b361515e582296a1cd71db9e65d187123beea340a88be9",
+    "metadataChanged": true,
+    "sourceSha256": "0e216ee82c4abbce62338784c63ff0078ce24d610dff90209acda7df0fb68e0f",
+    "sha256": "68313bb85d8ba8aa4540e572fa34ff356c9e84dad334d968555dea0db65fbe68"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-10"
+  }
+}

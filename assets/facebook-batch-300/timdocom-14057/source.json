@@ -1,0 +1,40 @@
+{
+  "sourceId": "timdocom-14057",
+  "sourceUrl": "https://timdo24h.com/14057",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:47.351288+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu tím kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu tím kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Đồng Nai. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu tím kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Đồng Nai. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đồng Nai",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/4a478885-6f6f-49d6-a033-9be587039034.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ sinh viên",
+    "Thẻ ngân hàng",
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "294ae4758a4225e6274f0d3df8c2177b33f8024e2f2e910497d65d30f6544f57",
+    "metadataChanged": true,
+    "sourceSha256": "33567be1b205c6d4d887f12dd6b914b31c9c2f85fa8c6d93eeacf41e04538641",
+    "sha256": "011e55f7be01469515f9ce1e90a3c13f4832c78e507dd875f830906b834de7eb"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy trực cửa hàng (giả định)",
+      "address": "Quầy phục vụ gần cửa vào, Đồng Nai (địa điểm mô phỏng).",
+      "instructions": "Trao đổi với người trực ca chiều; cung cấp thời điểm và đặc điểm nhận dạng."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

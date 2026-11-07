@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdocom-13512",
+  "sourceUrl": "https://timdo24h.com/13512",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:47.449848+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/2511f878-081b-462d-ad4a-65f99dc78298.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "b2f6157480380d0faba8eaf4b615207c88b776a5a8d738fd483e69504ffbd2f5",
+    "metadataChanged": false,
+    "sourceSha256": "493db955d8ef38efbdf5bc8f8b3e042aa7f6057a2f5bd2cf857a7a95248342e7",
+    "sha256": "493db955d8ef38efbdf5bc8f8b3e042aa7f6057a2f5bd2cf857a7a95248342e7"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy bảo vệ tòa nhà (giả định)",
+      "address": "Quầy bảo vệ, sảnh chính, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi trong khung 07:00–19:00; mô tả món đồ và thời điểm thất lạc."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-08T09:05:00+07:00"
+  }
+}

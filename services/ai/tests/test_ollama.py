@@ -329,6 +329,89 @@ def test_vision_redaction_uses_pinned_model_and_strict_structured_schema():
     asyncio.run(run())
 
 
+@pytest.mark.parametrize(('mode', 'label'), [({}, 'face'), ({'address_only': True}, 'address'),
+                                          ({'document_only': True}, 'qr_code')])
+def test_redaction_retries_placeholder_boxes_once_with_fresh_complete_output(mode, label):
+    settings = replace(SETTINGS, redaction_revision='b' * 64)
+    image = image_bytes()
+    paths, requests = [], []
+    valid = {'label': label, 'bbox': [100, 200, 300, 400]}
+
+    def respond(request):
+        paths.append(request.url.path)
+        if request.method == 'GET':
+            return httpx.Response(200, json={'models': [{'name': settings.redaction_model, 'digest': settings.redaction_revision}]})
+        body = json.loads(request.content)
+        requests.append(body)
+        assert base64.b64decode(body['images'][0]) == image
+        if len(requests) == 1:
+            regions = [{'label': label, 'bbox': [0, 0, 100, 100]}, {'label': label, 'bbox': [0, 0, 0, 0]}]
+        else:
+            assert 'Your previous response did not match the region schema.' in body['prompt']
+            assert 'Omit absent categories entirely' in body['prompt']
+            assert body['format'] == requests[0]['format']
+            regions = [valid]
+        return httpx.Response(200, json={'model': settings.redaction_model, 'done': True, 'done_reason': 'stop',
+                                        'response': json.dumps({'regions': regions})})
+
+    async def run():
+        model = Ollama(settings, httpx.MockTransport(respond))
+        try:
+            assert await model.detect_regions(image, **mode) == [valid]
+        finally:
+            await model.close()
+    asyncio.run(run())
+    assert paths == ['/api/tags', '/api/generate', '/api/tags', '/api/generate', '/api/tags']
+
+
+def test_redaction_second_invalid_response_fails_closed_without_more_retries_or_output():
+    settings = replace(SETTINGS, redaction_revision='b' * 64)
+    generated = 0
+
+    def respond(request):
+        nonlocal generated
+        if request.method == 'GET':
+            return httpx.Response(200, json={'models': [{'name': settings.redaction_model, 'digest': settings.redaction_revision}]})
+        generated += 1
+        return httpx.Response(200, json={'model': settings.redaction_model, 'done': True, 'done_reason': 'stop',
+                                        'response': '{"regions":[{"label":"phone","bbox":[0,0,0,0],"text":"private"}]}'})
+
+    async def run():
+        model = Ollama(settings, httpx.MockTransport(respond))
+        try:
+            with pytest.raises(ModelUnavailable, match='invalid_regions') as raised:
+                await model.detect_regions(image_bytes())
+            assert 'private' not in str(raised.value)
+        finally:
+            await model.close()
+    asyncio.run(run())
+    assert generated == 2
+
+
+def test_redaction_model_revision_change_during_retry_fails_before_using_valid_output():
+    settings = replace(SETTINGS, redaction_revision='b' * 64)
+    generated = 0
+
+    def respond(request):
+        nonlocal generated
+        if request.method == 'GET':
+            digest = settings.redaction_revision if generated < 2 else 'c' * 64
+            return httpx.Response(200, json={'models': [{'name': settings.redaction_model, 'digest': digest}]})
+        generated += 1
+        response = '{"regions":[{"label":"face","bbox":[0,0,0,0]}]}' if generated == 1 else '{"regions":[]}'
+        return httpx.Response(200, json={'model': settings.redaction_model, 'done': True, 'done_reason': 'stop', 'response': response})
+
+    async def run():
+        model = Ollama(settings, httpx.MockTransport(respond))
+        try:
+            with pytest.raises(ModelUnavailable, match='revision'):
+                await model.detect_regions(image_bytes())
+        finally:
+            await model.close()
+    asyncio.run(run())
+    assert generated == 2
+
+
 @pytest.mark.parametrize('changes', [
     {'response': '{"regions":[{"label":"face","bbox":[0,0,NaN,100]}]}'},
     {'response': '{"regions":[{"label":"face","bbox":[0,0,100,100],"text":"private"}]}'},

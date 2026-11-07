@@ -37,30 +37,25 @@ def cached_store(monkeypatch):
     async def query(*args):
         semantic, keyword = args[-3:-1]
         return ({"semantic": [row]} if semantic else {}) | ({"lexical": [row], "locations": [row]} if keyword else {})
-    store = Store("test-database", "test-model", "revision", 2, cache=cache, query_identity=("instruction", "profile"))
+    store = Store("test-database", "test-model", "revision", 2, cache=cache)
     store._search_channels = AsyncMock(side_effect=query)
     return store, cache, entries, state
 
 
-def test_hit_skips_embedding_and_sql_and_keeps_keyword_and_semantic_separate(cached_store):
+def test_keyword_hit_still_embeds_and_queries_semantic(cached_store):
     async def run():
         store, cache, entries, _ = cached_store
         embed = AsyncMock(return_value=[1, 0])
         first = await store.search("Ví phòng E.205", None, embed=embed)
-        assert await store.search("Ví phòng E.205", None, embed=embed) == first
-        embed.assert_awaited_once()
-        store._search_channels.assert_awaited_once()
-        assert len(entries) == 2
-        assert {key.split(":")[3] for key in entries} == {"keyword", "semantic"}
-        assert "Ví" not in json.dumps(entries)
-        del entries[next(key for key in entries if ":keyword:" in key)]
-        assert await store.search("Ví phòng E.205", None, embed=embed) == first
-        assert store._search_channels.await_args.args[-3:-1] == (False, True)
-        embed.assert_awaited_once()
-        del entries[next(key for key in entries if ":semantic:" in key)]
+        assert store._search_channels.await_args.args[-3:-1] == (True, True)
         assert await store.search("Ví phòng E.205", None, embed=embed) == first
         assert store._search_channels.await_args.args[-3:-1] == (True, False)
-        assert embed.await_count == 2
+        assert embed.await_count == store._search_channels.await_count == 2
+        cache.client.set.assert_awaited_once()
+        (key, value), = entries.items()
+        assert key.startswith("findie:search:v1:keyword:")
+        assert set(json.loads(value)) == {"lexical", "locations"}
+        assert "Ví" not in value
         await store.close()
         cache.client.aclose.assert_awaited_once()
     asyncio.run(run())
@@ -73,8 +68,10 @@ def test_cached_candidate_channels_are_fused_with_the_current_weight(cached_stor
                     "source_version": 1, "source_sha256": "a" * 64,
                     "processing_profile": "text-v1", "location_tokens": []}
         keyword = semantic | {"item_id": str(uuid4()), "source_id": str(uuid4())}
-        store._search_channels.side_effect = None
-        store._search_channels.return_value = {"semantic": [semantic], "lexical": [keyword], "locations": []}
+        store._search_channels.side_effect = [
+            {"semantic": [semantic], "lexical": [keyword], "locations": []},
+            {"semantic": [semantic]},
+        ]
         embed = AsyncMock(return_value=[1, 0])
         store.semantic_weight = 0.3
         first = await store.search("ví", None, embed=embed)
@@ -82,18 +79,16 @@ def test_cached_candidate_channels_are_fused_with_the_current_weight(cached_stor
         store.semantic_weight = 0.7
         second = await store.search("ví", None, embed=embed)
         assert [hit["itemId"] for hit in second] == [semantic["item_id"], keyword["item_id"]]
-        assert len(entries) == 2
-        embed.assert_awaited_once()
-        store._search_channels.assert_awaited_once()
+        assert len(entries) == 1
     asyncio.run(run())
 
 
-def test_keyword_normalizes_vietnamese_but_semantic_preserves_exact_text(cached_store):
+def test_keyword_normalizes_vietnamese_independently_of_vector(cached_store):
     async def run():
         store, _, entries, _ = cached_store
         await store.search("Ví phòng E.205", [1, 0])
-        await store.search("vi phong E205", [1, 0])
-        assert len(entries) == 3
+        await store.search("vi phong E205", [0, 1])
+        assert len(entries) == 1
         assert store._search_channels.await_args.args[-3:-1] == (True, False)
     asyncio.run(run())
 
@@ -109,23 +104,22 @@ def test_inflight_old_generation_cannot_repopulate_the_current_cache(cached_stor
         await store.search("ví", [1, 0])
         store._search_channels.side_effect = query
         await store.search("ví", [1, 0])
-        assert store._search_channels.await_count == 2 and len(entries) == 4
+        assert store._search_channels.await_args.args[-3:-1] == (True, True)
+        assert len(entries) == 2
         await store.search("ví", [1, 0])
-        assert store._search_channels.await_count == 2
+        assert store._search_channels.await_args.args[-3:-1] == (True, False)
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("changed", ["area", "from_date", "until", "include_images", "vector", "model", "revision",
-                                    "dimensions", "database", "instruction", "generation"])
+@pytest.mark.parametrize("changed", ["from_date", "until", "include_images", "model", "revision",
+                                    "dimensions", "database", "generation"])
 def test_cache_identity_isolates_filters_models_modalities_and_index_versions(cached_store, changed):
     async def run():
         store, _, entries, state = cached_store
         await store.search("ví", [1, 0])
         kwargs, vector = {}, [1, 0]
-        if changed in {"area", "from_date", "until", "include_images"}:
-            kwargs[changed] = {"area": "Sài Gòn", "from_date": "2026-10-25", "until": "2026-10-25", "include_images": True}[changed]
-        elif changed == "vector":
-            vector = [0, 1]
+        if changed in {"from_date", "until", "include_images"}:
+            kwargs[changed] = {"from_date": "2026-10-25", "until": "2026-10-25", "include_images": True}[changed]
         elif changed in {"model", "revision", "dimensions"}:
             identity = list(store.identity)
             index = {"model": 0, "revision": 1, "dimensions": 2}[changed]
@@ -135,13 +129,11 @@ def test_cache_identity_isolates_filters_models_modalities_and_index_versions(ca
                 store.dimensions, vector = 3, [1, 0, 0]
         elif changed == "database":
             store.dsn = "other-database"
-        elif changed == "instruction":
-            store.query_identity = ("different instruction", "profile")
         else:
             state.version = str(uuid4())
         await store.search("ví", vector, **kwargs)
         assert store._search_channels.await_count == 2
-        assert len(entries) == (3 if changed in {"vector", "instruction"} else 4)
+        assert len(entries) == 2
     asyncio.run(run())
 
 
@@ -150,26 +142,25 @@ def test_output_limit_and_date_representation_reuse_full_candidate_pool(cached_s
         store, _, _, _ = cached_store
         expected = await store.search("ví", [1, 0], from_date="2026-10-25", limit=1)
         assert await store.search("ví", [1, 0], from_date=date(2026, 10, 25), limit=10) == expected
-        store._search_channels.assert_awaited_once()
+        assert store._search_channels.await_args.args[-3:-1] == (True, False)
         assert store._search_channels.await_args.args[-1] == 200
     asyncio.run(run())
 
 
 def test_empty_results_are_cached_and_strategies_only_query_their_branch(cached_store):
     async def run():
-        store, _, entries, _ = cached_store
-        store._search_channels.side_effect = None
-        store._search_channels.return_value = {"semantic": [], "lexical": [], "locations": []}
-        assert await store.search("missing", [1, 0]) == []
-        assert await store.search("missing", [1, 0]) == []
-        store._search_channels.assert_awaited_once()
-        entries.clear()
-        await store.search("missing", [1, 0], strategy="lexical")
+        store, cache, entries, _ = cached_store
+        store._search_channels.side_effect = [{"lexical": [], "locations": []}, {"semantic": []}]
+        assert await store.search("missing", [1, 0], strategy="lexical") == []
         assert store._search_channels.await_args.args[-3:-1] == (False, True)
-        assert len(entries) == 1 and ":keyword:" in next(iter(entries))
-        await store.search("missing", [1, 0], strategy="semantic")
+        assert await store.search("missing", [1, 0], strategy="lexical") == []
+        store._search_channels.assert_awaited_once()
+        cache.client.get.reset_mock()
+        assert await store.search("missing", [1, 0], strategy="semantic") == []
         assert store._search_channels.await_args.args[-3:-1] == (True, False)
-        assert len(entries) == 2
+        cache.client.get.assert_not_awaited()
+        cache.client.set.assert_awaited_once()
+        assert len(entries) == 1
     asyncio.run(run())
 
 
@@ -185,8 +176,9 @@ def test_redis_failure_falls_back_and_does_not_hide_search_errors(cached_store, 
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("payload", [b"broken-json", b"[]", b'{"wrong": []}', b'{"semantic": [{}]}',
-                                     b'{"semantic": "wrong"}', b"x" * (1024 * 1024 + 1)])
+@pytest.mark.parametrize("payload", [b"broken-json", b"[]", b'{"semantic": []}',
+                                     b'{"lexical": [{}], "locations": []}',
+                                     b'{"lexical": [], "locations": "wrong"}', b"x" * (1024 * 1024 + 1)])
 def test_invalid_cache_entries_are_misses(cached_store, payload):
     async def run():
         store, cache, _, _ = cached_store
@@ -250,3 +242,14 @@ def test_cache_settings_from_environment_and_safe_repr(monkeypatch):
 def test_cache_configuration_validation(kwargs):
     with pytest.raises(ValueError, match="AI_(REDIS_URL|SEARCH_CACHE_TTL_SECONDS)"):
         Settings(service_token="test", **kwargs)
+
+
+
+def test_area_preference_reuses_global_keyword_candidates(cached_store):
+    async def run():
+        store, _, entries, _ = cached_store
+        first = await store.search("ví", [1, 0], area="Quang Trung")
+        assert await store.search("ví", [1, 0], area="Chợ Quán") == first
+        assert store._search_channels.await_args.args[-3:-1] == (True, False)
+        assert len(entries) == 1
+    asyncio.run(run())

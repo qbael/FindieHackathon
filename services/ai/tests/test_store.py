@@ -66,7 +66,7 @@ def redis_url():
     return url
 
 
-def test_redis_cache_branches_and_invalidation_follow_committed_index_changes(store, redis_url):
+def test_redis_keyword_cache_and_invalidation_follow_committed_index_changes(store, redis_url):
     async def run():
         cache = SearchCache(redis_url, 60)
         store.cache = cache
@@ -78,24 +78,22 @@ def test_redis_cache_branches_and_invalidation_follow_committed_index_changes(st
             await put(store, value)
             first = await store.search("ví E.205", None, embed=embed)
             assert first[0]["itemId"] == value["itemId"]
+            assert store._search_channels.await_args.args[-3:-1] == (True, True)
             assert await store.search("ví E.205", None, embed=embed) == first
-            embed.assert_awaited_once()
-            store._search_channels.assert_awaited_once()
-            keys = [call.args[0] for call in cache.put.await_args_list]
-            assert len(keys) == 2 and all([0 < await cache.client.ttl(key) <= 60 for key in keys])
-            for name, expected in (("keyword", (False, True)), ("semantic", (True, False))):
-                await cache.client.delete(next(key for key in keys if f":{name}:" in key))
-                assert await store.search("ví E.205", None, embed=embed) == first
-                assert store._search_channels.await_args.args[-3:-1] == expected
-            assert embed.await_count == 2
+            assert store._search_channels.await_args.args[-3:-1] == (True, False)
+            assert embed.await_count == store._search_channels.await_count == 2
+            cache.put.assert_awaited_once()
+            key = cache.put.await_args.args[0]
+            assert key.startswith("findie:search:v1:keyword:")
+            assert 0 < await cache.client.ttl(key) <= 60
             # Invalid writes roll back the generation alongside the previous projection.
             invalid = with_images(snapshot(item_id=value["itemId"], version=2), count=1)
             invalid["sources"][1]["processingProfile"] = "unknown"
             with pytest.raises(ValueError):
                 await store.upsert(invalid, checksum(invalid), {source["id"]: [1, 0, 0] for source in invalid["sources"]}, deadline())
-            calls = store._search_channels.await_count
             assert await store.search("ví E.205", None, embed=embed) == first
-            assert store._search_channels.await_count == calls
+            assert store._search_channels.await_args.args[-3:-1] == (True, False)
+            cache.put.assert_awaited_once()
             # A writer with no reachable Redis must still invalidate another worker's warm cache.
             offline = Store(store.dsn, *store.identity[:3], cache=SearchCache("redis://127.0.0.1:1", 60))
             try:
@@ -105,11 +103,13 @@ def test_redis_cache_branches_and_invalidation_follow_committed_index_changes(st
             finally:
                 await offline.close()
             assert (await store.search("ví E.205", None, embed=embed))[0]["documentVersion"] == 2
-            assert embed.await_count == 3
+            assert store._search_channels.await_args.args[-3:-1] == (True, True)
+            assert cache.put.await_args.args[0] != key
             tombstone = {**updated, "kind": "tombstone", "documentVersion": 3, "document": None, "sources": []}
             await store.remove(tombstone, checksum(tombstone), deadline())
             assert await store.search("ví E.205", None, embed=embed) == []
-            # Cached empty pools cannot hide an item published later.
+            assert store._search_channels.await_args.args[-3:-1] == (True, True)
+            # An empty keyword pool cannot hide an item published later.
             new = snapshot()
             await put(store, new)
             assert (await store.search("ví E.205", None, embed=embed))[0]["itemId"] == new["itemId"]
@@ -118,7 +118,7 @@ def test_redis_cache_branches_and_invalidation_follow_committed_index_changes(st
     asyncio.run(run())
 
 
-def test_redis_ttl_expiry_runs_search_again(store, redis_url):
+def test_redis_keyword_ttl_expiry_runs_keyword_search_again(store, redis_url):
     async def run():
         cache = SearchCache(redis_url, 1)
         store.cache = cache
@@ -128,10 +128,11 @@ def test_redis_ttl_expiry_runs_search_again(store, redis_url):
             await put(store, snapshot())
             expected = await store.search("ví", None, embed=embed)
             assert await store.search("ví", None, embed=embed) == expected
-            embed.assert_awaited_once()
+            assert store._search_channels.await_args.args[-3:-1] == (True, False)
             await asyncio.sleep(1.1)
             assert await store.search("ví", None, embed=embed) == expected
-            assert embed.await_count == store._search_channels.await_count == 2
+            assert store._search_channels.await_args.args[-3:-1] == (True, True)
+            assert embed.await_count == store._search_channels.await_count == 3
         finally:
             await store.close()
     asyncio.run(run())
@@ -141,7 +142,7 @@ async def put(store, value, vector=(1.0, 0.0, 0.0)):
     return await store.upsert(value, checksum(value), list(vector), deadline())
 
 
-def test_room_hall_retrieval_and_hard_filters_precede_candidate_limit(store):
+def test_room_hall_retrieval_and_date_filters_precede_candidate_limit(store):
     async def run():
         room = snapshot()
         hall = snapshot("Ví màu đen nhặt được tại sảnh hội trường A")
@@ -149,7 +150,6 @@ def test_room_hall_retrieval_and_hard_filters_precede_candidate_limit(store):
         for value, vector in [(room, [0.8, 0.2, 0]), (hall, [0.8, 0.1, 0.1]), (wrong_room, [1, 0, 0])]:
             await put(store, value, vector)
         for _ in range(5):
-            await put(store, snapshot(area="Đại học khác"))
             await put(store, snapshot(found_on="2026-10-23"))
         result = await store.search("vi den phong E205", [1, 0, 0], "SÀI GÒN", "2026-10-25", "2026-10-25", 2)
         assert result[0]["itemId"] == room["itemId"]
@@ -256,7 +256,7 @@ def test_multisource_snapshot_is_atomic_and_image_search_deduplicates_with_prove
         assert text[0]["sourceId"] == sources[0]["id"]
         assert images[0]["sourceId"] == sources[1]["id"]
         assert images[0]["sourceVersion"] == 2 and images[0]["sourceSha256"] == sources[1]["sha256"]
-        assert await store.search("", [0, 1, 0], area="other", limit=1, modality="image") == []
+        assert (await store.search("", [0, 1, 0], area="other", limit=1, modality="image"))[0]["itemId"] == value["itemId"]
         assert await store.search("", [0, 1, 0], from_date="2026-10-26", limit=1, modality="image") == []
         async with await psycopg.AsyncConnection.connect(store.dsn) as db:
             rows = await (await db.execute("SELECT processing_profile, search_terms::text, location_tokens FROM ai_documents")).fetchall()
@@ -379,4 +379,22 @@ def test_bad_later_source_rolls_back_watermark_and_keeps_previous_projection(sto
         result = await store.search("ví", [1, 0, 0])
         assert len(result) == 1 and result[0]["documentVersion"] == 1
         assert result[0]["sourceSha256"] == old["sources"][0]["sha256"]
+    asyncio.run(run())
+
+
+
+def test_area_preference_retains_text_and_image_candidates_elsewhere(store):
+    async def run():
+        local = with_images(snapshot(area="Đường Quang Trung"), count=1)
+        outside = with_images(snapshot(area="Trường Đại học Sài Gòn, Chợ Quán"), count=1)
+        for value in (local, outside):
+            await store.upsert(value, checksum(value),
+                {source["id"]: [1, 0, 0] for source in value["sources"]}, deadline())
+        expected = {local["itemId"], outside["itemId"]}
+        for modality in ("text", "image"):
+            hits = await store.search("ví", [1, 0, 0], area="quang trung", modality=modality)
+            assert {hit["itemId"] for hit in hits} == expected
+            assert len(hits) == len(expected)
+            assert await store.search("ví", [1, 0, 0], area="quang trung",
+                                      from_date="2026-10-26", modality=modality) == []
     asyncio.run(run())

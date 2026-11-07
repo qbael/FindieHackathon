@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdothatlac-3493",
+  "sourceUrl": "https://timdothatlac.vn/post/3493",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:05.197787+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: Đầu ngõ 20 Hồ Tùng Mậu. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: Đầu ngõ 20 Hồ Tùng Mậu. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đầu ngõ 20 Hồ Tùng Mậu",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793836871610-l1cdihpyr3q.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "9e47cb37d6c7aa86be6aa8769d424eb4d47384ede9e9020e213a632921caa2ba",
+    "metadataChanged": false,
+    "sourceSha256": "d1dc480005e3bd5ffeae6b53083db8723f3ecffc6f98f8ddfa31f74a6b99e85c",
+    "sha256": "d1dc480005e3bd5ffeae6b53083db8723f3ecffc6f98f8ddfa31f74a6b99e85c"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-21T12:20:00+07:00"
+  }
+}

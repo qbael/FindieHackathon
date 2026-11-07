@@ -17,12 +17,11 @@ class SnapshotConflict(ValueError):
 
 class Store:
     def __init__(self, dsn, model_id, revision, dimensions, processing_profile="text-v1", *,
-                 cache=None, query_identity=(), semantic_weight=0.6):
+                 cache=None, semantic_weight=0.6):
         self.dsn = dsn
         self.identity = (model_id, revision, dimensions, processing_profile)
         self.dimensions = dimensions
         self.cache = cache
-        self.query_identity = query_identity
         self.semantic_weight = semantic_weight
 
     async def close(self):
@@ -166,34 +165,25 @@ class Store:
         channels = {"semantic": [], "lexical": [], "locations": []}
         need_semantic = modality == "image" or strategy != "lexical"
         need_keyword = modality == "text" and strategy != "semantic"
-        semantic_key = keyword_key = None
+        keyword_key = None
         # shortcut: exact vector scan favors recall; add ANN only after measuring corpus size and recall.
         async with await psycopg.AsyncConnection.connect(self.dsn, row_factory=dict_row, autocommit=True) as connection:
-            if self.cache and modality == "text":
+            if self.cache and need_keyword:
                 cursor = await connection.execute("SELECT version FROM ai_search_state WHERE singleton")
                 version = str((await cursor.fetchone())["version"])
                 identity = (sha256(self.dsn.encode()).hexdigest(), version, self.identity, profiles,
-                            area, first.isoformat() if first else None, last.isoformat() if last else None)
-                if need_semantic:
-                    semantic_key = self.cache.key("semantic", (*identity, self.query_identity, text, vector))
-                    cached = await self.cache.get(semantic_key, ("semantic",))
-                    if cached is not None:
-                        channels.update(cached)
-                        need_semantic = False
-                if need_keyword:
-                    keyword_key = self.cache.key("keyword", (*identity, lexical_query, tokens))
-                    cached = await self.cache.get(keyword_key, ("lexical", "locations"))
-                    if cached is not None:
-                        channels.update(cached)
-                        need_keyword = False
+                            first.isoformat() if first else None, last.isoformat() if last else None)
+                keyword_key = self.cache.key((*identity, lexical_query, tokens))
+                cached = await self.cache.get(keyword_key)
+                if cached is not None:
+                    channels.update(cached)
+                    need_keyword = False
             if need_semantic and vector is None:
                 vector = self._vector(await embed())
             if need_semantic or need_keyword:
-                fresh = await self._search_channels(connection, profiles, area, first, start, last, end,
+                fresh = await self._search_channels(connection, profiles, first, start, last, end,
                     vector, lexical_query, tokens, need_semantic, need_keyword, pool_limit)
                 channels.update(fresh)
-                if semantic_key and need_semantic:
-                    await self.cache.put(semantic_key, {"semantic": channels["semantic"]})
                 if keyword_key and need_keyword:
                     await self.cache.put(keyword_key, {name: channels[name] for name in ("lexical", "locations")})
         if modality == "image":
@@ -203,7 +193,7 @@ class Store:
         return rank_candidates(channels["semantic"], channels["lexical"], channels["locations"], tokens, limit,
                                semantic_weight=self.semantic_weight)
 
-    async def _search_channels(self, connection, profiles, area, first, start, last, end, vector,
+    async def _search_channels(self, connection, profiles, first, start, last, end, vector,
                                lexical_query, tokens, need_semantic, need_keyword, pool_limit):
         cursor = await connection.execute(
             """WITH eligible AS MATERIALIZED (
@@ -211,7 +201,6 @@ class Store:
                 WHERE NOT i.tombstone AND d.document_version = i.document_version
                   AND (d.model_id, d.model_revision, d.dimensions) = (%s, %s, %s)
                   AND d.processing_profile = ANY(%s::text[])
-                  AND (%s::text IS NULL OR strpos(lower(d.found_area), lower(%s)) > 0)
                   AND (%s::date IS NULL OR d.found_on >= %s OR coalesce(d.found_until, d.found_from) >= %s)
                   AND (%s::date IS NULL OR d.found_on <= %s OR d.found_from < %s)
             ), nearest_source AS (
@@ -238,7 +227,7 @@ class Store:
             SELECT 'locations', item_id, document_version, source_id, source_version, source_sha256, processing_profile, location_tokens, rank FROM locations
             ORDER BY channel, rank""",
             (*self.identity[:3], profiles,
-             area, area, first, first, start, last, last, end, vector, need_semantic, vector, pool_limit,
+             first, first, start, last, last, end, vector, need_semantic, vector, pool_limit,
              lexical_query, lexical_query, need_keyword, lexical_query, pool_limit, lexical_query, need_keyword, tokens, pool_limit),
         )
         channels = {name: [] for name in (("semantic",) if need_semantic else ())

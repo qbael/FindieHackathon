@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-14124",
+  "sourceUrl": "https://timdo24h.com/14124",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:02.765471+00:00",
+  "sourceVisibility": "public",
+  "title": "Chìa khóa",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Quảng Trị. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Quảng Trị. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Quảng Trị",
+  "images": [
+    "photo-1.png"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/0ae904b4-c6ef-4680-abb4-091bdb3e22b0.png"
+  ],
+  "itemType": "keys",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "389d6ba0b1f6d34ccded4df6319f0b88c2d1424817f49cdde0c1ac05c45ca9f7",
+    "metadataChanged": true,
+    "sourceSha256": "ebe4ec2dae6ac1d382c3a460d6242c5bb19843f8ac690c850235ddeaef0b5dd4",
+    "sha256": "5c1e3bb3deb72cdfe8c6a862b1874ca12a53f48886893c076af7e1825d896a6d"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, Quảng Trị (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-10-27T07:40:00+07:00",
+    "foundUntil": "2026-10-27T11:10:00+07:00"
+  }
+}

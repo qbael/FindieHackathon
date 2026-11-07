@@ -1,0 +1,33 @@
+{
+  "sourceId": "timdocom-11188",
+  "sourceUrl": "https://timdo24h.com/11188",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:10.043067+00:00",
+  "sourceVisibility": "public",
+  "title": "Kính mắt gọng đen",
+  "sourceText": "Ảnh của bài nguồn cho thấy một chiếc kính mắt gọng đen. Khu vực được ghi nhận: Đà Nẵng. Mô tả mẫu lược bỏ tên và thông tin liên hệ.",
+  "publicDescription": "Ảnh của bài nguồn cho thấy một chiếc kính mắt gọng đen. Khu vực được ghi nhận: Đà Nẵng. Mô tả mẫu lược bỏ tên và thông tin liên hệ.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/acacc493-20fa-4a8d-be15-bb977a4cdf0f.jpeg"
+  ],
+  "itemType": "glasses",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "f3c56cbe7f1aa4374d8c71992b57f5a0cd2b4d9921192c6f41a80ca160332298",
+    "metadataChanged": true,
+    "sourceSha256": "6fa380e245f33d43cc8dab28192174db9e3469048614bb23d9507adc2a585a78",
+    "sha256": "db7ca1a5af1a4a1140764e140035dee83bcde0e4bc44ee0f0dd09011db103c6a"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

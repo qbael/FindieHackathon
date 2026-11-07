@@ -3,7 +3,9 @@
 Each assets/facebook/<source-id>/source.json contains sourceId, sourceUrl,
 originalKind (lost/found), capturedAt (ISO timestamp with timezone), sourceText,
 title, publicDescription, foundArea, and images (1..3 relative photo filenames).
-Only foundDateVerified=true together with foundOn=YYYY-MM-DD sets a found date.
+Only foundDateVerified=true together with foundOn=YYYY-MM-DD sets a verified found date.
+An optional scenario object supplies explicitly fictional custody and found time;
+source facts and existing imports are never rewritten.
 
 Usage: python3 scripts/import_facebook_samples.py [assets/facebook] --validate
        python3 scripts/import_facebook_samples.py --prepare-json /tmp/findie-public-samples.json
@@ -17,6 +19,7 @@ from pathlib import Path
 from datetime import date, datetime
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
+from uuid import UUID
 
 
 SOURCE_HOSTS = {"facebook.com", "www.facebook.com", "m.facebook.com", "web.facebook.com",
@@ -30,6 +33,68 @@ def text(record, field, maximum):
     if not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum:
         raise ValueError(f"{field} must contain 1..{maximum} characters")
     return value.strip()
+
+
+def scenario_payload(scenario, content):
+    if not isinstance(scenario, dict):
+        raise ValueError("scenario must be an object")
+    if scenario.get("foundTimezone", "Asia/Ho_Chi_Minh") != "Asia/Ho_Chi_Minh":
+        raise ValueError("scenario timezone must be Asia/Ho_Chi_Minh")
+    precision = scenario.get("foundTimePrecision")
+    on, start, end = (scenario.get(key) for key in ("foundOn", "foundFrom", "foundUntil"))
+    now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+    def timestamp(value):
+        if not isinstance(value, str):
+            raise ValueError("scenario timestamps must be ISO strings with timezone")
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            raise ValueError("scenario timestamps must include a timezone")
+        return parsed
+    valid = False
+    if precision == "unknown":
+        valid = on is None and start is None and end is None
+    elif precision == "date":
+        valid = isinstance(on, str) and date.fromisoformat(on) <= now.date() and start is None and end is None
+    elif precision == "exact":
+        valid = on is None and timestamp(start) <= now and end is None
+    elif precision == "range":
+        valid = on is None and timestamp(start) <= timestamp(end) <= now
+    if not valid:
+        raise ValueError("scenario found time is invalid or in the future")
+    if on is not None:
+        on = date.fromisoformat(on).isoformat()
+    if start is not None:
+        start = timestamp(start).isoformat()
+    if end is not None:
+        end = timestamp(end).isoformat()
+    content.update(foundTimePrecision=precision)
+    for key, value in (("foundOn", on), ("foundFrom", start), ("foundUntil", end)):
+        if value is not None:
+            content[key] = value
+    custody = scenario.get("custody")
+    if not isinstance(custody, dict):
+        raise ValueError("scenario custody must be an object")
+    custody = dict(custody)
+    kind = custody.get("kind")
+    if kind == "person":
+        if set(custody) != {"kind"}:
+            raise ValueError("person scenario cannot contain point or external fields")
+    elif kind == "point":
+        if set(custody) != {"kind", "pointId", "confirmedPhysicalReceipt"} or custody["confirmedPhysicalReceipt"] is not True:
+            raise ValueError("point scenario requires a point ID and confirmed physical receipt")
+        if not isinstance(custody["pointId"], str) or UUID(custody["pointId"]).int == 0:
+            raise ValueError("point scenario requires a nonempty point UUID")
+        custody["pointId"] = str(UUID(custody["pointId"]))
+    elif kind == "external":
+        if set(custody) - {"kind", "name", "address", "instructions"}:
+            raise ValueError("external scenario contains unexpected fields")
+        text(custody, "name", 200)
+        text(custody, "address", 500)
+        if "instructions" in custody:
+            text(custody, "instructions", 2000)
+    else:
+        raise ValueError("scenario custody kind must be person, point or external")
+    return custody
 
 
 def prepare(source_path):
@@ -52,6 +117,12 @@ def prepare(source_path):
                   f"Bài gốc: {original_kind}. ")
     if record["originalKind"] == "lost":
         disclosure += "Chuyển thể để thử nghiệm luồng nhặt đồ; vị trí là khu vực báo mất, chưa xác nhận đã nhặt được. "
+    scenario = record.get("scenario")
+    if scenario is not None:
+        disclosure = ("DỮ LIỆU MẪU — KỊCH BẢN GIẢ ĐỊNH dựa trên bài đăng nguồn. "
+                      f"Bài gốc: {original_kind}. "
+                      "Người giữ, Hub, nơi ngoài hệ thống và ngày giờ trong kịch bản chỉ phục vụ kiểm thử; "
+                      "không xác nhận đã nhặt được, bàn giao hay tình trạng hiện tại của đồ thật.")
     description += f"\n\n{disclosure}\nNguồn: {source_url}"
     if len(description) > 5000:
         raise ValueError("publicDescription plus source disclosure exceeds 5000 characters")
@@ -96,10 +167,15 @@ def prepare(source_path):
     def fingerprint(value):
         return hashlib.sha256(json.dumps({"source": record, "payload": value,
             "photos": [photo["sha256"] for photo in photos]}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    if scenario is not None:
+        if record.get("foundDateVerified") is True:
+            raise ValueError("scenario dates cannot be marked as verified source dates")
+        payload["custody"] = scenario_payload(scenario, content)
     legacy_payload = payload | {"content": content | {"title": "[Mẫu] " + title}}
     return {"sourceId": source_id, "sourceUrl": source_url, "path": source_path,
             "payload": payload, "photos": photos, "fingerprint": fingerprint(payload),
-            "legacyTitleFingerprint": fingerprint(legacy_payload)}
+            "legacyTitleFingerprint": fingerprint(legacy_payload),
+            **({"syntheticScenario": True} if scenario is not None else {})}
 
 
 def load_dataset(folder):

@@ -48,3 +48,29 @@ def rank_candidates(semantic, lexical, locations, query_locations, limit=200, *,
         "sourceVersion": candidates[item_id]["source_version"],
         "sourceSha256": candidates[item_id]["source_sha256"],
     } for item_id in ordered[:limit]]
+
+
+def fuse_rankings(rankings, limit=15, *, weights=None, text_index=None):
+    """Order combined, image-only, then text-only hits, retaining their evidence."""
+    candidates = {}
+    for idx, ranking in enumerate(rankings):
+        w = weights[idx] if weights else 1.0
+        seen = set()
+        for rank, candidate in enumerate(ranking, 1):
+            item_id = candidate["itemId"]
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+            fused = candidates.setdefault(item_id, {"itemId": item_id, "score": 0.0,
+                "imageScore": 0.0, "textScore": 0.0, "sources": []})
+            contribution = w / (60 + rank)
+            fused["imageScore" if idx != text_index else "textScore"] += contribution
+            fused["score"] = fused["imageScore"] + fused["textScore"]
+            source = {key: candidate[key] for key in (
+                "documentVersion", "sourceId", "sourceKind", "sourceVersion", "sourceSha256")}
+            if source not in fused["sources"]:
+                fused["sources"].append(source)
+    return sorted(candidates.values(), key=lambda candidate: (
+        0 if candidate["imageScore"] and candidate["textScore"] else 1 if candidate["imageScore"] else 2,
+        -candidate["score"], -candidate["imageScore"], -candidate["textScore"], candidate["itemId"],
+    ))[:limit]

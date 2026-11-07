@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-14123",
+  "sourceUrl": "https://timdo24h.com/14123",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:44:38.449610+00:00",
+  "sourceVisibility": "public",
+  "title": "Balo hoặc túi xách màu đen",
+  "sourceText": "Bài nguồn báo mất mô tả balo hoặc túi xách màu đen. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả balo hoặc túi xách màu đen. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/f539ed43-6f43-4aee-bc9a-7259de334a12.jpeg"
+  ],
+  "itemType": "bag",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "be31c480353619a85664d2e69efc5d0c81a104380cdb253a044fcc0151ffe794",
+    "metadataChanged": true,
+    "sourceSha256": "6f4c69a0144c30ae6f90f24222589a2c726c3a3a5253b1d46220bbb5db1eccc1",
+    "sha256": "7aa28f3790fe4aca7e6908acfc5f03ed4cb025aa022e221a54f7722c5f525453"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-04T07:40:00+07:00",
+    "foundUntil": "2026-09-04T08:10:00+07:00"
+  }
+}

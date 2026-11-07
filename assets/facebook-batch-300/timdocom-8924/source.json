@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-8924",
+  "sourceUrl": "https://timdo24h.com/8924",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:11.919072+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại iPhone",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/7b7691e6-9db5-4303-a91e-6e39b7672f5d.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "9c36202367b0e47bcf7a3ab02103ad51ee3ae65cbfdff9ac3829ae6260e84a73",
+    "metadataChanged": true,
+    "sourceSha256": "1763bb799e977a01dfb2e085dab53d04a3e8022321e91fa6fcf69d634c2f1b76",
+    "sha256": "1d9e4e14c94f28e7d469db53ae84b9b75eb08167a326cc7a3520770de5c94d26"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000003",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-13T11:35:00+07:00"
+  }
+}

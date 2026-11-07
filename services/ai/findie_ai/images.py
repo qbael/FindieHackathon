@@ -29,6 +29,10 @@ class Region(BaseModel):
         return self
 
 
+class ReviewedRegion(Region):
+    label: Literal["face", "identity_number", "identifier_number", "phone", "address", "qr_code", "barcode", "text"]
+
+
 class Regions(BaseModel):
     model_config = ConfigDict(extra="forbid")
     regions: list[Region] = Field(max_length=32)
@@ -68,18 +72,46 @@ async def normalize(body: bytes, content_type: str) -> bytes:
     return await asyncio.to_thread(lambda: _encode(_decode(body, content_type)))
 
 
-def _mask(image, regions):
+def coarse_preview(body: bytes, content_type: str) -> tuple[bytes, dict]:
+    if content_type != "image/png":
+        raise ValueError("invalid_coarse_preview")
+    image = _decode(body, content_type)
+    height, width = image.shape[:2]
+    if not 64 <= width <= 192 or not 64 <= height <= 192 or width % 16 or height % 16:
+        raise ValueError("invalid_coarse_preview")
+    tiles = image.reshape(height // 16, 16, width // 16, 16, 3)
+    if not np.all(tiles == tiles[:, :1, :, :1, :]):
+        raise ValueError("invalid_coarse_preview")
+    output = _encode(image)
+    return output, {"contentType": "image/png", "sha256": sha256(output).hexdigest(),
+                    "byteSize": len(output), "width": width, "height": height, "sensitiveRegions": []}
+
+
+def _mask(image, regions, *, partial_identifiers=True):
     height, width = image.shape[:2]
     for region in regions:
         padding = max(2, math.ceil(min(width, height) / (200 if region.label in {"qr_code", "barcode"} else 500)))
         x1, y1, x2, y2 = region.bbox
         left, top = max(0, math.floor(x1 * width / 1000) - padding), max(0, math.floor(y1 * height / 1000) - padding)
         right, bottom = min(width - 1, math.ceil(x2 * width / 1000) + padding - 1), min(height - 1, math.ceil(y2 * height / 1000) + padding - 1)
-        if region.label in {"identity_number", "identifier_number", "phone"}:
+        if partial_identifiers and region.label in {"identity_number", "identifier_number", "phone"}:
             # shortcut: bbox width approximates the last 40% of horizontal digits; use digit boxes for rotated/exact suffixes.
             right = min(width - 1, math.ceil((x1 + (x2 - x1) * 0.6) * width / 1000) - 1)
         cv2.rectangle(image, (left, top), (right, bottom), (0, 0, 0), thickness=cv2.FILLED)
     return _encode(image)
+
+
+def reviewed_mask(body: bytes, content_type: str, regions) -> tuple[bytes, dict]:
+    # Development importer binds these manually reviewed coordinates to the exact input hash.
+    if content_type != "image/png" or len(regions) > 32:
+        raise ValueError("invalid_reviewed_masks")
+    regions = [ReviewedRegion.model_validate(region) for region in regions]
+    image = _decode(body, content_type)
+    height, width = image.shape[:2]
+    output = _mask(image, regions, partial_identifiers=False)
+    return output, {"contentType": "image/png", "sha256": sha256(output).hexdigest(),
+                    "byteSize": len(output), "width": width, "height": height,
+                    "sensitiveRegions": [region.model_dump(mode="json") for region in regions]}
 
 
 async def redact(ollama, body: bytes, content_type: str) -> tuple[bytes, dict]:

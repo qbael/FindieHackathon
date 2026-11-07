@@ -9,7 +9,8 @@ namespace Findie.Api.Services;
 public interface IImageService
 {
     Task<IReadOnlyList<ImageResponse>> ListAsync(Guid actor, Guid itemId, CancellationToken ct);
-    Task<ImageResponse> UploadAsync(Guid actor, Guid key, Guid itemId, short position, string? mime, Stream body, long? length, CancellationToken ct);
+    Task<ImageResponse> UploadAsync(Guid actor, Guid key, Guid itemId, short position, string? mime, Stream body, long? length, CancellationToken ct, bool omitOcr = false, bool coarsePreview = false, JsonElement? reviewedRegions = null, (JsonElement Data, string SourceSha256)? originalEmbedding = null);
+    Task<ImageResponse> RestoreOriginalEmbeddingAsync(Guid actor, Guid key, Guid itemId, Guid imageId, long contentVersion, string processedSha256, string sourceSha256, JsonElement embedding, CancellationToken ct);
     Task<ImageResponse> ReviewAsync(Guid actor, Guid key, Guid itemId, Guid imageId, ReviewImageRequest request, CancellationToken ct);
     Task<ImageResponse> RetireAsync(Guid actor, Guid key, Guid itemId, Guid imageId, RetireImageRequest request, CancellationToken ct);
     Task<(byte[] Bytes, string ContentType)> ContentAsync(Guid actor, Guid itemId, Guid imageId, CancellationToken ct);
@@ -25,8 +26,12 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
         return item.Images.OrderBy(image => image.Position).ThenBy(image => image.CreatedAt).Select(Response).ToList();
     }
     public async Task<ImageResponse> UploadAsync(Guid actor, Guid key, Guid itemId, short position, string? mime,
-        Stream body, long? length, CancellationToken ct)
+        Stream body, long? length, CancellationToken ct, bool omitOcr = false, bool coarsePreview = false, JsonElement? reviewedRegions = null, (JsonElement Data, string SourceSha256)? originalEmbedding = null)
     {
+        if (reviewedRegions is not null && (!omitOcr || mime != "image/png" || coarsePreview))
+            throw new ApiException(400, "Reviewed masks require a PNG without OCR and cannot use a coarse preview.");
+        if (coarsePreview && (!omitOcr || mime != "image/png"))
+            throw new ApiException(400, "A coarse preview must be a PNG without OCR.");
         var current = await workflow.ItemAsync(itemId, false, ct);
         await workflow.RequireManagerAsync(current, actor, ct);
         if (!BoundedImage.Mime(mime)) throw new ApiException(415, "Use image/jpeg, image/png or image/webp with a binary request body.");
@@ -34,8 +39,12 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
         try
         {
             var request = new { position, mime, sha256 = RecoveryWorkflow.Hash(bytes), length = bytes.Length };
+            var suppliedEmbedding = originalEmbedding is { } supplied ? ValidateOriginalEmbedding(supplied.Data, supplied.SourceSha256) : null;
+            object operationRequest = reviewedRegions is { } reviewed ? new { image = request, reviewedRegions = reviewed } : request;
+            if (suppliedEmbedding is not null)
+                operationRequest = new { image = operationRequest, originalEmbeddingSha256 = RecoveryWorkflow.Hash(suppliedEmbedding) };
             var operation = $"image.upload:{itemId}";
-            if (await workflow.ReplayedAsync(actor, key, operation, request, "image", ct) is { } oldId)
+            if (await workflow.ReplayedAsync(actor, key, operation, operationRequest, "image", ct) is { } oldId)
                 return Response(Find(current, oldId));
             RecoveryWorkflow.RequireActive(current);
             if (position is < 1 or > 3) throw new ApiException(400, "Image position must be between 1 and 3.");
@@ -48,30 +57,41 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             var revision = AiProtocol.Setting(configuration, "RedactionRevision");
             var profile = AiProtocol.Setting(configuration, "RedactionProfile");
             var imageId = Guid.NewGuid();
-            var embeddingMetadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
-                sourceSha256 = request.sha256, modelId = AiProtocol.Setting(configuration, "EmbeddingModelId"),
-                modelRevision = AiProtocol.Setting(configuration, "EmbeddingRevision"), dimensions = AiProtocol.EmbeddingDimensions(configuration),
-                processingProfile = "image-v1", deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json);
-            string? embedding;
-            await using (var embeddingReply = await ai.RequestAsync(new AiCommand("image.embed", embeddingMetadata, bytes, mime!), ct))
+            string? embedding = suppliedEmbedding;
+            if (embedding is null)
             {
-                try
+                var embeddingRequest = JsonSerializer.SerializeToNode(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
+                    sourceSha256 = request.sha256, modelId = AiProtocol.Setting(configuration, "EmbeddingModelId"),
+                    modelRevision = AiProtocol.Setting(configuration, "EmbeddingRevision"), dimensions = AiProtocol.EmbeddingDimensions(configuration),
+                    processingProfile = "image-v1", deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json)!.AsObject();
+                if (omitOcr) embeddingRequest["omitOcr"] = true;
+                if (coarsePreview) embeddingRequest["coarsePreview"] = true;
+                var embeddingMetadata = JsonSerializer.SerializeToElement(embeddingRequest);
+                await using (var embeddingReply = await ai.RequestAsync(new AiCommand("image.embed", embeddingMetadata, bytes, mime!), ct))
                 {
-                    AiProtocol.Require(embeddingReply.Metadata, "image.embed");
-                    foreach (var field in new[] { "imageId", "itemId", "sourceVersion", "sourceSha256", "modelId", "modelRevision", "dimensions", "processingProfile" })
-                        if (embeddingReply.Metadata.GetProperty(field).ToString() != embeddingMetadata.GetProperty(field).ToString()) throw new JsonException();
-                    if (embeddingReply.Body.Length > 1048576) throw new JsonException();
-                    using var document = JsonDocument.Parse(embeddingReply.Body);
-                    embedding = document.RootElement.ValueKind == JsonValueKind.Null ? null
-                        : AiProtocol.Embedding(document.RootElement, configuration, request.sha256);
-                    await embeddingReply.CompleteAsync();
+                    try
+                    {
+                        AiProtocol.Require(embeddingReply.Metadata, "image.embed");
+                        foreach (var field in new[] { "imageId", "itemId", "sourceVersion", "sourceSha256", "modelId", "modelRevision", "dimensions", "processingProfile" })
+                            if (embeddingReply.Metadata.GetProperty(field).ToString() != embeddingMetadata.GetProperty(field).ToString()) throw new JsonException();
+                        if (embeddingReply.Body.Length > 1048576) throw new JsonException();
+                        using var document = JsonDocument.Parse(embeddingReply.Body);
+                        if (omitOcr && document.RootElement.ValueKind != JsonValueKind.Null
+                            && document.RootElement.TryGetProperty("ocr", out _)) throw new JsonException();
+                        embedding = document.RootElement.ValueKind == JsonValueKind.Null ? null
+                            : AiProtocol.Embedding(document.RootElement, configuration, request.sha256);
+                        await embeddingReply.CompleteAsync();
+                    }
+                    catch (Exception error) when (AiProtocol.Malformed(error))
+                    { throw new ApiException(502, "AI returned an invalid original image embedding; no image was stored."); }
                 }
-                catch (Exception error) when (AiProtocol.Malformed(error))
-                { throw new ApiException(502, "AI returned an invalid original image embedding; no image was stored."); }
             }
-            var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
+            var redactionRequest = JsonSerializer.SerializeToNode(new { schemaVersion = 1, imageId, itemId, sourceVersion = 1,
                 sourceSha256 = request.sha256, modelId = model, modelRevision = revision, processingProfile = profile,
-                deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json);
+                deadlineAt = DateTimeOffset.UtcNow.AddMinutes(5) }, RecoveryWorkflow.Json)!.AsObject();
+            if (coarsePreview) redactionRequest["coarsePreview"] = true;
+            if (reviewedRegions is { } masks) redactionRequest["reviewedRegions"] = JsonSerializer.SerializeToNode(masks);
+            var metadata = JsonSerializer.SerializeToElement(redactionRequest);
             await using var reply = await ai.RequestAsync(new AiCommand("image.redact", metadata, bytes, mime!), ct);
             var output = ValidateOutput(reply, metadata);
             var value = new StoredObject { OwnerUserId = actor, Bucket = storage.Bucket, ObjectKey = $"processed/{itemId}/{Guid.NewGuid():N}",
@@ -80,7 +100,7 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             repository.Add(value);
             await repository.SaveAsync(ct);
             await storage.PutAsync(value, reply.Body, ct);
-            var id = await workflow.WriteAsync(actor, key, operation, request, "image", 201, async () =>
+            var id = await workflow.WriteAsync(actor, key, operation, operationRequest, "image", 201, async () =>
             {
                 var item = await workflow.ItemAsync(itemId, true, ct);
                 await workflow.RequireManagerAsync(item, actor, ct);
@@ -117,11 +137,15 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             AiProtocol.Require(data, "image.redact");
             foreach (var field in new[] { "imageId", "itemId", "sourceVersion", "sourceSha256", "modelId", "modelRevision", "processingProfile" })
                 if (data.GetProperty(field).ToString() != expected.GetProperty(field).ToString()) throw new JsonException();
+            if (expected.TryGetProperty("coarsePreview", out _) && !data.GetProperty("coarsePreview").GetBoolean())
+                throw new JsonException();
             var mime = data.GetProperty("contentType").GetString()!;
             var hash = data.GetProperty("sha256").GetString()!;
             var width = data.GetProperty("width").GetInt32();
             var height = data.GetProperty("height").GetInt32();
             var regions = data.GetProperty("sensitiveRegions");
+            if (expected.TryGetProperty("reviewedRegions", out var masks) && !JsonElement.DeepEquals(masks, regions))
+                throw new JsonException();
             if (!BoundedImage.Mime(mime) || !BoundedImage.Signature(reply.Body, mime) || reply.Body.Length > BoundedImage.MaxBytes
                 || data.GetProperty("byteSize").GetInt32() != reply.Body.Length || hash != RecoveryWorkflow.Hash(reply.Body)
                 || width is < 1 or > 10000 || height is < 1 or > 10000 || (long)width * height > 40000000
@@ -129,6 +153,49 @@ public sealed class ImageService(IRecoveryRepository repository, RecoveryWorkflo
             return (mime, hash, width, height, regions.GetRawText());
         }
         catch (Exception error) when (AiProtocol.Malformed(error)) { throw new ApiException(502, "AI returned an invalid processed image; no image was stored."); }
+    }
+    string ValidateOriginalEmbedding(JsonElement embedding, string sourceSha256)
+    {
+        try
+        {
+            if (embedding.GetRawText().Length > 1048576 || embedding.TryGetProperty("ocr", out _)) throw new JsonException();
+            return AiProtocol.Embedding(embedding, configuration, sourceSha256);
+        }
+        catch (Exception error) when (AiProtocol.Malformed(error))
+        { throw new ApiException(400, "The original embedding must match the selected source hash and configured model without OCR."); }
+    }
+    public async Task<ImageResponse> RestoreOriginalEmbeddingAsync(Guid actor, Guid key, Guid itemId, Guid imageId,
+        long contentVersion, string processedSha256, string sourceSha256, JsonElement embedding, CancellationToken ct)
+    {
+        var current = await workflow.ItemAsync(itemId, false, ct);
+        await workflow.RequireManagerAsync(current, actor, ct);
+        RecoveryWorkflow.RequireActive(current);
+        RequireCurrent(Find(current, imageId));
+        var canonical = ValidateOriginalEmbedding(embedding, sourceSha256);
+        var request = new { contentVersion, processedSha256, sourceSha256, embeddingSha256 = RecoveryWorkflow.Hash(canonical) };
+        await workflow.WriteAsync(actor, key, $"image.restore-original-embedding:{itemId}:{imageId}", request, "image", 200, async () =>
+        {
+            var item = await workflow.ItemAsync(itemId, true, ct);
+            await workflow.RequireManagerAsync(item, actor, ct);
+            RecoveryWorkflow.RequireActive(item);
+            var image = Find(item, imageId);
+            RequireCurrent(image);
+            if (image.OriginalEmbedding != canonical)
+            {
+                image.OriginalEmbedding = canonical;
+                workflow.Changed(item);
+            }
+            return imageId;
+        }, ct);
+        return Response(Find(await workflow.ItemAsync(itemId, false, ct), imageId));
+
+        void RequireCurrent(ItemImage image)
+        {
+            if (image.ContentVersion != contentVersion || image.RetiredAt is not null
+                || image.ProcessingState is not ("ready" or "needs_review")
+                || image.ProcessedObject is not { ObjectState: "validated" } value || value.Sha256 != processedSha256)
+                throw new ApiException(409, "The processed image changed before its original embedding was restored.");
+        }
     }
     public async Task<ImageResponse> ReviewAsync(Guid actor, Guid key, Guid itemId, Guid imageId, ReviewImageRequest request, CancellationToken ct)
     {

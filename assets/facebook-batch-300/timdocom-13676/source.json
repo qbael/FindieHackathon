@@ -1,0 +1,41 @@
+{
+  "sourceId": "timdocom-13676",
+  "sourceUrl": "https://timdo24h.com/13676",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:58.244688+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu nâu kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu nâu kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu nâu kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/7bf7be9e-fb5b-4e61-890a-76b478eaf624.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "b77633d1644a475b6385b2919db69eb8eee619a4653ed97a3f939b1d0de38130",
+    "metadataChanged": true,
+    "sourceSha256": "1d4c4f081953fbe41daafcd50bc8bd5307a51d3219d8dd39b13dd8d2548323a4",
+    "sha256": "5f1c14245769cbf6d006d782c77851ebb364dc16e89fc3135bf116368f02426c"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-29T16:55:00+07:00",
+    "foundUntil": "2026-08-29T20:25:00+07:00"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdocom-13831",
+  "sourceUrl": "https://timdo24h.com/13831",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:53.440044+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/7cedf9e9-42b2-4ac6-b7dd-784e955fc274.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "482163c9fc94221b28a8d27768889775890f422f46063e12de93daf0cea88523",
+    "metadataChanged": true,
+    "sourceSha256": "4e81e313759d6babb9e1c36c053d2934f9e51901ac67828b7d0823af1e69d5c5",
+    "sha256": "1f64d5a71b80abc12f7a8aa12c0dd6ce935a85618ee70e9f4a83049a02bdb224"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-23T07:40:00+07:00"
+  }
+}

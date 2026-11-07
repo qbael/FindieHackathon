@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdothatlac-3492",
+  "sourceUrl": "https://timdothatlac.vn/post/3492",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:05.326309+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ kèm thẻ ngân hàng, thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả giấy tờ kèm thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả giấy tờ kèm thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hồ Chí Minh",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793808081422-4srq6rnczz.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "44e7dfd6c9240d8ba3533ebb844d70f19918fa836dd8303867b051470d63c45c",
+    "metadataChanged": false,
+    "sourceSha256": "8bf7f4df5988733a5ca8eeb53a65de94ec80ca98ca907e2cc1a7974c3ec154d4",
+    "sha256": "8bf7f4df5988733a5ca8eeb53a65de94ec80ca98ca907e2cc1a7974c3ec154d4"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-17T23:45:00+07:00"
+  }
+}

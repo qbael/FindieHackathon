@@ -1,6 +1,6 @@
 import pytest
 
-from findie_ai.ranking import location_tokens, normalize_text, rank_candidates
+from findie_ai.ranking import fuse_rankings, location_tokens, normalize_text, rank_candidates
 
 
 def candidate(item_id, description):
@@ -70,3 +70,70 @@ def test_zero_weight_channel_does_not_contribute_candidates_or_replace_source(se
                              semantic_weight=semantic_weight)
     assert [row["itemId"] for row in result] == expected
     assert result[1]["sourceId"] == ("semantic-source" if semantic_weight == 1 else "keyword-source")
+
+
+def test_multimodal_rrf_deduplicates_each_ranking_and_keeps_all_contributing_sources():
+    first, second = rank_candidates([candidate(name, "") for name in ("first", "second")], [], [], [])
+    image = first | {"sourceId": "image", "sourceKind": "image"}
+    older = first | {"documentVersion": 1}
+    hits = fuse_rankings([[image, image, second], [second, first], [older]])
+    assert [hit["itemId"] for hit in hits] == ["first", "second"]
+    assert hits[0]["score"] == pytest.approx(2 / 61 + 1 / 62)
+    assert hits[1]["score"] == pytest.approx(1 / 63 + 1 / 61)
+    assert hits[0]["sources"] == [{key: source[key] for key in (
+        "documentVersion", "sourceId", "sourceKind", "sourceVersion", "sourceSha256")}
+        for source in (image, first, older)]
+    assert len(fuse_rankings([[image], [image]], limit=1)[0]["sources"]) == 1
+    assert fuse_rankings([[], []]) == []
+    assert len(fuse_rankings([[first, second]], limit=1)) == 1
+
+
+def test_multimodal_fusion_defaults_to_fifteen_final_candidates():
+    ranking = rank_candidates([candidate(str(index), "") for index in range(20)], [], [], [])
+    hits = fuse_rankings([ranking])
+    assert len(hits) == 15
+    assert [hit["itemId"] for hit in hits] == [row["itemId"] for row in ranking[:15]]
+
+
+
+def test_combined_then_image_then_text_groups_precede_score_and_limit():
+    rows = {name: rank_candidates([candidate(name, "")], [], [], [])[0]
+            for name in ("combined", "image", "text")}
+    # Text-query evidence can also come from an image source.
+    rows["text"]["sourceKind"] = "image"
+    hits = fuse_rankings([
+        [rows["image"], rows["image"], rows["combined"]],
+        [rows["text"], rows["combined"]],
+    ], weights=[0.1, 1.0], text_index=1)
+    assert [hit["itemId"] for hit in hits] == ["combined", "image", "text"]
+    assert hits[1]["score"] < hits[2]["score"]
+    assert hits[1]["score"] == pytest.approx(0.1 / 61)
+    assert hits[2]["imageScore"] == 0
+    assert hits[2]["textScore"] == pytest.approx(1 / 61)
+    assert all(hit["score"] == hit["imageScore"] + hit["textScore"] for hit in hits)
+    assert len({hit["itemId"] for hit in hits}) == len(hits)
+    assert fuse_rankings([[rows["image"], rows["combined"]], [rows["text"], rows["combined"]]],
+                         1, text_index=1)[0]["itemId"] == "combined"
+
+
+def test_fusion_sorts_each_group_by_its_score():
+    rows = {name: rank_candidates([candidate(name, "")], [], [], [])[0]
+            for name in ("shared-a", "shared-b", "image-a", "image-b", "text-a", "text-b")}
+    hits = fuse_rankings([
+        [rows[name] for name in ("image-a", "shared-a", "image-b", "shared-b")],
+        [rows[name] for name in ("text-a", "shared-a", "text-b", "shared-b")],
+    ], weights=[1.0, 0.5], text_index=1)
+    assert [hit["itemId"] for hit in hits] == [
+        "shared-a", "shared-b", "image-a", "image-b", "text-a", "text-b"]
+
+
+
+def test_both_query_branches_with_image_sources_still_form_combined_group():
+    hit = rank_candidates([candidate("bottle", "")], [], [], [])[0] | {"sourceKind": "image"}
+    image_hit = hit | {"sourceId": "photo-one"}
+    text_hit = hit | {"sourceId": "photo-two"}
+    result = fuse_rankings([[image_hit], [text_hit]], weights=[1.0, 0.5], text_index=1)
+    assert len(result) == 1
+    assert result[0]["imageScore"] == pytest.approx(1 / 61)
+    assert result[0]["textScore"] == pytest.approx(0.5 / 61)
+    assert {source["sourceId"] for source in result[0]["sources"]} == {"photo-one", "photo-two"}

@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-4953",
+  "sourceUrl": "https://timdo24h.com/4953",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:37.598539+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/67aedaca-43e0-4ebc-9811-e2523701226d.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "9db2569a43bce04f0152038544ca01701d427488d09c77784da05624c07852e3",
+    "metadataChanged": true,
+    "sourceSha256": "663f6903627037c1216f62f98c277009caf59b7504726b8a7db603b5d0b2eec4",
+    "sha256": "d46ce416815c7ad62bb3b7a26cd9345489bedbf8f0dcb340293d2a764cc01055"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000005",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-02"
+  }
+}

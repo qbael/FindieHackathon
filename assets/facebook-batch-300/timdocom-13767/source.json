@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-13767",
+  "sourceUrl": "https://timdo24h.com/13767",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:45.556480+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Nghệ An. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Nghệ An. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Nghệ An",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/c970b307-79da-4561-976e-291a3e9dda8e.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "3b492e94865fab918706a18cbedabb48b85129ea368a760dbaf0f97bdf669584",
+    "metadataChanged": true,
+    "sourceSha256": "257ccb066f3cce51360861c6d7e1e3e2a0f4be91d36232c75ff080dad26d4638",
+    "sha256": "c2c5d7ff9e40240fdf7e8f6bd67cd8392d45195336f00121d2a571e82d66d75f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy trực cửa hàng (giả định)",
+      "address": "Quầy phục vụ gần cửa vào, Nghệ An (địa điểm mô phỏng).",
+      "instructions": "Trao đổi với người trực ca chiều; cung cấp thời điểm và đặc điểm nhận dạng."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

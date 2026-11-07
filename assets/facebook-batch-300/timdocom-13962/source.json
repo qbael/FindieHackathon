@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-13962",
+  "sourceUrl": "https://timdo24h.com/13962",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:50.184320+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví",
+  "sourceText": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/c76b8eae-1547-48d4-a3ad-2e4a499fb945.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "9340f82986b7d70e710df01ee7e1d5d246d674679a7f2693141f166aa319f56b",
+    "metadataChanged": true,
+    "sourceSha256": "f0720a58c0ede3112d8acf7bf7839d32bb38371a8269d1d5aae0a11f814ae25c",
+    "sha256": "2bad6895bc269d302fe3adaf88f8cb13e742e608f16a6da9d4b58b502afb4b03"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000005",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-09T18:30:00+07:00"
+  }
+}

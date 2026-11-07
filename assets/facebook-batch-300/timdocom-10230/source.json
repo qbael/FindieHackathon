@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-10230",
+  "sourceUrl": "https://timdo24h.com/10230",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:58.939892+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hưng Yên. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hưng Yên. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hưng Yên",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/169c4660-9935-418e-b8c2-bbcc1454b1a3.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "672af3fdf8842c01afcce57e39af77d194f9f32ef7f6b6a32d3739d3d2460aa2",
+    "metadataChanged": true,
+    "sourceSha256": "d336536194e630c41edea0e5ae0dabb235c6e7d6013f6595ad336c9d0acdc330",
+    "sha256": "098b7c91cb8f3c82cc86e99de438e109a1781b1a68701598ecbd7e7b298fcd18"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, Hưng Yên (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-19T14:45:00+07:00",
+    "foundUntil": "2026-08-19T17:00:00+07:00"
+  }
+}
