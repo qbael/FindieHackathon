@@ -113,6 +113,53 @@ export type CustodyEvent = {
   occurredAt: string;
 };
 
+export type ProblemDetails = {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  errors?: Record<string, string[] | string>;
+  message?: string;
+};
+
+export function extractProblemMessage(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const problem = data as ProblemDetails;
+
+  if (problem.errors && typeof problem.errors === "object") {
+    const errorMessages: string[] = [];
+    for (const val of Object.values(problem.errors)) {
+      if (Array.isArray(val)) {
+        for (const msg of val) {
+          if (typeof msg === "string" && msg.trim()) errorMessages.push(msg.trim());
+        }
+      } else if (typeof val === "string" && val.trim()) {
+        errorMessages.push(val.trim());
+      }
+    }
+    if (errorMessages.length > 0) {
+      return errorMessages.join(" ");
+    }
+  }
+
+  if (typeof problem.detail === "string" && problem.detail.trim()) {
+    return problem.detail.trim();
+  }
+
+  if (typeof problem.title === "string" && problem.title.trim()) {
+    const trimmed = problem.title.trim();
+    if (trimmed !== "One or more validation errors occurred.") {
+      return trimmed;
+    }
+  }
+
+  if (typeof problem.message === "string" && problem.message.trim()) {
+    return problem.message.trim();
+  }
+
+  return null;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -151,12 +198,21 @@ export async function api<T>(
       "Chưa kết nối được máy chủ. Hãy kiểm tra kết nối và thử lại.",
     );
   }
-  if (!response.ok)
+  if (!response.ok) {
+    let serverMessage: string | null = null;
+    try {
+      const data = await response.json();
+      serverMessage = extractProblemMessage(data);
+    } catch {
+      // Body không phải JSON hoặc rỗng, dùng failureMessages dự phòng
+    }
     throw new ApiError(
       response.status,
-      failureMessages[response.status] ??
+      serverMessage ||
+        failureMessages[response.status] ||
         "Máy chủ chưa hoàn tất thao tác. Vui lòng thử lại.",
     );
+  }
   if (response.status === 204) return undefined as T;
   try {
     return (await response.json()) as T;

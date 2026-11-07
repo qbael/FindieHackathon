@@ -28,6 +28,9 @@ const paths = {
   document: "M14 2H5v20h14V7l-5-5Zm0 0v6h5M8 12h8m-8 4h6",
   building: "M3 21h18M5 21V3h14v18M9 7h1m4 0h1M9 11h1m4 0h1m-4 10v-5h2v5",
   refresh: "M20 7a9 9 0 1 0 1 8M20 2v6h-6",
+  users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  grid: "M3 3h7v7H3zm11 0h7v7h-7zm0 11h7v7h-7zM3 14h7v7H3z",
+  trash: "M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
 } as const;
 export function Icon({
   name,
@@ -116,7 +119,7 @@ export function EmptyState({
 }: {
   title: string;
   children: ReactNode;
-  icon?: "box" | "chat" | "search" | "document";
+  icon?: keyof typeof paths;
 }) {
   return (
     <div className="empty-state">

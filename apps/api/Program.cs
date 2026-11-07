@@ -127,9 +127,19 @@ builder.Services.AddAntiforgery(options =>
     options.SuppressReadingTokenFromFormBody = true;
     options.Cookie.SecurePolicy = cookieSecurity;
 });
-builder.Services.AddAuthorization(options => options.DefaultPolicy = new AuthorizationPolicyBuilder()
-    .RequireAuthenticatedUser().AddRequirements(new ActiveUserRequirement()).Build());
+var adminEmailsConfig = builder.Configuration["AdminEmails"]
+    ?? builder.Configuration["ADMIN_EMAILS"]
+    ?? builder.Configuration["Admin:Emails"];
+builder.Services.AddSingleton(new AdminOptions(adminEmailsConfig));
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser().AddRequirements(new ActiveUserRequirement()).Build();
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAuthenticatedUser().AddRequirements(new ActiveUserRequirement(), new AdminUserRequirement()));
+});
 builder.Services.AddScoped<IAuthorizationHandler, ActiveUserHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminUserHandler>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReceptionPointRepository, ReceptionPointRepository>();
