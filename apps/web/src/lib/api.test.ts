@@ -130,3 +130,76 @@ test("failed sessions and malformed CSRF prevent writes; response failures stay 
   );
   await assert.rejects(api("/api/items"), /Phản hồi máy chủ chưa hợp lệ/);
 });
+
+test("server ProblemDetails errors extract title, detail, or validation errors cleanly", async () => {
+  // Test with title
+  mock.restoreAll();
+  mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(
+        JSON.stringify({
+          status: 404,
+          title: "Không tìm thấy người dùng với email 'oanhtran01011971@gmail.con'.",
+        }),
+        { status: 404, headers: { "Content-Type": "application/problem+json" } },
+      ),
+  );
+  await assert.rejects(
+    api("/api/admin/points/p1/staff"),
+    (error) =>
+      error instanceof ApiError &&
+      error.status === 404 &&
+      error.message === "Không tìm thấy người dùng với email 'oanhtran01011971@gmail.con'.",
+  );
+
+  // Test with detail
+  mock.restoreAll();
+  mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(
+        JSON.stringify({
+          status: 400,
+          title: "Bad Request",
+          detail: "Nhân viên trạm phải có ít nhất quyền Tiếp nhận hoặc Trao trả.",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      ),
+  );
+  await assert.rejects(
+    api("/api/admin/points/p1/staff"),
+    (error) =>
+      error instanceof ApiError &&
+      error.status === 400 &&
+      error.message === "Nhân viên trạm phải có ít nhất quyền Tiếp nhận hoặc Trao trả.",
+  );
+
+  // Test with validation errors
+  mock.restoreAll();
+  mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(
+        JSON.stringify({
+          status: 400,
+          title: "One or more validation errors occurred.",
+          errors: {
+            UserEmail: ["Email không đúng định dạng."],
+          },
+        }),
+        { status: 400, headers: { "Content-Type": "application/problem+json" } },
+      ),
+  );
+  await assert.rejects(
+    api("/api/admin/points/p1/staff"),
+    (error) =>
+      error instanceof ApiError &&
+      error.status === 400 &&
+      error.message === "Email không đúng định dạng.",
+  );
+  mock.restoreAll();
+});

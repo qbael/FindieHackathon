@@ -15,6 +15,9 @@ export type MockUser = {
   email: string | null;
   displayName: string;
   createdAt: string;
+  isAdmin?: boolean;
+  isStaff?: boolean;
+  managedPoints?: Array<{ id: string; name: string }>;
 };
 
 export const defaultMockUser: MockUser = {
@@ -22,6 +25,31 @@ export const defaultMockUser: MockUser = {
   email: 'tester@findie.vn',
   displayName: 'Nguyễn Văn Test',
   createdAt: '2026-11-01T00:00:00Z',
+  isAdmin: false,
+  isStaff: false,
+  managedPoints: [],
+};
+
+export const defaultMockAdminUser: MockUser = {
+  id: 'u-admin-test-01',
+  email: 'admin@findie.vn',
+  displayName: 'Super Admin',
+  createdAt: '2026-11-01T00:00:00Z',
+  isAdmin: true,
+  isStaff: false,
+  managedPoints: [],
+};
+
+export const defaultMockStaffUser: MockUser = {
+  id: 'u-staff-test-01',
+  email: 'staff@findie.vn',
+  displayName: 'Nguyễn Văn Trực Trạm',
+  createdAt: '2026-11-01T00:00:00Z',
+  isAdmin: false,
+  isStaff: true,
+  managedPoints: [
+    { id: 'point-dh-sgu-01', name: 'Trạm Tiếp Nhận - ĐH Sài Gòn' },
+  ],
 };
 
 export type MockScenarioOptions = {
@@ -69,8 +97,22 @@ export async function setupDefaultApiMocks(
     const url = new URL(route.request().url());
     const q = url.searchParams.get('q')?.toLowerCase() ?? '';
     const area = url.searchParams.get('area')?.toLowerCase() ?? '';
+    const scope = url.searchParams.get('scope');
 
     let filtered = items;
+    if (scope === 'managed') {
+      await route.fulfill({
+        status: 200,
+        json: {
+          items: filtered,
+          page: 1,
+          pageSize: 12,
+          hasMore: false,
+        },
+      });
+      return;
+    }
+
     if (q) {
       filtered = filtered.filter(
         (it: any) =>
@@ -208,6 +250,31 @@ export async function setupDefaultApiMocks(
     });
   });
 
+  // 4b. Item Custody Events
+  await page.route(/\/api\/items\/([\da-f-]+)\/custody-events(\?.*)?$/i, async (route) => {
+    const match = route.request().url().match(/\/api\/items\/([\da-f-]+)\/custody-events(\?.*)?$/i);
+    const itemId = match ? match[1] : items[0]?.id ?? 'item-01';
+    await route.fulfill({
+      status: 200,
+      json: {
+        items: [
+          {
+            id: 'evt-01',
+            itemId,
+            eventKind: 'received',
+            custodyVersion: 2,
+            actorUserId: user?.id ?? 'u-staff-test-01',
+            fromCustody: { kind: 'person' },
+            occurredAt: '2026-11-06T11:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        hasMore: false,
+      },
+    });
+  });
+
   // 5. Post Item Creation
   await page.route('**/api/items', async (route) => {
     if (route.request().method() === 'POST') {
@@ -267,12 +334,26 @@ export async function setupDefaultApiMocks(
       status: 200,
       json: [
         {
-          id: 'point-hub-01',
-          name: 'Findie Hub Sài Gòn A',
+          id: 'point-dh-sgu-01',
+          name: 'Trạm Tiếp Nhận - ĐH Sài Gòn',
           publicAddress: '273 An Dương Vương, Phường 3, Quận 5',
           directions: 'Quầy tiếp nhận tại sảnh A',
         },
       ],
+    });
+  });
+
+  await page.route(/\/api\/reception-points\/([\da-z-]+)$/i, async (route) => {
+    const match = route.request().url().match(/\/api\/reception-points\/([\da-z-]+)$/i);
+    const id = match ? match[1] : 'point-dh-sgu-01';
+    await route.fulfill({
+      status: 200,
+      json: {
+        id,
+        name: 'Trạm Tiếp Nhận - ĐH Sài Gòn',
+        publicAddress: '273 An Dương Vương, Phường 3, Quận 5',
+        directions: 'Quầy tiếp nhận tại sảnh A',
+      },
     });
   });
 
@@ -324,6 +405,325 @@ export async function setupDefaultApiMocks(
             answerText: 'Doraemon đeo chuông vàng',
           },
         ],
+      },
+    });
+  });
+
+  // 9. Admin Portal API Mocks
+  let mockAdminUsersList = [
+    {
+      id: 'u-admin-test-01',
+      email: 'admin@findie.vn',
+      displayName: 'Super Admin',
+      createdAt: '2026-11-01T00:00:00Z',
+      disabledAt: null,
+      isAdmin: true,
+      itemsCount: 5,
+    },
+    {
+      id: 'u-target-02',
+      email: 'user.spam@example.com',
+      displayName: 'Người Dùng Khả Nghi',
+      createdAt: '2026-11-02T10:00:00Z',
+      disabledAt: null,
+      isAdmin: false,
+      itemsCount: 1,
+    },
+  ];
+
+  let mockAdminItemsList = [
+    {
+      id: 'item-mod-01',
+      title: 'Ví da cá sấu màu nâu',
+      publicDescription: 'Ví da rơi tại sảnh B cơ sở 1',
+      foundArea: 'Cơ sở 1 - Khu A',
+      foundTimePrecision: 'date',
+      foundOn: '2026-11-05',
+      foundFrom: null,
+      foundUntil: null,
+      lifecycle: 'active',
+      publicationState: 'published',
+      rowVersion: 1,
+      createdAt: '2026-11-05T08:30:00Z',
+      updatedAt: '2026-11-05T08:30:00Z',
+      authorId: 'u-author-01',
+      authorDisplayName: 'Trần Thị Tìm Thấy',
+      authorEmail: 'author@example.com',
+      custodyKind: 'person',
+      holderPointId: null,
+      holderPointName: null,
+      images: [
+        {
+          id: 'img-mod-01',
+          position: 1,
+          contentVersion: 1,
+          processingState: 'completed',
+          reviewState: 'approved',
+          failureCode: null,
+          retiredAt: null,
+          previewUrl: '/assets/sample-item.jpg',
+          redactionModelId: 'mock-redact',
+          redactionProfile: 'standard',
+        },
+      ],
+    },
+  ];
+
+  let mockAdminPointsList = [
+    {
+      id: 'point-dh-sgu-01',
+      name: 'Trạm Tiếp Nhận - ĐH Sài Gòn',
+      publicAddress: '273 An Dương Vương, Phường 3, Quận 5',
+      directions: 'Quầy tiếp nhận tại sảnh A',
+      active: true,
+      createdAt: '2026-10-01T00:00:00Z',
+      staffCount: 1,
+      itemsCount: 3,
+    },
+  ];
+
+  await page.route('**/api/admin/overview', async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        totalItems: 42,
+        activeItems: 28,
+        returnedItems: 12,
+        hiddenItems: 2,
+        totalUsers: 150,
+        activeUsers: 147,
+        disabledUsers: 3,
+        totalHubs: 5,
+        activeHubs: 5,
+        totalCustodyEvents: 85,
+        totalHandovers: 12,
+      },
+    });
+  });
+
+  await page.route(/\/api\/admin\/users(\?.*)?$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    const url = new URL(route.request().url());
+    const query = url.searchParams.get('query')?.toLowerCase() ?? '';
+    let filtered = mockAdminUsersList;
+    if (query) {
+      filtered = filtered.filter(
+        (u) =>
+          u.displayName.toLowerCase().includes(query) ||
+          (u.email && u.email.toLowerCase().includes(query))
+      );
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        items: filtered,
+        page: 1,
+        pageSize: 20,
+        hasMore: false,
+      },
+    });
+  });
+
+  await page.route(/\/api\/admin\/users\/([\da-z-]+)\/toggle-status$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    const match = route.request().url().match(/\/api\/admin\/users\/([\da-z-]+)\/toggle-status$/i);
+    const targetId = match ? match[1] : '';
+    const found = mockAdminUsersList.find((u) => u.id === targetId);
+    if (!found) {
+      await route.fulfill({ status: 404, json: { message: 'User not found' } });
+      return;
+    }
+    found.disabledAt = found.disabledAt ? null : new Date().toISOString();
+    await route.fulfill({
+      status: 200,
+      json: found,
+    });
+  });
+
+  await page.route(/\/api\/admin\/items(\?.*)?$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    const url = new URL(route.request().url());
+    const query = url.searchParams.get('query')?.toLowerCase() ?? '';
+    let filtered = mockAdminItemsList;
+    if (query) {
+      filtered = filtered.filter(
+        (i) =>
+          i.title.toLowerCase().includes(query) ||
+          i.publicDescription.toLowerCase().includes(query)
+      );
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        items: filtered,
+        page: 1,
+        pageSize: 20,
+        hasMore: false,
+      },
+    });
+  });
+
+  await page.route(/\/api\/admin\/items\/([\da-z-]+)\/set-publication$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    const match = route.request().url().match(/\/api\/admin\/items\/([\da-z-]+)\/set-publication$/i);
+    const targetId = match ? match[1] : '';
+    const postData = route.request().postDataJSON();
+    const found = mockAdminItemsList.find((i) => i.id === targetId);
+    if (found) {
+      found.publicationState = postData.publicationState;
+      found.rowVersion += 1;
+      found.updatedAt = new Date().toISOString();
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        id: targetId,
+        publicationState: postData?.publicationState ?? 'hidden',
+        rowVersion: found ? found.rowVersion : 2,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  });
+
+  await page.route(/\/api\/admin\/items\/([\da-z-]+)\/images\/([\da-z-]+)\/retire$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    const match = route.request().url().match(/\/api\/admin\/items\/([\da-z-]+)\/images\/([\da-z-]+)\/retire$/i);
+    await route.fulfill({
+      status: 200,
+      json: {
+        id: match ? match[2] : 'img-retired',
+        itemId: match ? match[1] : 'item-mod-01',
+        retiredAt: new Date().toISOString(),
+        reviewState: 'rejected',
+      },
+    });
+  });
+
+  await page.route(/\/api\/admin\/points(\?.*)?$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        json: mockAdminPointsList,
+      });
+    } else if (route.request().method() === 'POST') {
+      const postData = route.request().postDataJSON();
+      const newPoint = {
+        id: `point-new-${Date.now()}`,
+        name: postData.name,
+        publicAddress: postData.publicAddress,
+        directions: postData.directions ?? null,
+        active: true,
+        createdAt: new Date().toISOString(),
+        staffCount: 0,
+        itemsCount: 0,
+      };
+      mockAdminPointsList.push(newPoint);
+      await route.fulfill({ status: 201, json: newPoint });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.route(/\/api\/admin\/points\/([\da-z-]+)\/staff$/i, async (route) => {
+    if (!user?.isAdmin) {
+      await route.fulfill({ status: 403, json: { message: 'Forbidden' } });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      json: [
+        {
+          pointId: 'point-dh-sgu-01',
+          userId: 'u-staff-test-01',
+          email: 'staff@findie.vn',
+          displayName: 'Nguyễn Văn Trực Trạm',
+          canReceive: true,
+          canReturn: true,
+          assignedAt: '2026-10-15T00:00:00Z',
+          revokedAt: null,
+        },
+      ],
+    });
+  });
+
+  // 10. Intake Requests (Hub Workspace)
+  let mockIntakesList = [
+    {
+      id: 'intake-req-01',
+      itemId: 'e4b2d380-6bc7-4d98-b80c-e2f4a56c0001',
+      pointId: 'point-dh-sgu-01',
+      senderUserId: 'u-sender-01',
+      status: 'pending',
+      stale: false,
+      itemRowVersion: 1,
+      createdAt: '2026-11-06T10:00:00Z',
+      decidedAt: null,
+      decisionNote: null,
+    },
+  ];
+
+  await page.route(/\/api\/intake-requests(\?.*)?$/i, async (route) => {
+    if (route.request().method() === 'GET') {
+      const url = new URL(route.request().url());
+      const status = url.searchParams.get('status');
+      let filtered = mockIntakesList;
+      if (status && status !== 'all') {
+        filtered = filtered.filter((i) => i.status === status);
+      }
+      await route.fulfill({
+        status: 200,
+        json: {
+          items: filtered,
+          page: 1,
+          pageSize: 12,
+          hasMore: false,
+        },
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.route(/\/api\/intake-requests\/([\da-z-]+)\/decision$/i, async (route) => {
+    const match = route.request().url().match(/\/api\/intake-requests\/([\da-z-]+)\/decision$/i);
+    const intakeId = match ? match[1] : '';
+    const postData = route.request().postDataJSON();
+    const found = mockIntakesList.find((i) => i.id === intakeId);
+    if (found) {
+      found.status = postData.decision === 'received' ? 'received' : 'rejected';
+      found.decidedAt = new Date().toISOString();
+      found.decisionNote = postData.note ?? null;
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        id: intakeId,
+        status: postData?.decision ?? 'received',
+        decidedAt: new Date().toISOString(),
+        decisionNote: postData?.note ?? null,
       },
     });
   });

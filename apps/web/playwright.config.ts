@@ -34,7 +34,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'node ./node_modules/vite/bin/vite.js',
     cwd: __dirname,
     url: baseURL,
     reuseExistingServer: !process.env.CI,

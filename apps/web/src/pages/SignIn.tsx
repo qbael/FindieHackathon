@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadUser, logout, type UserProfile } from "../lib/auth";
+import { loadUser, logout, resolveReturnUrl, type UserProfile } from "../lib/auth";
 import { readSystemStatus } from "../lib/status";
 import { safeReturnUrl } from "../lib/api";
 import identityShield from "../assets/login/identity-shield.svg";
@@ -155,7 +155,7 @@ export default function SignIn() {
                     {user.displayName}
                   </span>
                 </p>
-                <a className={providerClass} href={returnUrl}>
+                <a className={providerClass} href={resolveReturnUrl(returnUrl, user)}>
                   Tiếp tục với Findie <img src={chevronRight} alt="" />
                 </a>
                 <button

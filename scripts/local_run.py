@@ -20,8 +20,8 @@ def runtime_environment(environment, service):
         if service == "ai" and (key.startswith("AI_") and key not in {"AI_SEARCH_MIGRATION_DSN", "AI_TEST_DATABASE_URL"}
                                 or key in {"OLLAMA_BASE_URL", "OLLAMA_API_KEY"}):
             platform[key] = value
-        if service == "api" and (key.startswith(("Ai__", "Authentication__", "Storage__", "RabbitMq__", "Logging__"))
-                                 or key == "ConnectionStrings__Database"):
+        if service == "api" and (key.startswith(("Ai__", "Authentication__", "Storage__", "RabbitMq__", "Logging__", "Admin"))
+                                 or key in {"ConnectionStrings__Database", "ADMIN_EMAILS", "AdminEmails"}):
             platform[key] = value
     return platform
 

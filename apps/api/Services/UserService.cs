@@ -1,16 +1,17 @@
 using Findie.Api.Contracts;
 using Findie.Api.Models;
 using Findie.Api.Repositories;
+using Findie.Api.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Findie.Api.Services;
 
-public sealed class UserService(IUserRepository users) : IUserService
+public sealed class UserService(IUserRepository users, AdminOptions adminOptions) : IUserService
 {
     public async Task<UserProfile?> GetProfileAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await users.GetByIdAsync(userId, cancellationToken);
-        return user is null || user.DisabledAt is not null ? null : ToProfile(user);
+        return user is null || user.DisabledAt is not null ? null : await ToProfileAsync(user, cancellationToken);
     }
 
     public async Task<UserProfile?> UpdateProfileAsync(Guid userId, UpdateUserRequest request, CancellationToken cancellationToken)
@@ -31,8 +32,13 @@ public sealed class UserService(IUserRepository users) : IUserService
                 throw new DbUpdateConcurrencyException("The profile changed; reload before saving.");
             throw new InvalidOperationException("The profile could not be updated.");
         }
-        return ToProfile(user);
+        return await ToProfileAsync(user, cancellationToken);
     }
 
-    private static UserProfile ToProfile(ApplicationUser user) => new(user.Id, user.Email, user.DisplayName, user.CreatedAt);
+    private async Task<UserProfile> ToProfileAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        var managedPoints = await users.ListManagedPointsAsync(user.Id, cancellationToken);
+        return new(user.Id, user.Email, user.DisplayName, user.CreatedAt, adminOptions.IsAdmin(user.Email),
+            managedPoints.Count > 0, managedPoints);
+    }
 }

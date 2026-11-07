@@ -74,7 +74,15 @@ with ThreadingHTTPServer(("127.0.0.1", 0), AiHandler) as ai, tempfile.TemporaryF
             "name": "Findie API", "stage": "scaffold", "database": "unavailable", "ai": "unavailable",
             "features": {"business": True, "authentication": False, "storage": False},
         }
-        for path in ("/api/users/me", "/api/reception-points", "/api/reception-points/00000000-0000-0000-0000-000000000001"):
+        for path in (
+            "/api/users/me",
+            "/api/reception-points",
+            "/api/reception-points/00000000-0000-0000-0000-000000000001",
+            "/api/admin/overview",
+            "/api/admin/users",
+            "/api/admin/items",
+            "/api/admin/points",
+        ):
             assert get(path) == (401, None)
         assert get("/api/auth/google")[0] == 503
         assert get("/api/auth/google?returnUrl=https://evil.example")[0] == 400

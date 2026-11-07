@@ -26,6 +26,7 @@ if (new NpgsqlConnectionStringBuilder(connection).Database?.StartsWith("findie_t
     throw new InvalidOperationException("Integration checks only accept a findie_test_ database.");
 
 Environment.SetEnvironmentVariable("Ai__ServiceToken", "integration-token");
+Environment.SetEnvironmentVariable("AdminEmails", "admin@example.test");
 Environment.SetEnvironmentVariable("Authentication__Google__ClientId", "integration-client");
 Environment.SetEnvironmentVariable("Authentication__Google__ClientSecret", "integration-secret");
 if (!args.Contains("--cross-service-only"))
@@ -87,7 +88,7 @@ await GoogleLogin(client, "owner", "owner@example.test", verified: true, HttpSta
 var profile = await Read(client, "/api/users/me");
 Check(profile.GetProperty("email").GetString() == "owner@example.test", "Google identity persisted");
 Check(profile.EnumerateObject().Select(property => property.Name).Order().SequenceEqual(
-    new[] { "createdAt", "displayName", "email", "id" }), "profile DTO exposes only safe fields");
+    new[] { "createdAt", "displayName", "email", "id", "isAdmin", "isStaff", "managedPoints" }), "profile DTO exposes only safe fields");
 var ownerId = profile.GetProperty("id").GetGuid();
 
 await Expect(client.PutAsJsonAsync("/api/users/me", new { displayName = "Updated" }), HttpStatusCode.BadRequest, "writes require CSRF");
@@ -150,6 +151,8 @@ await RecoveryChecks.RunAsync(factory, async (browser, subject) =>
 await ItemDeletionChecks.RunAsync(factory, aiGateway, async (browser, subject) =>
     await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
 await ImageSearchChecks.RunAsync(factory, aiGateway, storage, async (browser, subject) =>
+    await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
+await AdminChecks.RunAsync(factory, async (browser, subject) =>
     await GoogleLogin(browser, subject, subject + "@example.test", true, HttpStatusCode.Redirect));
 await BrokerChecks.RunAsync(factory.Services.GetRequiredService<IServiceScopeFactory>());
 using (var seedScope = factory.Services.CreateScope())

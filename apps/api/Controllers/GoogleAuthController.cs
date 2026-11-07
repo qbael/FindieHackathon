@@ -11,12 +11,15 @@ namespace Findie.Api.Controllers;
 [Route("api/auth/google")]
 public sealed class GoogleAuthController(
     IGoogleAuthService authentication,
+    IUserService users,
     SignInManager<ApplicationUser> signIn,
     IAuthenticationSchemeProvider schemes) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Login([FromQuery] string returnUrl = "/")
     {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            returnUrl = "/";
         if (!Url.IsLocalUrl(returnUrl))
             return Problem(statusCode: 400, title: "Return URL must be a local path.");
         if (await schemes.GetSchemeAsync(GoogleDefaults.AuthenticationScheme) is null)
@@ -29,15 +32,27 @@ public sealed class GoogleAuthController(
     }
 
     [HttpGet("callback")]
-    public async Task<IActionResult> Callback([FromQuery] string returnUrl = "/")
+    public async Task<IActionResult> Callback([FromQuery] string returnUrl = "/", CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            returnUrl = "/";
         if (!Url.IsLocalUrl(returnUrl))
             return Problem(statusCode: 400, title: "Return URL must be a local path.");
         try
         {
-            if (!await authentication.CompleteSignInAsync())
+            if (await authentication.CompleteSignInAsync() is not { } userId)
                 return Problem(statusCode: 401, title: "Google authentication failed.");
-            return LocalRedirect(returnUrl);
+            if (returnUrl != "/")
+                return LocalRedirect(returnUrl);
+
+            // Direct sign-ins land in the workspace matching the account's role; deep links are never overridden.
+            var profile = await users.GetProfileAsync(userId, cancellationToken);
+            return LocalRedirect(profile switch
+            {
+                { IsAdmin: true } => "/admin",
+                { IsStaff: true } => "/hub",
+                _ => "/"
+            });
         }
         finally
         {
