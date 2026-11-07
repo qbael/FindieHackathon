@@ -291,7 +291,7 @@ export default function HubInventory({
             </div>
           )}
 
-          <Pagination page={page} hasMore={itemsPage.hasMore} />
+          <Pagination page={page} totalPages={itemsPage.totalPages} />
         </>
       )}
 

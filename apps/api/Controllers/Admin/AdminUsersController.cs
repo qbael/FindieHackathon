@@ -44,6 +44,7 @@ public sealed class AdminUsersController(FindieDbContext database, AdminOptions 
             .ToListAsync(cancellationToken);
 
         var hasMore = users.Count > pageSize;
+        var totalPages = Math.Clamp((int)Math.Ceiling((double)total / pageSize), 1, 10000);
         var pagedUsers = users.Take(pageSize).Select(u => new AdminUserResponse(
             Id: u.Id,
             Email: u.Email,
@@ -54,7 +55,7 @@ public sealed class AdminUsersController(FindieDbContext database, AdminOptions 
             ItemsCount: u.ItemsCount
         )).ToList();
 
-        return Ok(new PageResponse<AdminUserResponse>(pagedUsers, page, pageSize, hasMore));
+        return Ok(new PageResponse<AdminUserResponse>(pagedUsers, page, pageSize, hasMore, totalPages));
     }
 
     [HttpPost("{id:guid}/toggle-status")]

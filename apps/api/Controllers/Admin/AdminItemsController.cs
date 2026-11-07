@@ -49,6 +49,7 @@ public sealed class AdminItemsController(FindieDbContext database) : AdminContro
             .ToListAsync(cancellationToken);
 
         var hasMore = items.Count > pageSize;
+        var totalPages = Math.Clamp((int)Math.Ceiling((double)total / pageSize), 1, 10000);
         var pagedItems = items.Take(pageSize).Select(i => new AdminItemResponse(
             Id: i.Id,
             Title: i.Title,
@@ -83,7 +84,7 @@ public sealed class AdminItemsController(FindieDbContext database) : AdminContro
             )).ToList()
         )).ToList();
 
-        return Ok(new PageResponse<AdminItemResponse>(pagedItems, page, pageSize, hasMore));
+        return Ok(new PageResponse<AdminItemResponse>(pagedItems, page, pageSize, hasMore, totalPages));
     }
 
     [HttpPost("{id:guid}/set-publication")]

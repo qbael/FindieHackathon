@@ -298,7 +298,7 @@ export default function HubIntakes({
             </div>
           )}
 
-          <Pagination page={page} hasMore={intakesPage.hasMore} />
+          <Pagination page={page} totalPages={intakesPage.totalPages} />
         </>
       )}
 
