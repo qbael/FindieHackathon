@@ -1,0 +1,42 @@
+{
+  "sourceId": "timdocom-13433",
+  "sourceUrl": "https://timdo24h.com/13433",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:30.180786+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/5185a4d8-43d5-4131-8b47-59ee7f5739eb.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ sinh viên",
+    "Thẻ căn cước",
+    "Giấy phép lái xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "116709ace932402ea4f3081bf83befc4fc9517f21d50f4cb6df5a61c108fca69",
+    "metadataChanged": false,
+    "sourceSha256": "fbd66e99b68201fa0ee419ea6a95f18a818a6647dfff32d61b850d8d8f586af0",
+    "sha256": "fbd66e99b68201fa0ee419ea6a95f18a818a6647dfff32d61b850d8d8f586af0"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-24T14:45:00+07:00",
+    "foundUntil": "2026-08-24T15:15:00+07:00"
+  }
+}

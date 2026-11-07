@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-13866",
+  "sourceUrl": "https://timdo24h.com/13866",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:52.978893+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu vàng kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu vàng kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu vàng kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/241b93b9-c99d-4615-8e4f-08e8ce022a3f.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ sinh viên",
+    "Thẻ ngân hàng",
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "26736fd67063e84ab58bf9c20dcef4dcc3c280b5f57dd88b30851e401752ef6e",
+    "metadataChanged": false,
+    "sourceSha256": "815d8c1dc16d1e90d8fb6295400c0fda322e994f1aee707e7e3fc3910d8ded18",
+    "sha256": "815d8c1dc16d1e90d8fb6295400c0fda322e994f1aee707e7e3fc3910d8ded18"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-08"
+  }
+}

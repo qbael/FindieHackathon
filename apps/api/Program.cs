@@ -16,7 +16,11 @@ using System.Threading.RateLimiting;
 using Findie.Api.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 var seedLocal = args.Contains("--seed-local", StringComparer.Ordinal);
-var builder = WebApplication.CreateBuilder(seedLocal ? [] : args);
+var importPublicSamples = args.Contains("--import-public-samples", StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(seedLocal || importPublicSamples ? [] : args);
+
+if (importPublicSamples && !builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("Source sample import is allowed only in Development.");
 
 if (seedLocal)
 {
@@ -179,6 +183,12 @@ builder.Services.AddHttpClient("ai", client =>
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
 var app = builder.Build();
+
+if (importPublicSamples)
+{
+    Environment.ExitCode = await LocalPublicSamples.RunAsync(app.Services, args, Console.Out);
+    return;
+}
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {

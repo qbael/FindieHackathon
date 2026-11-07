@@ -1,0 +1,15 @@
+{
+  "scope": "Visually reviewed processed images for owner draft display; no publication authorized by this review.",
+  "images": [
+    {
+      "imageId": "177efdb3-5277-468f-9195-af233ce4f5da",
+      "contentVersion": 1,
+      "sha256": "40592588544cc8666575a8b7245d1383569087fe73d29791e237e62a97e0b6bf"
+    },
+    {
+      "imageId": "df053e25-92b3-4388-846c-0fa9f4ff9197",
+      "contentVersion": 1,
+      "sha256": "6dbb52663938e55e6bc7e47faf94b7bb4e774443f5f85fbfb035874f93b83792"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
 } from "../lib/api";
 import { useResource } from "../hooks/hooks";
 import { SearchImages } from "../components/SearchImages";
+import { vietnamLocal } from "../lib/itemForm";
 import {
   basicSearchUrl,
   searchImages,
@@ -30,6 +31,22 @@ import {
   Pagination,
   SafetyNote,
 } from "../components/ui";
+
+function LostTimeInput({ defaultValue, disabled }: { defaultValue?: string; disabled?: boolean }) {
+  return (
+    <label className="search-lost-time">
+      Thời điểm mất ước tính (không bắt buộc)
+      <input
+        name="lostAt"
+        type="datetime-local"
+        defaultValue={defaultValue}
+        max={vietnamLocal(new Date().toISOString())}
+        disabled={disabled}
+      />
+      <span className="field-hint">Giờ Việt Nam · Ưu tiên món được nhặt gần sau thời điểm này.</span>
+    </label>
+  );
+}
 
 export function Home({ signedIn, onImageSearch }: {
   signedIn: boolean;
@@ -64,6 +81,7 @@ export function Home({ signedIn, onImageSearch }: {
           area: String(form.get("area") ?? "").trim() || undefined,
           from: from || undefined,
           until: until || undefined,
+          lostAt: String(form.get("lostAt") ?? "") || undefined,
         } });
       }}>
         <input type="hidden" name="mode" value={query.trim() ? "text" : "basic"} />
@@ -125,6 +143,7 @@ export function Home({ signedIn, onImageSearch }: {
                   maxLength={200}
                 />
               </div>
+              <span className="field-hint">Ưu tiên khi tìm theo mô tả hoặc ảnh; lọc chính xác khi chỉ tìm theo khu vực.</span>
             </label>
             <label>
               Từ ngày
@@ -146,6 +165,7 @@ export function Home({ signedIn, onImageSearch }: {
                 onChange={(event) => setUntil(event.target.value)}
               />
             </label>
+            <LostTimeInput disabled={!query.trim() && files.length === 0} />
           </div>
           <div className="search-bottom">
             <button className="button" type="submit">
@@ -211,8 +231,8 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
     query.get("mode") === "basic" ? "basic" : "text",
   );
   const [files, setFiles] = useState<readonly File[]>(initialRequest?.files ?? []);
-  const [from, setFrom] = useState(query.get("from") ?? "");
-  const [until, setUntil] = useState(query.get("until") ?? "");
+  const [from, setFrom] = useState(initialRequest?.filters.from ?? query.get("from") ?? "");
+  const [until, setUntil] = useState(initialRequest?.filters.until ?? query.get("until") ?? "");
   const [request, setRequest] = useState<SearchInput | null>(() => initialRequest ?? (
     query.get("mode") !== "basic" && query.get("q")?.trim()
       ? {
@@ -222,6 +242,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
             area: query.get("area")?.trim() || undefined,
             from: query.get("from") || undefined,
             until: query.get("until") || undefined,
+            lostAt: query.get("lostAt") || undefined,
           },
         }
       : null),
@@ -245,7 +266,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
     setSuggestions(null);
     const signal = AbortSignal.any([
       controller.signal,
-      AbortSignal.timeout(45000),
+      AbortSignal.timeout(request.files.length ? 960000 : 45000),
     ]);
     const result =
       request.files.length
@@ -288,6 +309,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
         area: String(form.get("area") ?? "").trim() || undefined,
         from: String(form.get("from") ?? "") || undefined,
         until: String(form.get("until") ?? "") || undefined,
+        lostAt: String(form.get("lostAt") ?? "") || undefined,
       },
     });
   }
@@ -310,8 +332,8 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
         eyebrow="Có thể món đồ của bạn đang ở đây"
         title="Tìm đồ thất lạc"
       >
-        Tìm bằng mô tả, tối đa 3 ảnh hoặc kết hợp cả hai; dùng bộ lọc theo
-        khu vực và ngày nhặt được.
+        Tìm bằng mô tả, tối đa 3 ảnh hoặc kết hợp cả hai; ưu tiên khu vực bạn
+        chọn và lọc theo ngày nhặt được.
       </PageHeader>
       <div className="search-layout">
         <aside className="panel filter-panel">
@@ -346,18 +368,19 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
               {mode === "text" && (
                 <span className="field-hint">
                   Có thể thêm vị trí cụ thể, như phòng E.205 hoặc sảnh hội trường
-                  A. Nhập Trường Đại học Sài Gòn ở bộ lọc khu vực.
+                  A. Nhập Trường Đại học Sài Gòn ở mục khu vực ưu tiên.
                 </span>
               )}
             </label>
             <label>
-              Khu vực
+              {mode === "basic" ? "Khu vực" : "Khu vực ưu tiên"}
               <input
                 name="area"
-                defaultValue={query.get("area") ?? ""}
+                defaultValue={initialRequest?.filters.area ?? query.get("area") ?? ""}
                 maxLength={200}
                 placeholder="Ví dụ: Trường Đại học Sài Gòn"
               />
+              {mode !== "basic" && <span className="field-hint">Món ở khu vực khác vẫn có thể xuất hiện.</span>}
             </label>
             <label>
               Nhặt từ ngày
@@ -379,6 +402,9 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 onChange={(event) => setUntil(event.target.value)}
               />
             </label>
+            {mode !== "basic" && (
+              <LostTimeInput defaultValue={initialRequest?.filters.lostAt ?? query.get("lostAt") ?? undefined} />
+            )}
             <button className="button" type="submit" disabled={searching}>
               <Icon name="search" size={17} />
               {searching ? "Đang tìm kiếm…" : "Tìm kiếm"}
@@ -440,7 +466,7 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
                 <p>Một số gợi ý không còn hợp lệ nên danh sách có thể chưa đầy đủ.</p>
               )}
               {suggestions.filtersRelaxed && (
-                <p>Dịch vụ đã mở rộng bộ lọc; gợi ý có thể nằm ngoài khu vực hoặc khoảng ngày đã chọn.</p>
+                <p>Có gợi ý ngoài khu vực ưu tiên; bộ lọc ngày vẫn được giữ nguyên.</p>
               )}
               {suggestions.items.length > 0 && fallback && (
                 <a className="text-button" href={fallback}>
@@ -487,12 +513,12 @@ export function Search({ initialRequest }: { initialRequest?: SearchInput | null
               ) : (
                 <EmptyState title="Chưa thấy món đồ phù hợp" icon="search">
                   <p>
-                    Thử rút gọn mô tả hoặc mở rộng khu vực và khoảng ngày nhặt được.
+                    {request ? "Thử rút gọn mô tả hoặc mở rộng khoảng ngày nhặt được." : "Thử rút gọn từ khóa hoặc mở rộng khu vực và khoảng ngày nhặt được."}
                   </p>
                 </EmptyState>
               )}
               {!request && basic.data && (
-                <Pagination page={page} hasMore={basic.data.hasMore} />
+                <Pagination page={basic.data.page} totalPages={basic.data.totalPages} />
               )}
             </>
           )}

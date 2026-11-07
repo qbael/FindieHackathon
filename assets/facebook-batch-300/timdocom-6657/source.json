@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-6657",
+  "sourceUrl": "https://timdo24h.com/6657",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:13.618970+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy phép lái xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy phép lái xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/bababf2e-0195-40c7-8cce-4fbd73681eb6.jpeg"
+  ],
+  "itemType": "driver-license",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8bf9b69bf08bf810bc363e4e4f62cb6cdc81fdbcac822c0c38142cd823d91b3c",
+    "metadataChanged": true,
+    "sourceSha256": "5159d750181fb767c4449066143dfe8511e723b5ef70bdada7272a974cc45acc",
+    "sha256": "4a947d8f13d000761389f910cea63a1a1d8eb5cd2c7fd142e31755f1e4ddff88"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000003",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

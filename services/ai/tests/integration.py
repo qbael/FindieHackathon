@@ -36,9 +36,15 @@ DIMENSIONS = 8
 REDACTION_MODEL = "qwen3-vl:4b-instruct"
 REDACTION_REVISION = "b" * 64
 CAMPUS = "Trường Đại học Sài Gòn"
+OCR_TEXT = "MSSV 0012345678\nCCCD 079200001234"
 
 
 class OllamaStub(BaseHTTPRequestHandler):
+    embedding_requests = 0
+    image_requests = 0
+    combined_text_requests = 0
+    ocr_requests = 0
+
     def log_message(self, *_args):
         pass
 
@@ -58,8 +64,14 @@ class OllamaStub(BaseHTTPRequestHandler):
             image = base64.b64decode(payload["images"][0], validate=True)
             with Image.open(BytesIO(image)) as decoded:
                 decoded.load()
+            if "text" in payload["format"].get("properties", {}):
+                type(self).ocr_requests += 1
+                result = {"text": OCR_TEXT, "hasUnclearText": False}
+            else:
+                labels = payload["format"]["$defs"]["Region"]["properties"]["label"]["enum"]
+                result = {"regions": [{"label": "face", "bbox": [100, 100, 600, 600]}] if "face" in labels else []}
             self.respond({"model": REDACTION_MODEL, "done": True, "done_reason": "stop",
-                "response": json.dumps({"regions": [{"label": "face", "bbox": [100, 100, 600, 600]}]})})
+                "response": json.dumps(result)})
             return
         if self.path != "/api/embed":
             self.respond({}, 404)
@@ -67,6 +79,7 @@ class OllamaStub(BaseHTTPRequestHandler):
         if payload.get("model") != MODEL:
             self.respond({"error": "unknown test model"}, 400)
             return
+        type(self).embedding_requests += 1
         inputs = payload["input"]
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -74,10 +87,15 @@ class OllamaStub(BaseHTTPRequestHandler):
         for value in inputs:
             # Keep text scores equal for lexical ranking, but isolate the image vector space.
             if isinstance(value, dict):
+                assert set(value) == {"image"}, "image embedding uses pixels only"
+                type(self).image_requests += 1
                 with Image.open(BytesIO(base64.b64decode(value["image"], validate=True))) as image:
                     image.load()
                 vectors.append([0.0, 1.0] + [0.0] * (DIMENSIONS - 2))
             else:
+                if OCR_TEXT in value:
+                    assert "Khu vực nhặt được:" in value, "OCR is embedded with the indexed description"
+                    type(self).combined_text_requests += 1
                 vectors.append([1.0] + [0.0] * (DIMENSIONS - 1))
         self.respond({"model": MODEL, "embeddings": vectors})
 
@@ -137,29 +155,36 @@ async def checks(broker_url, dsn, ollama_url):
             correlation = str(uuid4())
             waiter = asyncio.get_running_loop().create_future()
             waiters[correlation] = waiter
-            header = {"schemaVersion": 1, "deadlineAt": (datetime.now(timezone.utc) + timedelta(seconds=30)).isoformat(),
+            seconds = 940 if kind == "search.hybrid.images" else 300 if kind in {"image.embed", "image.redact", "search.hybrid.image"} else 30
+            header = {"schemaVersion": 1, "deadlineAt": (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat(),
                       "modelId": MODEL, "modelRevision": REVISION, **metadata}
             route = "findie.ai.commands" if persistent else (
-                "findie.ai.image" if content_type.startswith("image/") else "findie.ai.query")
+                "findie.ai.image" if kind == "search.hybrid.images" or content_type.startswith("image/") else "findie.ai.query")
             try:
                 async def publish(operation, payload, fields, mime):
                     await channel.default_exchange.publish(aio_pika.Message(
                         body=payload, headers={"metadata": encoded(header | fields).decode()}, type=operation,
                         correlation_id=correlation, reply_to=results.name if persistent else replies.name,
-                        content_type=mime, expiration=timedelta(seconds=30),
+                        content_type=mime, expiration=timedelta(seconds=seconds),
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT if persistent else aio_pika.DeliveryMode.NOT_PERSISTENT,
                     ), routing_key=route, mandatory=True)
-                if parts_first and parts:
-                    source, output = parts[0]
+
+                async def publish_part(part):
+                    source, payload, operation = part
                     fields = {"sourceId": source["id"], "sourceVersion": source["version"],
-                        "sourceSha256": source["sha256"], "processingProfile": "image-v1"}
-                    await publish("index.source.image", output, fields, "image/png")
-                    await publish("index.source.image", output, fields, "image/png")
+                              "sourceSha256": source["sha256"], "processingProfile": "image-v1"}
+                    if operation == "index.source.vector":
+                        fields["payloadSha256"] = digest(payload)
+                    await publish(operation, payload, fields,
+                                  "application/json" if operation == "index.source.vector" else "image/png")
+
+                if parts_first and parts:
+                    await publish_part(parts[0])
+                    await publish_part(parts[0])
                 await publish(kind, body, {}, content_type)
-                for source, output in (parts[1:] if parts_first else parts):
-                    await publish("index.source.image", output, {"sourceId": source["id"], "sourceVersion": source["version"],
-                        "sourceSha256": source["sha256"], "processingProfile": "image-v1"}, "image/png")
-                response, response_body = await asyncio.wait_for(waiter, timeout=35)
+                for part in (parts[1:] if parts_first else parts):
+                    await publish_part(part)
+                response, response_body = await asyncio.wait_for(waiter, timeout=seconds + 5)
                 assert response["schemaVersion"] == 1 and response["kind"] == kind, "response envelope must identify the operation"
                 return response, response_body
             finally:
@@ -188,7 +213,7 @@ async def checks(broker_url, dsn, ollama_url):
 
         search_metadata = {"processingProfile": "text-v1", "searchProfileId": "text-description-v1",
                            "searchProfileVersion": 1, "mode": "text", "area": CAMPUS,
-                           "from": None, "until": None, "limit": 10, "candidateLimit": 200}
+                           "from": None, "until": None, "limit": 10, "candidateLimit": 15}
 
         async def search(text, **filters):
             metadata = search_metadata | filters
@@ -202,19 +227,23 @@ async def checks(broker_url, dsn, ollama_url):
         room_id, hall_id, other_id = (str(UUID(int=value)) for value in (3, 1, 2))
         room = snapshot(room_id, "Ví da đen nhặt được tại phòng học E.205.")
         hall = snapshot(hall_id, "Ví da đen nhặt được tại sảnh hội trường A.")
-        other = snapshot(other_id, "Ví da đen nhặt được tại phòng học E.205.", "Trường Đại học Khác")
+        other = snapshot(other_id, "Ví da đen nhặt được tại phòng học E.206.", "Trường Đại học Khác")
         for value in (hall, other, room):
             await index(value)
 
         candidates = await search("ví da đen tại phòng E.205")
         assert candidates and candidates[0]["itemId"] == room_id, "exact classroom must rank before a different location"
-        assert all(hit["itemId"] != other_id for hit in candidates), "campus filter must exclude another university"
+        assert other_id in {hit["itemId"] for hit in candidates}, "area preference must retain another university"
+        requests = OllamaStub.embedding_requests
+        assert await search("ví da đen tại phòng E.205") == candidates
+        assert OllamaStub.embedding_requests == requests + 1, "Redis keyword hits must still rank vector candidates"
         for hit in candidates:
-            source = room["sources"][0] if hit["itemId"] == room_id else hall["sources"][0]
+            source = next(value["sources"][0] for value in (room, hall, other) if value["itemId"] == hit["itemId"])
             assert hit["documentVersion"] == 1 and hit["sourceId"] == hit["itemId"]
+            assert hit["sourceKind"] == "text"
             assert hit["sourceVersion"] == source["version"] and hit["sourceSha256"] == source["sha256"]
         assert (await search("ví da đen tại sảnh hội trường A"))[0]["itemId"] == hall_id
-        assert not await search("ví da đen", area="Khu vực không tồn tại"), "area filters must not be relaxed"
+        assert await search("ví da đen", area="Khu vực không tồn tại"), "a mistaken area must not hide relevant items"
         assert not await search("ví da đen", **{"from": "2026-10-25"}), "date filters must run before candidate limits"
 
         from findie_ai.config import Settings
@@ -222,7 +251,7 @@ async def checks(broker_url, dsn, ollama_url):
         report = await evaluate([
             Case(text="ví đen phòng E.205", area=CAMPUS, relevantItemIds=[room_id]),
             Case(text="ví đen sảnh hội trường A", area=CAMPUS, relevantItemIds=[hall_id]),
-            Case(text="mũ bảo hiểm", area="Khu vực không tồn tại", relevantItemIds=[]),
+            Case(text="mũ bảo hiểm", **{"from": "2026-10-25"}, relevantItemIds=[]),
         ], Settings(service_token="test", search_dsn=dsn, ollama_base_url=ollama_url,
                     model_id=MODEL, revision=REVISION, dimensions=DIMENSIONS))
         assert set(report["results"]) == {"semantic", "lexical", "hybrid"}
@@ -233,7 +262,7 @@ async def checks(broker_url, dsn, ollama_url):
             search_metadata | {"modelRevision": "b" * 64})
         assert not response["succeeded"], "different model revisions must fail instead of mixing vector spaces"
 
-        # A private upload is normalized and masked in RAM before any persistent index part exists.
+        # Derive a vector from unmasked pixels; only its cache and the masked output enter persistent parts.
         private_note = "PRIVATE-ORIGINAL-METADATA-NOT-FOR-STORAGE"
         buffer = BytesIO()
         info = PngImagePlugin.PngInfo()
@@ -241,22 +270,45 @@ async def checks(broker_url, dsn, ollama_url):
         with Image.new("RGB", (20, 20), "red") as image:
             image.save(buffer, format="PNG", pnginfo=info)
         raw_image = buffer.getvalue()
+        image_id = str(uuid4())
+        embed_metadata = {"itemId": room_id, "imageId": image_id, "sourceVersion": 1,
+                          "sourceSha256": digest(raw_image), "processingProfile": "image-v1", "dimensions": DIMENSIONS}
+        response, original_embedding = await request("image.embed", raw_image, embed_metadata, content_type="image/png")
+        assert response["succeeded"]
+        for field, expected in embed_metadata.items():
+            assert response[field] == expected, f"original embedding receipt must echo {field}"
+        cached = json.loads(original_embedding)
+        assert cached == {"modelId": MODEL, "modelRevision": REVISION, "dimensions": DIMENSIONS,
+                          "sourceSha256": digest(raw_image), "vector": [0.0, 1.0] + [0.0] * (DIMENSIONS - 2),
+                          "ocr": {"text": OCR_TEXT, "hasUnclearText": False, "modelId": REDACTION_MODEL,
+                                  "modelRevision": REDACTION_REVISION, "processingProfile": "ocr-v1"}}
+        assert OllamaStub.ocr_requests >= 1 and OllamaStub.image_requests >= 1
+        assert private_note.encode() not in original_embedding
+        response, _ = await request("image.embed", raw_image,
+                                    embed_metadata | {"sourceSha256": "0" * 64}, content_type="image/png")
+        assert not response["succeeded"], "original embedding rejects source hash mismatches"
         response, output = await request("image.redact", raw_image,
             {"modelId": REDACTION_MODEL, "modelRevision": REDACTION_REVISION,
-             "itemId": room_id, "imageId": str(uuid4()), "sourceVersion": 1,
-             "sourceSha256": digest(raw_image), "processingProfile": "redact-v3"}, content_type="image/png")
+             "itemId": room_id, "imageId": image_id, "sourceVersion": 1,
+             "sourceSha256": digest(raw_image), "processingProfile": "redact-v4"}, content_type="image/png")
         assert response["succeeded"] and response["sha256"] == digest(output)
         assert response["contentType"] == "image/png" and response["byteSize"] == len(output)
         assert output != raw_image and private_note.encode() not in output
         with Image.open(BytesIO(output)) as image:
             assert not image.info and image.getpixel((5, 5)) == (0, 0, 0)
         full = snapshot(room_id, room["document"]["publicDescription"], version=2)
-        full["sources"].extend({"kind": "image", "id": str(uuid4()), "version": 1,
-            "sha256": digest(output), "processingProfile": "image-v1"} for _ in range(2))
-        parts = [(source, output) for source in full["sources"] if source["kind"] == "image"]
+        full["sources"].extend({"kind": "image", "id": identifier, "version": 1,
+            "sha256": digest(output), "processingProfile": "image-v1"} for identifier in (image_id, str(uuid4())))
+        parts = [(full["sources"][1], original_embedding, "index.source.vector"),
+                 (full["sources"][2], output, "index.source.image")]
         await index(full, parts=parts, parts_first=True)
         await index(full, parts=parts)  # Exact replay remains a full, atomic manifest.
+        assert OllamaStub.combined_text_requests >= 2
         assert (await search("ví E.205"))[0]["sourceId"] == room_id
+        ocr_hits = await search("0012345678")
+        assert ocr_hits[0]["itemId"] == room_id and ocr_hits[0]["sourceId"] == room_id
+        assert ocr_hits[0]["sourceKind"] == "text", "OCR terms must resolve to the private text document"
+        assert OCR_TEXT not in json.dumps(ocr_hits), "candidate responses must not expose private OCR text"
 
         async def image_search(**filters):
             response, body = await request("search.hybrid.image", raw_image,
@@ -267,27 +319,47 @@ async def checks(broker_url, dsn, ollama_url):
 
         hits = await image_search()
         assert len(hits) == 1 and hits[0]["itemId"] == room_id
-        assert hits[0]["sourceId"] in {source["id"] for source, _ in parts}
+        assert hits[0]["sourceId"] in {source["id"] for source, _, _ in parts}
+        assert hits[0]["sourceKind"] == "image"
         assert hits[0]["sourceSha256"] == digest(output) and hits[0]["documentVersion"] == 2
-        assert not await image_search(area="Other campus")
+        assert OCR_TEXT not in json.dumps(hits)
+        assert (await image_search(area="Other campus"))[0]["itemId"] == room_id
         assert not await image_search(**{"from": "2026-10-25"})
+        batch_metadata = search_metadata | {
+            "mode": "combined", "processingProfile": "multimodal-v1", "searchProfileId": "multimodal-fusion-v1",
+            "text": "ví E.205", "images": [{"contentType": "image/png", "length": len(raw_image)}] * 2,
+        }
+        response, body = await request("search.hybrid.images", raw_image * 2, batch_metadata,
+                                       content_type="application/octet-stream")
+        assert response["succeeded"] and "text" not in response and "images" not in response
+        fused = json.loads(body)["candidates"]
+        assert fused[0]["itemId"] == room_id and fused[0]["score"] > 2 / 61
+        assert {source["sourceKind"] for source in fused[0]["sources"]} == {"text", "image"}
+        assert all(source["documentVersion"] == 2 for source in fused[0]["sources"])
+        assert OCR_TEXT not in json.dumps(fused)
+        response, _ = await request("search.hybrid.images", raw_image, batch_metadata,
+                                    content_type="application/octet-stream")
+        assert not response["succeeded"], "batch framing must match all declared image lengths"
         async with await psycopg.AsyncConnection.connect(dsn) as db:
             cursor = await db.execute("SELECT data_type FROM information_schema.columns WHERE table_name IN ('ai_items', 'ai_documents')")
             assert all(row[0] != "bytea" for row in await cursor.fetchall()), "raw/output/query bytes have no persistence column"
-            cursor = await db.execute("SELECT search_terms::text, location_tokens FROM ai_documents WHERE processing_profile = 'image-v1'")
-            assert all(not terms and not tokens for terms, tokens in await cursor.fetchall()), "image retrieval must not invent OCR/lexical terms"
+            cursor = await db.execute("SELECT processing_profile, search_terms::text, location_tokens FROM ai_documents WHERE item_id=%s", (room_id,))
+            terms = await cursor.fetchall()
+            assert "0012345678" in next(text for profile, text, _ in terms if profile == "text-v1")
+            assert all(not text and not tokens for profile, text, tokens in terms if profile == "image-v1")
 
         await index(snapshot(room_id, "", version=3, removed=True))
         await index(room, expect_success=False)
         await index(full, parts=parts, expect_success=False)
         assert not await image_search(), "old image manifests cannot resurrect a tombstone"
         assert all(hit["itemId"] != room_id for hit in await search("ví da đen tại phòng E.205"))
-        print("PASS: Python worker with real PostgreSQL/RabbitMQ: text ranking, full output-only image manifest/parts, atomic receipts, image provenance/dedupe, filters, model mismatch and tombstone replay")
+        print("PASS: Python worker with real PostgreSQL/RabbitMQ/Redis: keyword cache, vector ranking, private description and OCR index, image-only vectors, legacy image parts, atomic receipts, filters, model mismatch and tombstone replay")
 
 
 def run():
     suffix = secrets.token_hex(6)
     database_name, broker_name = "findie-ai-test-" + suffix, "findie-ai-broker-" + suffix
+    redis_name = "findie-ai-redis-" + suffix
     password, token = secrets.token_hex(24), secrets.token_hex(24)
     environment = os.environ | {"POSTGRES_DB": "findie_search", "POSTGRES_USER": "findie_test",
         "POSTGRES_PASSWORD": password, "RABBITMQ_DEFAULT_USER": "findie_test", "RABBITMQ_DEFAULT_PASS": password}
@@ -296,12 +368,15 @@ def run():
     server_thread.start()
     worker = None
     try:
+        subprocess.run(["docker", "run", "--detach", "--rm", "--name", redis_name,
+            "--publish", "127.0.0.1::6379", "redis:8.2.3-alpine", "redis-server", "--save", "", "--appendonly", "no"],
+            check=True, capture_output=True)
         subprocess.run(["docker", "run", "--detach", "--rm", "--name", database_name,
             "--env", "POSTGRES_DB", "--env", "POSTGRES_USER", "--env", "POSTGRES_PASSWORD",
             "--publish", "127.0.0.1::5432", "pgvector/pgvector:0.8.2-pg17-trixie"], env=environment, check=True, capture_output=True)
         subprocess.run(["docker", "run", "--detach", "--rm", "--name", broker_name,
             "--env", "RABBITMQ_DEFAULT_USER", "--env", "RABBITMQ_DEFAULT_PASS",
-            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2", "--publish", "127.0.0.1::5672",
+            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2 -rabbit max_message_size 33554432", "--publish", "127.0.0.1::5672",
             "rabbitmq@sha256:76412b1ed2865b88ed01b4a504f72e888842f2089a7527743d325ce7c9d3a43b"],
             env=environment, check=True, capture_output=True)
 
@@ -309,6 +384,7 @@ def run():
             return int(subprocess.check_output(["docker", "port", name, container_port], text=True).strip().rsplit(":", 1)[1])
 
         db_port, broker_port = port(database_name, "5432/tcp"), port(broker_name, "5672/tcp")
+        redis_url = f"redis://127.0.0.1:{port(redis_name, '6379/tcp')}/0"
         dsn = f"postgresql://findie_test:{password}@127.0.0.1:{db_port}/findie_search"
         broker_url = f"amqp://findie_test:{password}@127.0.0.1:{broker_port}/"
         deadline = time.monotonic() + 60
@@ -337,6 +413,7 @@ def run():
             listener.bind(("127.0.0.1", 0))
             worker_port = listener.getsockname()[1]
         environment |= {"AI_SERVICE_TOKEN": token, "AI_SEARCH_DSN": dsn, "AI_RABBITMQ_URL": broker_url,
+            "AI_REDIS_URL": redis_url, "AI_SEARCH_CACHE_TTL_SECONDS": "60",
             "OLLAMA_BASE_URL": f"http://127.0.0.1:{server.server_port}", "AI_EMBEDDING_MODEL": MODEL,
             "AI_EMBEDDING_REVISION": REVISION, "AI_EMBEDDING_DIMENSIONS": str(DIMENSIONS),
             "AI_INDEX_QUEUE": "findie.ai.commands", "AI_RESULT_QUEUE": "findie.api.results",
@@ -348,7 +425,7 @@ def run():
         subprocess.run([sys.executable, "-m", "findie_ai.migrate"], cwd=ROOT,
             env=environment | {"AI_SEARCH_MIGRATION_DSN": dsn}, check=True)
         subprocess.run([sys.executable, "-m", "pytest", "services/ai/tests/test_store.py", "-q"], cwd=ROOT,
-            env=environment | {"AI_TEST_DATABASE_URL": dsn}, check=True)
+            env=environment | {"AI_TEST_DATABASE_URL": dsn, "AI_TEST_REDIS_URL": redis_url}, check=True)
         worker = subprocess.Popen([sys.executable, "-m", "uvicorn", "findie_ai.main:app", "--host", "127.0.0.1",
             "--port", str(worker_port), "--log-level", "warning", "--no-access-log"], cwd=ROOT,
             env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
@@ -380,7 +457,7 @@ def run():
         server.shutdown()
         server.server_close()
         server_thread.join(timeout=2)
-        for name in (broker_name, database_name):
+        for name in (broker_name, database_name, redis_name):
             subprocess.run(["docker", "rm", "--force", name], capture_output=True)
         if worker is not None and b"Traceback" in output:
             raise RuntimeError("Worker emitted an unhandled exception; see sanitized stderr above.")

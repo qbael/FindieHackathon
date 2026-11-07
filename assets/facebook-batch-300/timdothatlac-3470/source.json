@@ -1,0 +1,33 @@
+{
+  "sourceId": "timdothatlac-3470",
+  "sourceUrl": "https://timdothatlac.vn/post/3470",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:06.847720+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ màu đen",
+  "sourceText": "Bài nguồn báo mất mô tả giấy tờ màu đen. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả giấy tờ màu đen. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793721676698-xsireoaclll.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "f2d177e6dc0ecd8120e1eb97c48b204c542bff503fa926c4e756d9db939f990f",
+    "metadataChanged": false,
+    "sourceSha256": "cc91a05f10c833067ddb4469e8b23291f7479710f142f24860974074257b5241",
+    "sha256": "cc91a05f10c833067ddb4469e8b23291f7479710f142f24860974074257b5241"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

@@ -10,6 +10,7 @@ public sealed class ItemImage
     public string ProcessingState { get; set; } = "pending";
     public string ReviewState { get; set; } = "pending";
     public string? SensitiveRegions { get; set; }
+    public string? OriginalEmbedding { get; set; }
     public string? RedactionModelId { get; set; }
     public string? RedactionModelRevision { get; set; }
     public string? RedactionProfile { get; set; }

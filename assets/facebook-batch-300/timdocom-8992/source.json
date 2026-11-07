@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-8992",
+  "sourceUrl": "https://timdo24h.com/8992",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:03.764701+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Bình Dương. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Bình Dương. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Bình Dương",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/47e4cc53-4d34-4ddb-b0b3-4b4cea13c717.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "b2bdfc291ec240f6bf83fb7bf674e502b6c5d5ae648fb187813fddbab48e0cdf",
+    "metadataChanged": true,
+    "sourceSha256": "a2e59420e76b08d2983e96ef7eae5d32e7ad7cc811e0f7b68d54540f9f4befdd",
+    "sha256": "83f68a32021f04efbff8f02a7c3970e03fe75d25086d70a64c7b90401f306c41"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, Bình Dương (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-25T23:45:00+07:00",
+    "foundUntil": "2026-08-26T02:00:00+07:00"
+  }
+}

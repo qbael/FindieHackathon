@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdocom-13809",
+  "sourceUrl": "https://timdo24h.com/13809",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:54.482538+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ ngân hàng, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.png"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/1ace341f-0dde-4a64-80e7-677ea24ddd67.png"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "ea11cfd8946deb54b5004a08e3944901ba459b7fd9ac9b8343f59fef2ed970dd",
+    "metadataChanged": true,
+    "sourceSha256": "5dfb475dd6624713b92f3af6dab2cf2b403147ff19af2efd0f79ba4348ceb342",
+    "sha256": "f216d5d758bad2178aea7d79c49e6b1926dadc8f3fda4d60645df73c588b982b"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000006",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

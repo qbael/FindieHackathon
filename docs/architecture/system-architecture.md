@@ -2,6 +2,29 @@
 
 **Phiên bản:** 1.4.0 · **Ngày:** 2026-10-23 · **Trạng thái:** Thiết kế đích MVP; Python lưu embedding và thực hiện hybrid search, .NET xử lý nghiệp vụ, giao tiếp RabbitMQ; R2 chỉ lưu ảnh đầu ra, không lưu gốc; chưa triển khai đầy đủ
 
+Cập nhật runtime 05/11/2026: ảnh upload mới có vector riêng từ pixel chưa che và được
+đọc OCR bằng model vision đã ghim. Cache nội bộ giữ vector và OCR có model/profile
+riêng; không giữ bytes gốc, không trả OCR qua DTO hay ghi vào mô tả công khai. Sau
+duyệt, OCR được ghép với tiêu đề, mô tả và khu vực trong vector và từ khóa văn bản.
+Sửa mô tả lập lại nguồn văn bản, dùng lại OCR và vector ảnh đã lưu. Tìm bằng ảnh
+chỉ tạo vector từ ảnh truy vấn trong request tạm, deadline 300 giây. Nguồn cũ chưa
+có OCR hoặc đang dùng vector ảnh/OCR cũ cần tải lại ảnh để tạo cache mới. Cách che `redact-v4`
+giữ nguyên. Không có bộ lọc chính xác số/đuôi số hoặc bảo đảm OCR đọc đúng từng chữ số.
+Ghi chú này thay thế phần tách modality/chưa OCR của cập nhật 04/11 bên dưới; các đoạn
+thiết kế lịch sử còn lại giữ làm bối cảnh, hợp đồng runtime tại
+[AI service](../guides/ai-service.md) và [AMQP](../api/amqp.md).
+
+Cập nhật runtime 04/11/2026: upload mới khi bật capability ảnh tạo embedding từ ảnh chưa
+che qua request tạm `image.embed`, lưu cache vector nội bộ cùng model/revision/chiều/hash
+gốc, chỉ lưu bytes bản che trên R2. Sau duyệt, chỉ mục nhận `index.source.vector` gắn với
+hash/phiên bản bản che; ảnh cũ/không có cache vẫn dùng bytes bản che như trước. Cache bị
+bỏ khi gỡ ảnh/xóa món đồ; đổi model cần tải lại ảnh gốc cho nguồn có cache. Profile
+`redact-v4` giữ khoảng 40% phần cuối theo chiều rộng vùng số CCCD/CMND, điện thoại và
+mã định danh như MSSV; khuôn mặt/địa chỉ/QR/mã vạch vẫn che toàn bộ. Tìm text và ảnh vẫn
+tách theo modality, chưa có OCR hoặc đối chiếu đuôi số chính xác. Các đoạn thiết kế nền
+bên dưới nói về embedding chỉ từ output được thay bằng luồng runtime tại
+[AI service](../guides/ai-service.md) và [hợp đồng AMQP](../api/amqp.md).
+
 Cập nhật runtime 31/10/2026: đã có API nghiệp vụ, AMQP/R2/outbox và worker text/ảnh; Python normalize/che ảnh, index full manifest/parts và tìm ảnh native. Notebook 04 dùng `Qwen/Qwen3-VL-Embedding-2B`/2048 qua Transformers và `qwen3-vl:4b-instruct` qua Ollama, sau gateway ngrok có hợp đồng API Ollama. Các model/chiều trong thiết kế bên dưới là baseline ban đầu; cấu hình thực thi hiện tại ở [AI service](../guides/ai-service.md), [spec local](../specs/003-local-full-stack/spec.md) và [hợp đồng AMQP](../api/amqp.md). Model/Google/R2 thật và chất lượng chưa được coi là đã nghiệm thu chỉ từ test stub.
 [Hiến chương dự án](../../.specify/memory/constitution.md) xác định các nguyên tắc bắt buộc;
 [đặc tả sản phẩm](../product/DAC_TA_FINDIE.md) cung cấp phạm vi,
@@ -94,7 +117,7 @@ Thông tin bí mật được giữ ở phía máy chủ. Ảnh gốc chỉ tồ
 | Đầu vào | Snapshot công khai/metadata lọc; tombstone ID/version; query text hoặc ảnh tạm; `image.redact` nhận raw chỉ trong request có deadline, không có R2 original key; lập chỉ mục ảnh chỉ nhận bytes output đã duyệt |
 | Kết quả | `succeeded`/`failed`, mã lỗi an toàn; biên nhận đã commit chỉ mục kèm ID/phiên bản/model/chiều; hoặc danh sách ứng viên `item_id`, nguồn ảnh nếu có, phiên bản nguồn/document, hạng/điểm thành phần và profile; hoặc bytes ảnh sạch kèm MIME/kích thước/hash; không trả toàn bộ OCR riêng tư |
 
-Văn bản, biên nhận và ứng viên dùng JSON UTF-8; vector được Python ghi trực tiếp vào `findie_search`. Ảnh dùng body nhị phân, `content_type` tương ứng và header `metadata` chứa JSON hợp đồng nhỏ, giới hạn đề xuất 16 KiB; không base64 hoặc chuyển cả ảnh vào header. Mỗi message chỉ mang một ảnh, giới hạn đề xuất **10 MiB cho body**, kể cả ảnh kết quả; broker/client đặt trần tổng message có chỗ cho header và kiểm tra trước publish/consume. Python kiểm JPEG/PNG/WebP thực, số frame và trần pixel trước suy luận. Snapshot mô tả dài hoặc danh sách ứng viên vượt trần header dùng body JSON riêng, không nhét dữ liệu tùy ý vào header ảnh. Các giới hạn là baseline cần chốt/đo, không phải hiệu năng đã kiểm chứng.
+Văn bản, biên nhận và ứng viên dùng JSON UTF-8; vector được Python ghi trực tiếp vào `findie_search`. Ảnh dùng body nhị phân, `content_type` tương ứng và header `metadata` chứa JSON hợp đồng nhỏ, giới hạn 16 KiB; không base64 hoặc chuyển cả ảnh vào header. Message ảnh đơn có trần **10 MiB cho body**, kể cả ảnh kết quả. Riêng `search.hybrid.images` ghép tối đa ba ảnh vào body nhị phân 30 MiB, kèm MIME/length từng ảnh trong metadata. Broker/client kiểm trần trước publish/consume. Python kiểm JPEG/PNG/WebP thực, số frame và trần pixel trước suy luận. Snapshot mô tả dài hoặc danh sách ứng viên vượt trần header dùng body JSON riêng, không nhét dữ liệu tùy ý vào header ảnh.
 
 Ảnh đi qua broker vẫn là dữ liệu riêng tư: dùng AMQPS với kiểm chứng certificate khi triển khai, tài khoản riêng theo service và vhost theo môi trường. .NET chỉ phát command/nhận result, Python chỉ nhận command/phát result; topology bền vững do tài khoản triển khai cấp, Python chỉ được khai báo/bind queue ảnh exclusive tạm trong phạm vi được cấp. Không nhận `reply_to`, routing key hay URL tùy ý từ trình duyệt. Luồng chỉ mục/output có ACL/retention tương ứng; raw ảnh phải bị loại khỏi DLQ, log/tracing, outbox và backup. Không ghi ảnh hoặc OCR vào log. R2 vẫn là kho ảnh lâu dài do .NET quản lý. Message hết hạn/DLQ được dọn cả khi người dùng hủy truy vấn hoặc gỡ ảnh; tác vụ còn chạy phải kiểm phiên bản trước khi lưu.
 
@@ -204,9 +227,11 @@ Việc .NET bỏ biên nhận cũ **không tự thu hồi vector đã ghi ở kh
 
 ## 5. Hybrid search và chi tiết món đồ
 
-**Python AI service đảm nhận cả lưu embedding và hybrid search trong vector database.** .NET nhận truy vấn từ React, kiểm dữ liệu/bộ lọc và chuyển `search.hybrid` qua RabbitMQ; không lấy vector về để tự tìm. Python trả danh sách ứng viên có thứ hạng, .NET kiểm điều kiện nghiệp vụ hiện tại rồi lấy thông tin món đồ từ database nghiệp vụ để trả giao diện.
+**Python AI service đảm nhận cả lưu embedding, hybrid search và gộp kết quả nhiều ảnh/mô tả.** .NET nhận truy vấn từ React, kiểm dữ liệu/bộ lọc rồi chuyển qua RabbitMQ; không lấy vector về để tự tìm. Text dùng `search.hybrid`, ảnh đơn dùng `search.hybrid.image`, nhóm ảnh và mô tả tùy chọn dùng một lệnh `search.hybrid.images`. Python trả danh sách ứng viên đã gộp; .NET kiểm điều kiện nghiệp vụ hiện tại và toàn bộ nguồn đã góp điểm rồi lấy thông tin món đồ từ database nghiệp vụ để trả giao diện. Bonus thời gian mất `lostAt` vẫn chạy ở .NET trên điểm Python; .NET không tính lại fusion.
 
 Mô tả tiếng Việt không rỗng hoặc ảnh hợp lệ là đầu vào; tìm chỉ bằng mô tả vẫn là quy tắc cốt lõi. Nếu có cả ảnh và mô tả, baseline tiếp tục chọn một chế độ. Hybrid ở đây kết hợp **từ khóa và ngữ nghĩa** khi có văn bản; không tự bật trộn điểm vector text–image hoặc tìm chéo phương thức. Ảnh đơn thuần dùng vector ảnh cùng bộ lọc cấu trúc; không bịa từ khóa/OCR để coi như có nhánh lexical.
+
+Python dùng Redis tùy chọn để cache ứng viên **từ khóa/vị trí** cho truy vấn văn bản. Nhánh **ngữ nghĩa** vẫn xếp hạng vector trong PostgreSQL. Khóa SHA-256 tách theo model, bộ lọc và UUID chỉ mục trong `ai_search_state`. UUID đổi trong cùng transaction khi upsert/remove. TTL mặc định 60 giây. Nếu Redis lỗi, Python tìm trực tiếp trong PostgreSQL. .NET vẫn kiểm nguồn, phiên bản và quyền hiện tại. [Cấu hình, phạm vi và kiểm thử Redis](../guides/ai-service.md#cache-từ-khóa-bằng-redis).
 
 ### 5.1. Thuật toán hybrid search cơ sở
 
@@ -222,7 +247,7 @@ Kho `findie_search` chỉ giữ mô tả công khai, vector text/ảnh sạch, m
 
 ### 5.2. Request/reply tìm kiếm qua RabbitMQ
 
-.NET gửi `search.hybrid` cho text hoặc `search.hybrid.image` cho bytes ảnh qua queue tạm, kèm bộ lọc hợp lệ, `correlation_id`, `deadline_at` và giới hạn ứng viên. Python tạo vector truy vấn, chạy hybrid search tại `findie_search` rồi trả **ứng viên đã xếp hạng**, không trả embedding để .NET thực hiện tìm kiếm. Dùng connection/channel và queue kết quả lâu dài, không tạo theo từng truy vấn.
+.NET gửi `search.hybrid` cho text, `search.hybrid.image` cho ảnh đơn hoặc `search.hybrid.images` cho nhóm 1–3 ảnh và mô tả tùy chọn qua queue tạm, kèm bộ lọc hợp lệ, `correlation_id`, `deadline_at` và giới hạn ứng viên. Lệnh nhóm dùng body nhị phân nối các ảnh (tối đa 30 MiB), metadata chứa MIME/length từng ảnh và text tùy chọn; deadline chung 940 giây. Python tạo vector truy vấn, chạy hybrid search tại `findie_search`, gộp các danh sách ảnh/text bằng RRF rồi trả tối đa 15 **ứng viên đã xếp hạng** cùng điểm và provenance của mọi nguồn góp điểm; các pool truy hồi nội bộ vẫn tối đa 200. .NET loại cả ứng viên nếu bất kỳ nguồn góp điểm sai phiên bản/hash hoặc không còn hợp lệ. Không trả embedding để .NET thực hiện tìm kiếm. Xem hợp đồng hiện hành tại [AMQP](../api/amqp.md#searchhybridimages).
 
 .NET giữ waiter trong thời gian chờ HTTP hữu hạn, không giữ giao dịch DB. Chỉ hoàn tất waiter còn sống, khớp correlation/model/profile và schema; kết quả đến muộn, trùng hoặc của tiến trình đã khởi động lại được ACK/bỏ. Truy vấn tạm không tạo `ai_jobs` nghiệp vụ hoặc embedding bền vững trong vector DB; Python chỉ giữ text/ảnh/vector truy vấn trong bộ nhớ tiến trình khi xử lý. Ảnh query dùng `search.hybrid.image` qua queue ảnh tạm, nonpersistent/TTL, không body DLQ hoặc R2 temporary. Broker vẫn có thể page message xuống đĩa; cleanup logic không phải cam kết xóa vật lý tức thì. Worker kiểm deadline và bỏ input cả khi lỗi; mất payload phải tải lại.
 

@@ -1,0 +1,38 @@
+{
+  "sourceId": "facebook-1751891336938170",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=1751891336938170&set=gm.1883976486290742&idorvanity=230346474987093",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "lost",
+  "originalKindInferred": true,
+  "title": "Ví đựng giấy tờ",
+  "sourceText": "Bài đăng Facebook công khai về ví đựng giấy tờ. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Ví đựng giấy tờ được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=1751891336938170&set=gm.1883976486290742&idorvanity=230346474987093"
+    }
+  ],
+  "sourceImageSha256": "718ec17d74e1418ec2c992f955fbcb084e67ec7e27b79f9a71ce02a8d14f424d",
+  "sourceImageSize": [
+    780,
+    540
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Bộ phận tiếp nhận đồ thất lạc (giả định)",
+      "address": "Quầy thông tin khu vực, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Mô tả vật đựng, màu sắc hoặc dấu hiệu riêng để đối chiếu."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-17"
+  }
+}

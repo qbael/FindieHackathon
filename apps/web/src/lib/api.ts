@@ -6,6 +6,7 @@ export type Page<T> = {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  totalPages: number;
 };
 export type CustodyKind = "person" | "point" | "external";
 export type Item = {
@@ -281,7 +282,7 @@ export async function uploadImage(
         "Content-Type": prepared.type,
         "Idempotency-Key": key,
       },
-      signal: AbortSignal.timeout(300000),
+      signal: AbortSignal.timeout(660000),
     },
   );
   uploadKeys.delete(file);

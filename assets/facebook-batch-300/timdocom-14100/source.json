@@ -1,0 +1,41 @@
+{
+  "sourceId": "timdocom-14100",
+  "sourceUrl": "https://timdo24h.com/14100",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:46.007068+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu đen kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu đen kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu đen kèm thẻ sinh viên, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/88803a51-1a74-4d8c-89a2-7610fa705716.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ sinh viên",
+    "Thẻ căn cước",
+    "Giấy phép lái xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "6b1cc06d0e009d0d3da93ec1b7229dd5cdff09f5c1c46270aa8a53b4ae1a7222",
+    "metadataChanged": false,
+    "sourceSha256": "7d36871461270b3224da3471154135632c359502e11938dc499ce23b4cf8fcd5",
+    "sha256": "7d36871461270b3224da3471154135632c359502e11938dc499ce23b4cf8fcd5"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000005",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-07T09:05:00+07:00",
+    "foundUntil": "2026-09-07T10:20:00+07:00"
+  }
+}

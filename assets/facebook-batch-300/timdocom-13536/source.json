@@ -1,0 +1,42 @@
+{
+  "sourceId": "timdocom-13536",
+  "sourceUrl": "https://timdo24h.com/13536",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:44:02.478936+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ sinh viên, thẻ ngân hàng, thẻ căn cước. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/98d0d5ca-935a-4125-b7a1-332426630351.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ sinh viên",
+    "Thẻ ngân hàng",
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "92fd159ab9375c44a73e9d866fd0d30839b02586837cc337d5f53834fc8e516b",
+    "metadataChanged": true,
+    "sourceSha256": "ec67ce1fc3e547e931b850ac41030362f6480df497d114a71171f4b974c53f13",
+    "sha256": "7358a8655bec23ee90d6a7a36eb37aa3de05f5093979c2309095c2bd354f22e1"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000005",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-29"
+  }
+}

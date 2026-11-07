@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdocom-11234",
+  "sourceUrl": "https://timdo24h.com/11234",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:08.929565+00:00",
+  "sourceVisibility": "public",
+  "title": "Chìa khóa",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/0c096bfe-eafe-490d-bffd-00b3040ab926.jpeg"
+  ],
+  "itemType": "keys",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "2e9507d709621c8e34433ea73d487be4ebc8dc5ef4347a3afea30381f8d11731",
+    "metadataChanged": true,
+    "sourceSha256": "ccad37970a12915abfc3306d45be91d0135163b7e9865c511ed6f53007b331e5",
+    "sha256": "3e5687c26bb3f3d2ad8b5f5080b4d366d7a1b5665323c9ddf7d06ff8803a0427"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-10-01T12:20:00+07:00"
+  }
+}

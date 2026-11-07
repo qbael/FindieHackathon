@@ -266,7 +266,7 @@ export function Requests({ user }: { user: UserProfile }) {
               </a>
             </EmptyState>
           )}
-          <Pagination page={page} hasMore={claims.data.hasMore} />
+          <Pagination page={claims.data.page} totalPages={claims.data.totalPages} />
         </>
       )}
     </>
@@ -428,6 +428,12 @@ export function MyPosts() {
     `/api/items?scope=${managed ? "managed" : "mine"}&page=${page}&pageSize=10`,
   );
   const action = useAction();
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
+  useEffect(() => {
+    if (deleteTarget && !deleteDialog.current?.open) deleteDialog.current?.showModal();
+  }, [deleteTarget]);
+
   async function publication(item: Item) {
     const result = await action.run(() =>
       write<Item>(
@@ -442,12 +448,6 @@ export function MyPosts() {
     if (result) items.reload();
   }
   async function deletePost(item: Item) {
-    if (
-      !window.confirm(
-        `Xóa bài đăng “${item.title}”?\n\nKhông thể khôi phục bài đăng sau khi xóa. Lịch sử yêu cầu nhận đồ, hội thoại và bàn giao vẫn được lưu giữ.`,
-      )
-    )
-      return;
     const deleted = await action.run(async () => {
       await write<void>(
         `/api/items/${item.id}`,
@@ -612,7 +612,7 @@ export function MyPosts() {
                             className="text-button danger-text"
                             type="button"
                             disabled={action.busy}
-                            onClick={() => void deletePost(item)}
+                            onClick={() => setDeleteTarget(item)}
                           >
                             Xóa bài đăng
                           </button>
@@ -638,7 +638,7 @@ export function MyPosts() {
                   </a>
                 </EmptyState>
               )}
-              <Pagination page={page} hasMore={items.data.hasMore} />
+              <Pagination page={items.data.page} totalPages={items.data.totalPages} />
             </>
           )}
         </section>
@@ -661,6 +661,36 @@ export function MyPosts() {
           <SafetyNote />
         </aside>
       </div>
+      <dialog
+        ref={deleteDialog}
+        className="confirm-dialog"
+        aria-labelledby="delete-post-title"
+        aria-describedby="delete-post-warning"
+        onClose={() => setDeleteTarget(null)}
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!deleteTarget || action.busy) return;
+            deleteDialog.current?.close();
+            void deletePost(deleteTarget);
+          }}
+        >
+          <h2 id="delete-post-title">Xóa bài đăng “{deleteTarget?.title}”?</h2>
+          <p id="delete-post-warning">
+            Không thể khôi phục bài đăng sau khi xóa. Lịch sử yêu cầu nhận đồ,
+            hội thoại và bàn giao vẫn được lưu giữ.
+          </p>
+          <div className="form-actions">
+            <button className="button button-secondary" type="button" onClick={() => deleteDialog.current?.close()}>
+              Hủy
+            </button>
+            <button className="button button-secondary danger-text" type="submit">
+              Xác nhận xóa bài đăng
+            </button>
+          </div>
+        </form>
+      </dialog>
     </>
   );
 }
@@ -860,7 +890,7 @@ export function Messages({ user }: { user: UserProfile }) {
             </p>
           )}
           {conversations.data && (
-            <Pagination page={page} hasMore={conversations.data.hasMore} />
+            <Pagination page={conversations.data.page} totalPages={conversations.data.totalPages} />
           )}
         </aside>
         <section className="conversation-main">

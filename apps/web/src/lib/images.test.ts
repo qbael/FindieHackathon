@@ -149,7 +149,7 @@ test("uncertain upload retries reuse encoded bytes, MIME and idempotency key", a
   assert.deepEqual(requests[0].headers, requests[1].headers);
   assert.equal((requests[0].headers as Record<string, string>)["Content-Type"], "image/jpeg");
   assert.equal(requests[0].credentials, "same-origin");
-  assert.equal(timeouts.mock.calls.filter(call => call.arguments[0] === 300000).length, 2);
+  assert.equal(timeouts.mock.calls.filter(call => call.arguments[0] === 660000).length, 2);
   await uploadImage("item-id", source, 2);
   assert.notEqual((requests[1].headers as Record<string, string>)["Idempotency-Key"],
     (requests[2].headers as Record<string, string>)["Idempotency-Key"]);

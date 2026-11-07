@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-156",
+  "sourceUrl": "https://timdo24h.com/156",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:37.857031+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ kèm thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/3b6d8114-32b7-4e3d-bf4f-8255bb5e82b0.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "1d29794bcd7709dfa8e8128580a303afba3b88264025e5636c24874529120587",
+    "metadataChanged": true,
+    "sourceSha256": "c86e18f46f0754bea1604e4930f1e1cd74f747d435103196079060e9ac22d240",
+    "sha256": "1d9dd055a335f3955473557aee3f69c7e9d3744424c59f0aead29bfaa3b30cac"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

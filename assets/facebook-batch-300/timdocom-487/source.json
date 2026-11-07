@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdocom-487",
+  "sourceUrl": "https://timdo24h.com/487",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:26.251348+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/f8d33f25-f3d1-41bf-9812-229c7b9ea559.jpeg"
+  ],
+  "itemType": "registration",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8e1e2668e53b715d169f601efddd568a0d04825a355cc51e88d337c9bbce396f",
+    "metadataChanged": false,
+    "sourceSha256": "b9eb4db877ce0b28ce0945dfb02472e2f61db315c25f958568007664b554c4e6",
+    "sha256": "b9eb4db877ce0b28ce0945dfb02472e2f61db315c25f958568007664b554c4e6"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-08-03"
+  }
+}

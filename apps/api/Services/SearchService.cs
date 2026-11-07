@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Findie.Api.Contracts;
 using Findie.Api.Infrastructure;
 using Findie.Api.Models;
@@ -18,21 +20,28 @@ public interface ISearchService
 
 public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai, IConfiguration configuration, RecoveryWorkflow workflow) : ISearchService
 {
+    const double MaxTimeBonus = 0.05;
+    // shortcut: area preference is heuristic; calibrate it on labelled search results.
+    const double MaxAreaBonus = 0.05;
+
     public Task<SearchResponse> TextAsync(Guid actor, SearchRequest request, CancellationToken ct)
     {
         var text = RecoveryWorkflow.Text(request.Text, 2000, "Search text");
-        return SearchAsync(actor, "text", text, request.Area, request.From, request.Until, request.Limit, [], "application/json", ct);
+        return SearchAsync(actor, "text", text, request.Area, request.From, request.Until, request.Limit,
+            ParseLostAt(request.LostAt), [], "application/json", ct);
     }
     public async Task<SearchResponse> ImageAsync(Guid actor, ImageSearchFilter filter, string? mime, Stream stream, long? length, CancellationToken ct)
     {
         if (!BoundedImage.Mime(mime)) throw new ApiException(415, "Use a JPEG, PNG or WebP binary body.");
+        var lostAt = ParseLostAt(filter.LostAt);
         var bytes = await BoundedImage.ReadAsync(stream, length, ct);
-        try { return await SearchAsync(actor, "image", null, filter.Area, filter.From, filter.Until, filter.Limit, bytes, mime!, ct); }
+        try { return await SearchAsync(actor, "image", null, filter.Area, filter.From, filter.Until, filter.Limit, lostAt, bytes, mime!, ct); }
         finally { Array.Clear(bytes); }
     }
     public async Task<SearchResponse> ImagesAsync(Guid actor, ImageSearchFilter filter, string? contentType, Stream stream, long? length, CancellationToken ct)
     {
         ValidateFilters(filter.Area, filter.From, filter.Until, filter.Limit);
+        var lostAt = ParseLostAt(filter.LostAt);
         if (length > 3 * BoundedImage.MaxBytes + 65536) throw new ApiException(413, "Search upload exceeds 30 MiB plus form headers.");
         if (!MediaTypeHeaderValue.TryParse(contentType, out var type) || type.MediaType != "multipart/form-data")
             throw new ApiException(415, "Use multipart/form-data with one to three images.");
@@ -83,31 +92,37 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
             }
             catch (Exception error) when (error is IOException or InvalidDataException or DecoderFallbackException)
             { throw new ApiException(400, "Invalid multipart search input."); }
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeout.CancelAfter(TimeSpan.FromSeconds(40));
+            var body = new byte[images.Sum(image => image.Bytes.Length)];
             try
             {
-                var rankings = new List<IReadOnlyList<SearchCandidate>>();
+                var offset = 0;
                 foreach (var image in images)
-                    rankings.Add(await QueryAsync("image", null, filter.Area, filter.From, filter.Until, filter.Limit,
-                        image.Bytes, image.Mime, timeout.Token));
-                if (text is not null)
-                    rankings.Add(await QueryAsync("text", text, filter.Area, filter.From, filter.Until, filter.Limit,
-                        [], "application/json", timeout.Token));
-                return await ResultsAsync(actor, rankings, text is null ? "image" : "combined",
-                    text is null ? "image-fusion-v1" : "multimodal-fusion-v1", filter.Area, filter.From, filter.Until, filter.Limit, timeout.Token);
+                {
+                    image.Bytes.CopyTo(body, offset);
+                    offset += image.Bytes.Length;
+                }
+                var mode = text is null ? "image" : "combined";
+                var profile = text is null ? "image-fusion-v1" : "multimodal-fusion-v1";
+                var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1,
+                    modelId = AiProtocol.Setting(configuration, "EmbeddingModelId"), modelRevision = AiProtocol.Setting(configuration, "EmbeddingRevision"),
+                    processingProfile = "multimodal-v1", searchProfileId = profile, searchProfileVersion = 1,
+                    mode, area = RecoveryWorkflow.Optional(filter.Area), from = filter.From, until = filter.Until, limit = filter.Limit,
+                    candidateLimit = 200 * (images.Count + (text is null ? 0 : 1)), cacheScope = actor, deadlineAt = DateTimeOffset.UtcNow.AddSeconds(940), text,
+                    images = images.Select(image => new { contentType = image.Mime, length = image.Bytes.Length }) }, RecoveryWorkflow.Json);
+                var candidates = await QueryAsync(new AiCommand("search.hybrid.images", metadata, body, "application/octet-stream"),
+                    mode, images.Count + (text is null ? 0 : 1), ct);
+                return await ResultsAsync(actor, candidates, mode, profile, filter.Area, filter.From, filter.Until, filter.Limit, lostAt, ct);
             }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            { throw new ApiException(503, "AI search timed out; use GET /api/items for basic filters."); }
+            finally { Array.Clear(body); }
         }
         finally { foreach (var image in images) Array.Clear(image.Bytes); }
     }
     async Task<SearchResponse> SearchAsync(Guid actor, string mode, string? text, string? area, DateOnly? from, DateOnly? until,
-        int limit, byte[] bytes, string mime, CancellationToken ct) =>
-        await ResultsAsync(actor, [await QueryAsync(mode, text, area, from, until, limit, bytes, mime, ct)], mode,
-            AiProtocol.Setting(configuration, mode == "text" ? "TextSearchProfile" : "ImageSearchProfile"), area, from, until, limit, ct);
+        int limit, DateTimeOffset? lostAt, byte[] bytes, string mime, CancellationToken ct) =>
+        await ResultsAsync(actor, await QueryAsync(actor, mode, text, area, from, until, limit, bytes, mime, ct), mode,
+            AiProtocol.Setting(configuration, mode == "text" ? "TextSearchProfile" : "ImageSearchProfile"), area, from, until, limit, lostAt, ct);
 
-    async Task<IReadOnlyList<SearchCandidate>> QueryAsync(string mode, string? text, string? area, DateOnly? from, DateOnly? until,
+    async Task<IReadOnlyList<SearchCandidate>> QueryAsync(Guid actor, string mode, string? text, string? area, DateOnly? from, DateOnly? until,
         int limit, byte[] bytes, string mime, CancellationToken ct)
     {
         ValidateFilters(area, from, until, limit);
@@ -117,74 +132,143 @@ public sealed class SearchService(IRecoveryRepository repository, IAiGateway ai,
         var profile = AiProtocol.Setting(configuration, mode == "text" ? "TextSearchProfile" : "ImageSearchProfile");
         var metadata = JsonSerializer.SerializeToElement(new { schemaVersion = 1, modelId = model, modelRevision = revision,
             processingProfile = mode + "-v1", searchProfileId = profile, searchProfileVersion = 1,
-            mode, area, from, until, limit, candidateLimit = 200, deadlineAt = DateTimeOffset.UtcNow.AddSeconds(30) }, RecoveryWorkflow.Json);
+            mode, area, from, until, limit, candidateLimit = 200, cacheScope = actor,
+            deadlineAt = DateTimeOffset.UtcNow.AddSeconds(mode == "image" ? 300 : 30) }, RecoveryWorkflow.Json);
         var kind = mode == "image" ? "search.hybrid.image" : "search.hybrid";
         var body = mode == "image" ? bytes : JsonSerializer.SerializeToUtf8Bytes(new { text, area, from, until }, RecoveryWorkflow.Json);
+        try { return await QueryAsync(new AiCommand(kind, metadata, body, mime), mode, 0, ct); }
+        finally { if (mode == "text") Array.Clear(body); }
+    }
+    async Task<IReadOnlyList<SearchCandidate>> QueryAsync(AiCommand command, string mode, int fusionBranches, CancellationToken ct)
+    {
         try
         {
-            await using var reply = await ai.RequestAsync(new AiCommand(kind, metadata, body, mime), ct);
-            AiProtocol.Require(reply.Metadata, kind);
-            foreach (var field in new[] { "modelId", "modelRevision", "processingProfile", "searchProfileId", "searchProfileVersion" })
-                if (reply.Metadata.GetProperty(field).ToString() != metadata.GetProperty(field).ToString()) throw new JsonException();
-            if (reply.Body.Length > 262144) throw new JsonException();
+            await using var reply = await ai.RequestAsync(command, ct);
+            AiProtocol.Require(reply.Metadata, command.Kind);
+            foreach (var field in new[] { "modelId", "modelRevision", "processingProfile", "searchProfileId", "searchProfileVersion", "mode" })
+                if (reply.Metadata.GetProperty(field).ToString() != command.Metadata.GetProperty(field).ToString()) throw new JsonException();
+            if (reply.Body.Length > 1024 * 1024) throw new JsonException();
             using var document = JsonDocument.Parse(reply.Body);
             var candidates = document.RootElement.GetProperty("candidates");
-            if (candidates.ValueKind != JsonValueKind.Array || candidates.GetArrayLength() > 200) throw new JsonException();
+            if (candidates.ValueKind != JsonValueKind.Array
+                || candidates.GetArrayLength() > command.Metadata.GetProperty("candidateLimit").GetInt32()
+                || candidates.GetArrayLength() > 800) throw new JsonException();
             var result = new List<SearchCandidate>();
+            var previousScore = double.PositiveInfinity;
+            var previousGroup = -1;
             foreach (var candidate in candidates.EnumerateArray())
             {
-                result.Add(new SearchCandidate(candidate.GetProperty("itemId").GetGuid(), candidate.GetProperty("documentVersion").GetInt64(),
-                    candidate.GetProperty("sourceId").GetGuid(), candidate.GetProperty("sourceVersion").GetInt64(),
-                    candidate.GetProperty("sourceSha256").GetString(), mode == "image"));
+                var sources = new List<SearchSource>();
+                var score = fusionBranches == 0 ? 1d / (61 + result.Count) : candidate.GetProperty("score").GetDouble();
+                var imageScore = mode == "image" ? score : 0d;
+                var textScore = mode == "text" ? score : 0d;
+                if (fusionBranches > 0)
+                {
+                    imageScore = candidate.GetProperty("imageScore").GetDouble();
+                    textScore = candidate.GetProperty("textScore").GetDouble();
+                    var maxImageScore = command.Metadata.GetProperty("images").GetArrayLength() / 61d;
+                    var maxTextScore = mode == "combined" ? 0.5 / 61d : 0d;
+                    if (!double.IsFinite(score) || score <= 0 || score > maxImageScore + maxTextScore + 1e-12
+                        || !double.IsFinite(imageScore) || imageScore < 0 || imageScore > maxImageScore + 1e-12
+                        || !double.IsFinite(textScore) || textScore < 0 || textScore > maxTextScore + 1e-12
+                        || mode == "image" && textScore != 0
+                        || Math.Abs(score - imageScore - textScore) > 1e-12) throw new JsonException();
+                    var evidence = candidate.GetProperty("sources");
+                    if (evidence.ValueKind != JsonValueKind.Array || evidence.GetArrayLength() < 1 || evidence.GetArrayLength() > fusionBranches)
+                        throw new JsonException();
+                    foreach (var source in evidence.EnumerateArray()) sources.Add(ReadSource(source, mode == "image", true));
+                }
+                else sources.Add(ReadSource(candidate, mode == "image"));
+                var hit = new SearchCandidate(candidate.GetProperty("itemId").GetGuid(), score, imageScore, textScore, sources);
+                if (hit.Group < previousGroup || hit.Group == previousGroup && score > previousScore) throw new JsonException();
+                result.Add(hit);
+                previousScore = score;
+                previousGroup = hit.Group;
             }
             await reply.CompleteAsync();
             return result;
         }
         catch (Exception error) when (AiProtocol.Malformed(error)) { throw new ApiException(502, "AI returned an invalid search response; use GET /api/items for basic filters."); }
-        finally { if (mode == "text") Array.Clear(body); }
     }
-    async Task<SearchResponse> ResultsAsync(Guid actor, IReadOnlyList<IReadOnlyList<SearchCandidate>> rankings, string mode, string profile,
-        string? area, DateOnly? from, DateOnly? until, int limit, CancellationToken ct)
+    static SearchSource ReadSource(JsonElement source, bool imageOnly, bool strict = false)
+    {
+        var kind = source.GetProperty("sourceKind").GetString();
+        var documentVersion = source.GetProperty("documentVersion").GetInt64();
+        var sourceVersion = source.GetProperty("sourceVersion").GetInt64();
+        var hash = source.GetProperty("sourceSha256").GetString();
+        if (kind is not ("text" or "image") || imageOnly && kind != "image" || strict && (documentVersion <= 0 || sourceVersion <= 0
+            || hash is not { Length: 64 } || hash.Any(c => c is not (>= '0' and <= '9' or >= 'a' and <= 'f'))))
+            throw new JsonException();
+        return new SearchSource(documentVersion, source.GetProperty("sourceId").GetGuid(), sourceVersion, hash, kind == "image");
+    }
+    async Task<SearchResponse> ResultsAsync(Guid actor, IReadOnlyList<SearchCandidate> candidates, string mode, string profile,
+        string? area, DateOnly? from, DateOnly? until, int limit, DateTimeOffset? lostAt, CancellationToken ct)
     {
         area = RecoveryWorkflow.Optional(area);
-        var scores = new Dictionary<Guid, (double Score, Item Item)>();
+        var scores = new Dictionary<Guid, (SearchCandidate Candidate, Item Item)>();
         var items = new Dictionary<Guid, Item?>();
         var removed = false;
-        foreach (var ranking in rankings)
+        foreach (var candidate in candidates)
         {
-            var seen = new HashSet<Guid>();
-            for (var rank = 0; rank < ranking.Count; rank++)
-            {
-                var candidate = ranking[rank];
-                if (!items.TryGetValue(candidate.ItemId, out var item))
-                    items[candidate.ItemId] = item = await repository.ItemAsync(candidate.ItemId, false, ct);
-                var validSource = item is not null && (candidate.Image
-                    ? item.Images.Any(image => image.Id == candidate.SourceId && RecoveryWorkflow.PublicImage(image)
-                        && image.ContentVersion == candidate.SourceVersion && image.ProcessedObject!.Sha256 == candidate.SourceHash)
-                    : candidate.SourceId == item.Id && item.ContentVersion == candidate.SourceVersion
-                        && candidate.SourceHash == RecoveryWorkflow.Hash(item.Title + "\n" + item.PublicDescription));
-                if (item is null || !RecoveryWorkflow.Public(item) || !validSource || !Matches(item, area, from, until)
-                    || item.DocumentVersion != candidate.DocumentVersion || !seen.Add(candidate.ItemId))
-                { removed = true; continue; }
-                scores.TryGetValue(item.Id, out var current);
-                scores[item.Id] = (current.Score + 1d / (61 + rank), item);
-                if (rankings.Count == 1 && scores.Count == limit) break;
-            }
+            if (!items.TryGetValue(candidate.ItemId, out var item))
+                items[candidate.ItemId] = item = await repository.ItemAsync(candidate.ItemId, false, ct);
+            var validSources = item is not null && candidate.Sources.All(source => item.DocumentVersion == source.DocumentVersion && (source.Image
+                ? item.Images.Any(image => image.Id == source.SourceId && RecoveryWorkflow.PublicImage(image)
+                    && image.ContentVersion == source.SourceVersion && image.ProcessedObject!.Sha256 == source.SourceHash)
+                : source.SourceId == item.Id && item.ContentVersion == source.SourceVersion
+                    && source.SourceHash == RecoveryWorkflow.Hash(item.Title + "\n" + item.PublicDescription)));
+            if (item is null || !RecoveryWorkflow.Public(item) || !validSources || !Matches(item, from, until))
+            { removed = true; continue; }
+            if (!scores.TryGetValue(item.Id, out var current)
+                || (-candidate.Group, candidate.Score, candidate.ImageScore, candidate.TextScore).CompareTo(
+                    (-current.Candidate.Group, current.Candidate.Score, current.Candidate.ImageScore, current.Candidate.TextScore)) > 0)
+                scores[item.Id] = (candidate, item);
         }
         var hits = new List<SearchHit>();
-        foreach (var value in scores.Values.OrderByDescending(value => value.Score).Take(limit))
+        foreach (var value in scores.Values.OrderBy(value => value.Candidate.Group).ThenByDescending(value =>
+            value.Candidate.Score * (1 + (area is not null && MatchesArea(value.Item, area) ? MaxAreaBonus : 0))
+                * (1 + (lostAt is { } whenLost ? TimeBonus(value.Item, whenLost) : 0)))
+            .ThenByDescending(value => value.Candidate.ImageScore).ThenByDescending(value => value.Candidate.TextScore).Take(limit))
             hits.Add(new SearchHit(hits.Count + 1, await workflow.ResponseAsync(value.Item, actor, ct)));
-        return new SearchResponse(hits, mode, profile, 1, removed && hits.Count < limit, false, "/api/items");
+        return new SearchResponse(hits, mode, profile, 1, removed && hits.Count < limit,
+            area is not null && hits.Any(hit => !hit.Item.FoundArea.Contains(area, StringComparison.OrdinalIgnoreCase)), "/api/items");
+    }
+    static DateTimeOffset? ParseLostAt(string? value)
+    {
+        if (value is null) return null;
+        if (!Regex.IsMatch(value, @"\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,7})?)?(Z|[+-]\d{2}:\d{2})\z")
+            || !DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var lostAt)
+            || lostAt > DateTimeOffset.UtcNow)
+            throw new ApiException(400, "Lost time must be a past ISO 8601 timestamp with a timezone offset.");
+        return lostAt;
+    }
+    static double TimeBonus(Item item, DateTimeOffset lostAt)
+    {
+        // shortcut: these weights are heuristic, tune them when labelled search results are available.
+        if (item.FoundFrom is { } start && (item.FoundUntil ?? start) >= lostAt)
+        {
+            var hoursAfterLoss = Math.Max(0, (start - lostAt).TotalHours);
+            var precisionWeight = item.FoundUntil is null ? 1d : 0.5;
+            return MaxTimeBonus * precisionWeight * Math.Max(0, 1 - hoursAfterLoss / 24);
+        }
+        if (item.FoundOn is { } day && TimeZoneInfo.TryFindSystemTimeZoneById(item.FoundTimezone, out var timezone)
+            && day == DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(lostAt, timezone).DateTime))
+            return 0.02;
+        return 0;
     }
     static void ValidateFilters(string? area, DateOnly? from, DateOnly? until, int limit)
     {
         if (from > until || from == DateOnly.MinValue || until == DateOnly.MaxValue) throw new ApiException(400, "Invalid date filter.");
         if (area?.Length > 200 || limit is < 1 or > 10) throw new ApiException(400, "Invalid search filter.");
     }
-    sealed record SearchCandidate(Guid ItemId, long DocumentVersion, Guid SourceId, long SourceVersion, string? SourceHash, bool Image);
-    static bool Matches(Item item, string? area, DateOnly? from, DateOnly? until)
+    sealed record SearchSource(long DocumentVersion, Guid SourceId, long SourceVersion, string? SourceHash, bool Image);
+    sealed record SearchCandidate(Guid ItemId, double Score, double ImageScore, double TextScore, IReadOnlyList<SearchSource> Sources)
     {
-        if (area is not null && !item.FoundArea.Contains(area, StringComparison.OrdinalIgnoreCase)) return false;
+        public int Group => ImageScore > 0 && TextScore > 0 ? 0 : ImageScore > 0 ? 1 : 2;
+    }
+    static bool MatchesArea(Item item, string area) => item.FoundArea.Contains(area, StringComparison.OrdinalIgnoreCase);
+    static bool Matches(Item item, DateOnly? from, DateOnly? until)
+    {
         if (from is { } first)
         {
             var start = new DateTimeOffset(first.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(7)).ToUniversalTime();

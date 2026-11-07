@@ -1,7 +1,7 @@
 import importlib.util
 from contextlib import redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import threading
@@ -94,6 +94,28 @@ class GatewayTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_check_gateway_reports_only_safe_upstream_502_details(self):
+        base_url = "http://127.0.0.1:11435"
+        endpoint = base_url + "/api/tags"
+        cases = (
+            ({"error": "ollama_unavailable", "upstreamStatus": 403}, "ollama_unavailable"),
+            ({"error": "ollama_timeout"}, "ollama_timeout"),
+            ({"error": "ollama_http_error", "upstreamStatus": 503}, "ollama_http_error (Ollama HTTP 503)"),
+            ({"error": "ollama_http_error", "upstreamStatus": True}, "ollama_http_error"),
+            ({"error": "ollama_http_error", "upstreamStatus": "503"}, "ollama_http_error"),
+            ({"error": "ollama_http_error", "upstreamStatus": 999}, "ollama_http_error"),
+            ({"error": "private upstream output " + TOKEN}, "không có mã lỗi ngrok"),
+        )
+        for payload, marker in cases:
+            with self.subTest(payload=payload):
+                body = json.dumps({**payload, "detail": "private upstream output " + TOKEN}).encode()
+                opener = Mock()
+                opener.open.side_effect = HTTPError(endpoint, 502, "Bad Gateway", {}, BytesIO(body))
+                with patch.object(module, "build_opener", return_value=opener), self.assertRaises(RuntimeError) as error:
+                    module.check_gateway(base_url, TOKEN, {})
+                self.assertEqual(str(error.exception), f"{endpoint}: HTTP 502, {marker}.")
+                opener.open.assert_called_once()
 
     def test_check_gateway_does_not_follow_redirect_with_bearer_token(self):
         requests = []
@@ -191,7 +213,11 @@ class GatewayTests(unittest.TestCase):
                                                 {"name": model, "digest": "sha256:" + embedding.digest}])
             self.assertEqual(request("/api/show", {"model": model}),
                              (200, {"capabilities": ["embedding", "vision"]}))
-            for value in ("search", {"image": "native-image-base64"}):
+            embedding.supports_image_text = True
+            self.assertEqual(request("/api/show", {"model": model}),
+                             (200, {"capabilities": ["embedding", "vision", "image_text"]}))
+            for value in ("search", {"image": "native-image-base64"},
+                          {"image": "native-image-base64", "text": "Thẻ sinh viên. MSSV: 12345678"}):
                 self.assertEqual(request("/api/embed", {**payload, "input": value, "dimensions": 2048,
                                                         "truncate": False}),
                                  (200, {"model": model, "embeddings": [vector]}))
@@ -315,28 +341,32 @@ class GatewayTests(unittest.TestCase):
                 self.assertIsNone(cell["execution_count"])
                 compile("".join(cell["source"]), f"cell{i}", "exec")
 
-    def test_notebook_gateway_start_reuses_current_token_on_rerun(self):
+    def test_notebook_gateway_start_uses_fresh_config_with_current_token_on_rerun(self):
         notebook = json.loads((ROOT / "notebooks/colab/04_full_stack_ollama_ngrok.ipynb").read_text())
         source = next("".join(c["source"]) for c in notebook["cells"]
                       if "gateway-start" in c["metadata"].get("tags", []))
-        config = SimpleNamespace(auth_token=None)
+        poisoned_default = SimpleNamespace(auth_token={"invalid": "default"}, ngrok_path={"invalid": "path"})
+        conf = SimpleNamespace(
+            get_default=Mock(return_value=poisoned_default),
+            PyngrokConfig=Mock(side_effect=lambda **kwargs: SimpleNamespace(**kwargs)),
+        )
         events = []
         public_url = "https://example.ngrok.app"
 
-        def connect(**_kwargs):
-            events.append(("connect", config.auth_token))
+        def connect(*, addr, proto, inspect, pyngrok_config):
+            events.append(("connect", pyngrok_config.auth_token))
             return SimpleNamespace(public_url=public_url)
 
         ngrok = Mock()
-        ngrok.kill.side_effect = lambda: events.append(("kill", config.auth_token))
+        ngrok.kill.side_effect = lambda *, pyngrok_config: events.append(("kill", pyngrok_config.auth_token))
         ngrok.connect.side_effect = connect
-        conf = SimpleNamespace(get_default=lambda: config)
         servers = [Mock(), Mock(), Mock()]
         check_gateway = Mock(return_value={"models": [{}, {}]})
         revisions = {"embedding": "b" * 64, "redaction": "c" * 64}
         namespace = {
             "gateway": Mock(side_effect=servers),
             "threading": SimpleNamespace(Thread=Mock()),
+            "ensure_ollama_ready": Mock(),
             "FINDIE_OLLAMA_TOKEN": TOKEN,
             "EMBEDDING_MODEL": "embedding",
             "REDACTION_MODEL": "redaction",
@@ -346,12 +376,22 @@ class GatewayTests(unittest.TestCase):
         }
         output = StringIO()
         tokens = ("ngrok-secret-first", "ngrok-secret-second")
+        configs = []
         with patch.dict("sys.modules", {"pyngrok": SimpleNamespace(conf=conf, ngrok=ngrok)}), redirect_stdout(output):
             for token in tokens:
                 namespace["NGROK_AUTHTOKEN"] = token
                 exec(source, namespace)
-            self.assertEqual(events, [("kill", None), ("connect", tokens[0]),
-                                      ("kill", tokens[0]), ("connect", tokens[1])])
+                configs.append(namespace["ngrok_config"])
+                conf.PyngrokConfig.assert_called_with(auth_token=token)
+                ngrok.kill.assert_called_with(pyngrok_config=configs[-1])
+                ngrok.connect.assert_called_with(addr="http://127.0.0.1:11435", proto="http", inspect=False,
+                                                 pyngrok_config=configs[-1])
+            self.assertIsNot(configs[0], configs[1])
+            self.assertEqual(conf.PyngrokConfig.call_count, 2)
+            self.assertEqual([config.auth_token for config in configs], list(tokens))
+            conf.get_default.assert_not_called()
+            self.assertEqual(events, [("kill", tokens[0]), ("connect", tokens[0]),
+                                      ("kill", tokens[1]), ("connect", tokens[1])])
             servers[0].shutdown.assert_called_once_with()
             servers[0].server_close.assert_called_once_with()
             ngrok.set_auth_token.assert_not_called()
@@ -359,7 +399,6 @@ class GatewayTests(unittest.TestCase):
             for local, remote in zip(check_gateway.call_args_list[::2], check_gateway.call_args_list[1::2]):
                 self.assertEqual(local.args, ("http://127.0.0.1:11435", TOKEN, revisions))
                 self.assertEqual(remote.args, (public_url, TOKEN, revisions))
-            ngrok.connect.assert_called_with(addr="http://127.0.0.1:11435", proto="http", inspect=False)
             public_url = "http://example.ngrok.app"
             with self.assertRaisesRegex(RuntimeError, "HTTPS"):
                 exec(source, namespace)
@@ -367,6 +406,39 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(check_gateway.call_args.args, ("http://127.0.0.1:11435", TOKEN, revisions))
         for token in (*tokens, TOKEN):
             self.assertNotIn(token, output.getvalue())
+
+
+    def test_notebook_gateway_rejects_invalid_ngrok_token_before_stopping_services(self):
+        notebook = json.loads((ROOT / "notebooks/colab/04_full_stack_ollama_ngrok.ipynb").read_text())
+        source = next("".join(c["source"]) for c in notebook["cells"]
+                      if "gateway-start" in c["metadata"].get("tags", []))
+        invalid_tokens = (None, {"token": "private-token"}, 123, True, b"private-token", "", " ",
+                          "private token", "private-token\n", "private-tokén")
+        for index, token in enumerate(invalid_tokens):
+            with self.subTest(case=index):
+                ngrok, conf, server = Mock(), Mock(), Mock()
+                namespace = {
+                    "NGROK_AUTHTOKEN": token,
+                    "ensure_ollama_ready": Mock(),
+                    "gateway_server": server,
+                    "gateway": Mock(),
+                    "check_gateway": Mock(),
+                }
+                output = StringIO()
+                with patch.dict("sys.modules", {"pyngrok": SimpleNamespace(conf=conf, ngrok=ngrok)}), redirect_stdout(output):
+                    with self.assertRaisesRegex(ValueError, "NGROK_AUTHTOKEN") as raised:
+                        exec(source, namespace)
+                self.assertNotIn("private-token", str(raised.exception))
+                self.assertEqual(output.getvalue(), "")
+                namespace["ensure_ollama_ready"].assert_not_called()
+                namespace["gateway"].assert_not_called()
+                namespace["check_gateway"].assert_not_called()
+                server.shutdown.assert_not_called()
+                server.server_close.assert_not_called()
+                conf.PyngrokConfig.assert_not_called()
+                conf.get_default.assert_not_called()
+                ngrok.kill.assert_not_called()
+                ngrok.connect.assert_not_called()
 
 
 if __name__ == "__main__":

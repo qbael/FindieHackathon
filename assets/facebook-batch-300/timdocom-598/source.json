@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-598",
+  "sourceUrl": "https://timdo24h.com/598",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:41.039291+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.png"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/e153c8a4-f50c-42a0-880c-8884389d0576.png"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "81074d48ec844fd92993e124898b0fa8b89347c39c5079b902bbad5301469718",
+    "metadataChanged": false,
+    "sourceSha256": "59a4d8366c4c8cbd16a5ee010cd2e116ce2d248e1d56b12f1777ad581f092ea3",
+    "sha256": "59a4d8366c4c8cbd16a5ee010cd2e116ce2d248e1d56b12f1777ad581f092ea3"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Văn phòng quản lý bãi xe (giả định)",
+      "address": "Chốt quản lý gần lối ra, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Hỏi nhân viên ca trực và mô tả nơi để xe hoặc nơi đánh rơi."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

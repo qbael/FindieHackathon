@@ -14,8 +14,11 @@ public interface IConversationService
 
 public sealed class ConversationService(IRecoveryRepository repository, RecoveryWorkflow workflow) : IConversationService
 {
-    public async Task<PageResponse<ConversationResponse>> ListAsync(Guid actor, int page, int size, CancellationToken ct) =>
-        RecoveryWorkflow.Page((await repository.ConversationsAsync(actor, page, size, ct)).Select(Response).ToList(), page, size);
+    public async Task<PageResponse<ConversationResponse>> ListAsync(Guid actor, int page, int size, CancellationToken ct)
+    {
+        var (items, totalCount) = await repository.ConversationsAsync(actor, page, size, ct);
+        return RecoveryWorkflow.Page(items.Select(Response).ToList(), page, size, totalCount);
+    }
     public async Task<ConversationResponse> GetAsync(Guid actor, Guid id, CancellationToken ct) => Response(await AuthorizedAsync(actor, id, ct));
     private async Task<Conversation> AuthorizedAsync(Guid actor, Guid id, CancellationToken ct)
     {

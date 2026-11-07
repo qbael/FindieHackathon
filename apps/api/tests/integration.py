@@ -91,7 +91,7 @@ def run():
         subprocess.run([
             "docker", "run", "--detach", "--rm", "--name", broker_name,
             "--env", "RABBITMQ_DEFAULT_USER", "--env", "RABBITMQ_DEFAULT_PASS",
-            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2",
+            "--env", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2 -rabbit max_message_size 33554432",
             "--publish", "127.0.0.1::5672",
             "rabbitmq@sha256:76412b1ed2865b88ed01b4a504f72e888842f2089a7527743d325ce7c9d3a43b",
         ], env=broker_env, check=True, capture_output=True, text=True)

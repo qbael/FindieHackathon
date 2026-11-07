@@ -130,7 +130,7 @@ def main():
     search_preflight(environment)
     commands = (
         ["python3", "scripts/init_rabbitmq.py"],
-        ["docker", "compose", "up", "-d", "--wait", "db", "rabbitmq"],
+        ["docker", "compose", "up", "-d", "--wait", "db", "rabbitmq", "redis"],
         ["docker", "compose", "exec", "-T", "rabbitmq", "rabbitmqctl", "-q", "import_definitions", "/etc/rabbitmq/definitions.json"],
         ["python3", "scripts/db/migrate.py"],
     )

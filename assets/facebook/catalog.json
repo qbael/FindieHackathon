@@ -1,0 +1,3875 @@
+{
+  "updatedAt": "2026-11-03T13:48:11.823853+00:00",
+  "summary": {
+    "sourceCount": 200,
+    "originalPhotoCount": 207,
+    "sourceDomains": {
+      "www.facebook.com": 1,
+      "timdo24h.vn": 4,
+      "timdo24h.com": 165,
+      "timdothatlac.vn": 30
+    },
+    "originalKinds": {
+      "lost": 197,
+      "found": 3
+    },
+    "importedDraftCount": 0,
+    "processedPhotoCount": 207,
+    "remainingImageUploads": 0,
+    "approvedPhotoCount": 207,
+    "publishedCount": 200,
+    "embeddingVectorCount": 407,
+    "fullyIndexedCount": 200
+  },
+  "samples": [
+    {
+      "sourceId": "sgu-1361953532390159",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=838248425549243&set=pcb.1361953532390159",
+      "originalKind": "lost",
+      "title": "Chìa khóa Honda kèm móc khóa vợt tại cơ sở chính SGU",
+      "foundArea": "Cơ sở chính Trường Đại học Sài Gòn",
+      "images": [
+        {
+          "file": "sgu-1361953532390159/photo-1.jpg",
+          "bytes": 18641,
+          "width": 360,
+          "height": 590,
+          "sha256": "b00a95dca9d3daa261caccf64a3baae48d8539e3c5570cd61266af58570f8a6f"
+        },
+        {
+          "file": "sgu-1361953532390159/photo-2.jpg",
+          "bytes": 17100,
+          "width": 504,
+          "height": 316,
+          "sha256": "264afca7050d0bc12c92f856ecf911ca78af94550dcaddddafc2aac6f0eea8a4"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e236d2e9-2c77-432f-b696-81d6fd852c5a",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdo24h-17388",
+      "sourceUrl": "https://timdo24h.vn/post/17388",
+      "originalKind": "lost",
+      "title": "Vòng tay thất lạc",
+      "foundArea": "Đường Lê Văn Quới, Gò Xoài, quận Bình Tân, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdo24h-17388/photo-1.webp",
+          "bytes": 603838,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "bad5472a35b61079629f41943eb96d507ef3db5586d3eaf2b41a9ca8ff8208c2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/69332b52-be4c-4db9-b7d8-b4510a8e0002",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdo24h-19113",
+      "sourceUrl": "https://timdo24h.vn/post/19113",
+      "originalKind": "lost",
+      "title": "Ví viền trắng",
+      "foundArea": "Đường từ Minh Lương về Sóc Xoài, An Giang",
+      "images": [
+        {
+          "file": "timdo24h-19113/photo-1.webp",
+          "bytes": 158456,
+          "width": 647,
+          "height": 610,
+          "sha256": "cae7594676a3a5cfea9cd3ec77e9d4e9540beeeacf55880ae9500b0ca92df36e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/710b1373-2d3f-4e43-b229-409b5a6eef07",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdo24h-19146",
+      "sourceUrl": "https://timdo24h.vn/post/19146",
+      "originalKind": "lost",
+      "title": "iPhone 15 Pro Max màu trắng",
+      "foundArea": "Hòa Đồng, Ngọc Định, xã Định Quán, Đồng Nai",
+      "images": [
+        {
+          "file": "timdo24h-19146/photo-1.webp",
+          "bytes": 4055460,
+          "width": 2258,
+          "height": 3398,
+          "sha256": "2c3f3e4d2df2bf77bfc77a5f3ed801c5abd5cb1541d58adc082080dd5c7b55b2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/fb7ac18e-c5a9-446a-8c6a-c8f2fece3f61",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdo24h-20988",
+      "sourceUrl": "https://timdo24h.vn/post/20988",
+      "originalKind": "lost",
+      "title": "Ví màu đỏ rượu vang",
+      "foundArea": "Khu vực chung cư Greenfield đi lên cầu Kinh Thanh Đa, quận Bình Thạnh, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdo24h-20988/photo-1.webp",
+          "bytes": 835838,
+          "width": 1079,
+          "height": 1419,
+          "sha256": "1f120662cbbebf3dcf7136ee82d681c210911861375fe007540fe8f8c2a7cf27"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/4dfa2080-52d8-49d8-b1b5-25c73370d566",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10065",
+      "sourceUrl": "https://timdo24h.com/em-tim-tai-nghe-airpods-pro-2-bi-roi-doc-tai-chu-hop-con",
+      "originalKind": "lost",
+      "title": "Hai tai nghe AirPods Pro 2",
+      "foundArea": "Thái Hà đến Quan Nhân, Nhân Hòa, Thanh Xuân, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10065/photo-1.jpg",
+          "bytes": 1099175,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "1802ddd08b4606ee9bd5019e31fd7bcdc3e34851d11b484b4d5269e29dfd35a2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5646af8d-a0eb-44c9-b0a5-fdad3372890d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10223",
+      "sourceUrl": "https://timdo24h.com/tim-do-o-yen-xa-trieu-khuc-di-qa-vien-103-cau-trang-ra-van-phuc-em-danh",
+      "originalKind": "lost",
+      "title": "Tìm đồ ở yên xá triều khúc đi qa viện 103 cầu trắng ra vạn phúc em đánh rơi 1 túi đồ đen",
+      "foundArea": "Yên xá đi ra viện 103 qa cầu trắng ra vạn phúc, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10223/photo-1.jpeg",
+          "bytes": 354816,
+          "width": 1290,
+          "height": 1302,
+          "sha256": "afd066462c65b22c63424c51172c5daca99eb4b2f9bc3ceaa483eaf10ff788a7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2fe88068-55cd-4291-930f-852d5d9e8aa1",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10353",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-o-me-tri-ha-hn",
+      "originalKind": "lost",
+      "title": "iPhone XS Max",
+      "foundArea": "Mễ Trì Hạ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10353/photo-1.jpg",
+          "bytes": 141215,
+          "width": 946,
+          "height": 2048,
+          "sha256": "edd172b301cf0ec0a2b048064e19881beea09965a0e002387b69317d105a87cd"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2fb00772-ffd4-495f-88e2-ca4985e669cb",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10566",
+      "sourceUrl": "https://timdo24h.com/tim-lac-bi-rot",
+      "originalKind": "lost",
+      "title": "Tìm lắc bị rớt",
+      "foundArea": "Phước tân, biên hòa, đồng nai, Đồng Nai",
+      "images": [
+        {
+          "file": "timdocom-10566/photo-1.jpeg",
+          "bytes": 95495,
+          "width": 894,
+          "height": 1079,
+          "sha256": "318521c2df0548332701afbf1835bf611087b45ae19702881f2e3daf17c7109a"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/36a22ff4-538b-4c50-944a-205ad59f7c45",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10631",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-van-thi-bao-ngoc-2012-o-da-nang-quang-nam-cu",
+      "originalKind": "lost",
+      "title": "Điện thoại có ốp trắng kem hình ngôi sao",
+      "foundArea": "Bãi tắm Thống Nhất đến cầu Câu Lâu cũ, Nam Phước, Quảng Nam",
+      "images": [
+        {
+          "file": "timdocom-10631/photo-1.jpg",
+          "bytes": 109908,
+          "width": 880,
+          "height": 1065,
+          "sha256": "457ca917dd26b18db99e713bac6e7eb5777601c5f68039b28564b08b72934ed2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/3983eb09-352a-481e-98c6-539163c79759",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10665",
+      "sourceUrl": "https://timdo24h.com/roi-1-chiec-vong-tay-o-ha-noi-truc-duong-nguyen-trai-tay-son-nguyen-luong",
+      "originalKind": "lost",
+      "title": "Rơi 1 chiếc vòng tay , ở Hà Nội trục đường nguyễn trãi tây sơn nguyễn lương bằng",
+      "foundArea": "Nguyễn Trãi, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10665/photo-1.jpeg",
+          "bytes": 2451562,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "2fb5a9c328a0d97172013646a9e0409aed532c7dc50f8e688a4fd5926d070b4a"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/609aa00c-7ae0-4824-8e6e-3ce01ad164fa",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10686",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-15plus-roi-o-da-nang",
+      "originalKind": "lost",
+      "title": "iPhone 15 Plus màu đen",
+      "foundArea": "Kinh Dương Vương, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-10686/photo-1.jpg",
+          "bytes": 18814,
+          "width": 157,
+          "height": 258,
+          "sha256": "952c55f22942a464b1b96289e672f2192e45f21e656305fb6d6bbb0489e0de18"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/92af0b58-381c-4b4d-8800-c7d2ab2a2690",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10743",
+      "sourceUrl": "https://timdo24h.com/tam-toi-qua-97-tam-22h-12h-dem-1",
+      "originalKind": "lost",
+      "title": "Camera Insta360",
+      "foundArea": "Chợ đêm Sơn Trà và chân cầu Rồng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-10743/photo-1.jpg",
+          "bytes": 43020,
+          "width": 271,
+          "height": 1280,
+          "sha256": "2d87f1599398008b7452c3154da59dd20cc62cee11abfbd4207ef3a6938543fd"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c4c7f8ee-0fa3-4b6e-b24f-9c97f2b2d052",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10754",
+      "sourceUrl": "https://timdo24h.com/roi-hai-tranh-ve-cung-o-trong-mot-boc-tai-ha-noi",
+      "originalKind": "lost",
+      "title": "Rơi hai tranh vẽ cùng ở trong một bọc tại Hà Nội",
+      "foundArea": "TTTM Vincom Times City, quanh khu vực ghế ngồi hình tròn màu nâu gần hàng Mixue, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10754/photo-1.jpeg",
+          "bytes": 168732,
+          "width": 2048,
+          "height": 1367,
+          "sha256": "a58b3329dfbda5809a36009c0bef2c470d9eeef85eded88892441c44d0284b1b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e8c9c6ac-04f9-4399-9150-268bfa660923",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10768",
+      "sourceUrl": "https://timdo24h.com/linh-trung-thu-duc-roi-dt-iphone-8-plus-vang-kem",
+      "originalKind": "lost",
+      "title": "iPhone 8 Plus màu vàng kem",
+      "foundArea": "Hoàng Diệu 2, Lê Văn Chí, Bệnh viện đa khoa khu vực Thủ Đức, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-10768/photo-1.jpg",
+          "bytes": 72506,
+          "width": 631,
+          "height": 631,
+          "sha256": "60cfa9f495dbc6c40718b94f2bc3a396d4fcb52e261409026c272d4eba22023f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7643992d-bea4-4183-a077-e784f8a41cf8",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10917",
+      "sourceUrl": "https://timdo24h.com/roi-hop-but-o-quan-tan-phu-binh-tan-tai-tphcm",
+      "originalKind": "lost",
+      "title": "Rơi hộp bút ở quận Tân Phú/ Bình Tân tại TP.HCM",
+      "foundArea": "Quận Tân Phú/ Quận Bình Tân, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-10917/photo-1.jpeg",
+          "bytes": 65696,
+          "width": 590,
+          "height": 519,
+          "sha256": "11de3249a36884c84624ddef1bf202e614a6d2f13a1cead14278e321ba901940"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/36d14ce4-ff52-43fd-814f-3555ef4fcc06",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-10951",
+      "sourceUrl": "https://timdo24h.com/roi-tui-du-lich-khu-phuc-benh-vien-xanh-pon",
+      "originalKind": "lost",
+      "title": "Rơi túi du lịch khu phực Bệnh viện Xanh Pôn",
+      "foundArea": "Trần Phú, bệnh viện Xanh pôn, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-10951/photo-1.jpeg",
+          "bytes": 278040,
+          "width": 1320,
+          "height": 1286,
+          "sha256": "0393ccb3521e5cf3f0e09967cc181e620ece0c6158e422f630d8f331af545d13"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/83e3f11b-b18d-49b2-b529-82e42f18057c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11040",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-xe-o-to-1",
+      "originalKind": "lost",
+      "title": "Chìa khóa Mazda CX-5",
+      "foundArea": "Khách sạn Hữu Nghị đến khách sạn Royal, phường Đồng Hới, Quảng Trị",
+      "images": [
+        {
+          "file": "timdocom-11040/photo-1.jpg",
+          "bytes": 3788137,
+          "width": 4000,
+          "height": 3000,
+          "sha256": "aaaa27a4591f42bc288400b093b67e3f0568f6ab78e7fece12e6436f95ee9608"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6d208d34-6a8f-4b60-a55b-5d4f1a41726d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11052",
+      "sourceUrl": "https://timdo24h.com/tim-ip11",
+      "originalKind": "lost",
+      "title": "iPhone 11, ốp hình bò",
+      "foundArea": "Đại học Nông Lâm đến Thảo Điền, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-11052/photo-1.jpg",
+          "bytes": 10484,
+          "width": 125,
+          "height": 224,
+          "sha256": "59f5f0541ab7c5f72ac6887918c37215d55a9aef0eafa521f9a81eec82ab6c8f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0d0ea1de-2ca7-4c64-9e75-18da3c302579",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11162",
+      "sourceUrl": "https://timdo24h.com/dien-thoai-1",
+      "originalKind": "lost",
+      "title": "Điện thoại có ốp Hello Kitty",
+      "foundArea": "Đoạn Bình Minh 10 và Bạch Đằng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-11162/photo-1.jpg",
+          "bytes": 108398,
+          "width": 830,
+          "height": 1800,
+          "sha256": "f10ec54a8bfe2d5a8c58a9dcbc06af2dd267ef594813dbf7c56e0bc18401d4a8"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/aa4b32f2-73da-4283-a939-4c4b35ebad77",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11197",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-15prm-xam-o-da-nang",
+      "originalKind": "lost",
+      "title": "iPhone 15 Pro Max màu xám",
+      "foundArea": "Mart Loco Đảo Xanh, đường 2/9, Bạch Đằng, Đống Đa, Lê Duẩn, Điện Biên Phủ, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-11197/photo-1.jpg",
+          "bytes": 47622,
+          "width": 514,
+          "height": 797,
+          "sha256": "24f9a590dfa0f2aa2630323984eb631dc03d0bf06aa5bf9a1ab2f1cae1c6def1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d77fbb1a-09b1-4e1a-a62e-8334b627e12d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11233",
+      "sourceUrl": "https://timdo24h.com/roi-action-cam-dji-osmo-nano-roi-o-hoi-an-nha-hang-le-ba-truyen-2",
+      "originalKind": "lost",
+      "title": "Máy quay DJI Osmo Nano",
+      "foundArea": "Nhà hàng Lê Bá Truyền II, đường Bà Triệu, Cẩm Phô, Hội An, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-11233/photo-1.jpg",
+          "bytes": 511567,
+          "width": 1477,
+          "height": 1477,
+          "sha256": "5e97386886eec6320f4b63e5ef12519958a34788848554c1f992482aade1fd9c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/92e59c21-a2d4-4fec-b9a2-b54d8eded409",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11240",
+      "sourceUrl": "https://timdo24h.com/tim-boc-ao-mau-bi-that-lac-doan-duong-tu-thach-ban-long-bien-sang-kim-nguu",
+      "originalKind": "lost",
+      "title": "Tìm bọc áo mẫu bị thất lạc đoạn đường Từ Thạch bàn long biên sang Kim ngưu",
+      "foundArea": "Đoạn đường từ Thạch bàn long biên sang Phố Kim ngưu, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11240/photo-1.jpeg",
+          "bytes": 147964,
+          "width": 963,
+          "height": 1280,
+          "sha256": "9643a343c7c73ed7e5ff604d6f1255213a20e6ed2b905b3c73adc0f546c34290"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b2c78d65-3e78-4c7a-bf72-4982b2bc7dd9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11288",
+      "sourceUrl": "https://timdo24h.com/roi-iphone-13-o-doan-duong-noi-kdt-ve-tinh-o-mai-dinh-mai-dong-soc-son",
+      "originalKind": "lost",
+      "title": "iPhone 13, ốp Hello Kitty màu hồng",
+      "foundArea": "Đường nối khu đô thị vệ tinh Mai Đình, Mai Động, Sóc Sơn, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11288/photo-1.png",
+          "bytes": 275928,
+          "width": 271,
+          "height": 501,
+          "sha256": "b195ef14eba74a00ef149e59de922e5dca89afb46455cad68294e647ffedae4a"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/525d513d-c060-4224-9acb-71d7e4354d73",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11314",
+      "sourceUrl": "https://timdo24h.com/roi-tui-o-le-van-hien-khu-hoc-vien-tai-chinh",
+      "originalKind": "lost",
+      "title": "Rơi túi ở Lê Văn Hiến khu Học viện Tài Chính",
+      "foundArea": "Ngõ 56 Lê Văn Hiến, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11314/photo-1.jpeg",
+          "bytes": 263094,
+          "width": 1275,
+          "height": 1858,
+          "sha256": "f9b1b4ac4801a4a07085ba966680ea227f2d3f30213ac269cfaf64cefeae993d"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d990782f-7c39-4178-9f03-8e73363c182d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11396",
+      "sourceUrl": "https://timdo24h.com/tim-quan-ao-moi-mua-hang-feng-atelier",
+      "originalKind": "lost",
+      "title": "Tìm quần áo mới mua hãng FENG Atelier",
+      "foundArea": "Cầu Nhật Tân, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11396/photo-1.jpeg",
+          "bytes": 184036,
+          "width": 2048,
+          "height": 2731,
+          "sha256": "13ce1a98c5cedbe208988987d95d625446a95c0fb8f80f59d2fc6b9740b6ead3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e80d7caf-14d2-4a1b-a4ed-effacef09707",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11484",
+      "sourceUrl": "https://timdo24h.com/roi-cuc-do",
+      "originalKind": "lost",
+      "title": "rơi cục đồ",
+      "foundArea": "gần ngã tư tô ký với nguyễn ảnh thủ. q12, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-11484/photo-1.jpeg",
+          "bytes": 1070522,
+          "width": 1920,
+          "height": 2560,
+          "sha256": "633ad35fb8717181f70fcd743b3cb99618e4f62e0e81962c47bf579ab9f71661"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a91c44f9-3a69-4b32-a085-d22b7dbe83d3",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11520",
+      "sourceUrl": "https://timdo24h.com/mat-doi-day-chuyen-mat-tron",
+      "originalKind": "lost",
+      "title": "Dây chuyền vàng mặt tròn thất lạc ở TP. Hồ Chí Minh",
+      "foundArea": "Quận 1. Quận 4. QUẬN 12, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-11520/photo-1.jpeg",
+          "bytes": 38869,
+          "width": 1264,
+          "height": 824,
+          "sha256": "bc1adacf3131ee5585699e08a5812a140c89e07ccfb258c5afb3013817719d9d"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/58e4e92d-b1c7-4ee9-bc12-c6760bc92006",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11632",
+      "sourceUrl": "https://timdo24h.com/em-can-tim-do-roi-o-ha-nam-a",
+      "originalKind": "lost",
+      "title": "Điện thoại Samsung S23 Ultra màu xanh",
+      "foundArea": "Phủ Lý, Hà Nam",
+      "images": [
+        {
+          "file": "timdocom-11632/photo-1.jpg",
+          "bytes": 133595,
+          "width": 1080,
+          "height": 1920,
+          "sha256": "5b945aa6e976cdfa4cc6958ddb745e83c12d4cee51842473479d8974a0989086"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2c46598b-6442-4db8-b98c-8e4b4fc2f3ab",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11633",
+      "sourceUrl": "https://timdo24h.com/toi-qua-ngay-108-tren-san-bay-da-nang-em-lo-danh-roi-1-chiec-vong-tay-hinh",
+      "originalKind": "lost",
+      "title": "Tối qua ngày 10/8 trên sân bay Đà Nẵng em lỡ đánh rơi 1 chiếc vòng tay hình bầu dục màu trắng.",
+      "foundArea": "San bay Da Nang, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-11633/photo-1.jpeg",
+          "bytes": 25691,
+          "width": 264,
+          "height": 380,
+          "sha256": "2c724f9ed97b4337148697075d9ca24c3237b4a9bd741159c4cafdb958475ea8"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/4304dcb3-fc9f-4741-9e95-681b0f2fbc3b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11680",
+      "sourceUrl": "https://timdo24h.com/roi-dt-ip12promax-mau-trang-roi-ha-noi-1",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max màu trắng, ốp hoa",
+      "foundArea": "Ngã tư Nhổn đến ngõ 80 Xuân Phương, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11680/photo-1.jpg",
+          "bytes": 86854,
+          "width": 828,
+          "height": 1472,
+          "sha256": "4dd02425c8c560917e3cc029bf6cbf8dc1e2e1c50957e0bc923da9da57c1782f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a7d12ec0-2cf0-4f57-8a7d-5f8c82c96984",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11784",
+      "sourceUrl": "https://timdo24h.com/roi-phu-tung-xe-container-o-khu-vuc-quan-2-sang-quan7",
+      "originalKind": "lost",
+      "title": "Phụ tùng xe container: ống sáo",
+      "foundArea": "Nguyễn Thị Định, Cát Lái, quận 2 qua cầu Phú Mỹ đến Nguyễn Thị Thập, quận 7, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-11784/photo-1.jpg",
+          "bytes": 74331,
+          "width": 600,
+          "height": 648,
+          "sha256": "680306d356a2c736780a2cb11905fd5e0cfcff9f0d3442a94492c65cf1e473b1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/ca67f1c3-a10a-4a66-9ced-20b8cb93f217",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11889",
+      "sourceUrl": "https://timdo24h.com/rot-dien-thoai-cccd-ten-ho-thanh-phuong-roi-o-xuan-dong-dong-nai",
+      "originalKind": "lost",
+      "title": "Điện thoại Vivo V60",
+      "foundArea": "Tỉnh lộ 765, Xuân Đông, Đồng Nai",
+      "images": [
+        {
+          "file": "timdocom-11889/photo-1.jpg",
+          "bytes": 74769,
+          "width": 866,
+          "height": 1280,
+          "sha256": "df8ca43e0e7b60f4b1826aba0f6a35fdd1c07a59f9093d818b2200042bbd98d0"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/32cb142e-8ac5-4dc5-8b5c-82472f2eeab6",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-11926",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-29",
+      "originalKind": "lost",
+      "title": "iPhone 13 mini",
+      "foundArea": "Đại lộ Thăng Long đến hầm chui Trung Hòa, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-11926/photo-1.jpg",
+          "bytes": 52040,
+          "width": 482,
+          "height": 1257,
+          "sha256": "c9117dc9cb60ef3619af2dce5658a491ea7d7aa9feeda6c2dd57b9518cd73235"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/93a1b4fd-17b2-4880-ab48-34b9bde6b4fe",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12048",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-30",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max màu trắng",
+      "foundArea": "Phùng Hưng, Hà Đông, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-12048/photo-1.jpg",
+          "bytes": 47990,
+          "width": 413,
+          "height": 664,
+          "sha256": "3caf0ed1e2fa05788e5510f453f7c91736de45e296d48897914f6fe8bc4f1ba3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/683ce8ab-2099-43c2-8143-6787057aec68",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12074",
+      "sourceUrl": "https://timdo24h.com/tim-cop-makeup-mau-den-roi-o-le-quang-dao-ha-noi",
+      "originalKind": "lost",
+      "title": "Tìm cốp makeup màu đen rơi ở LÊ QUANG ĐẠO -HÀ NỘI",
+      "foundArea": "Lê Quang Đạo gần ĐL Thăng Long - Hà Nội , Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-12074/photo-1.jpeg",
+          "bytes": 84838,
+          "width": 621,
+          "height": 608,
+          "sha256": "5492767759f3ade5e0a7121032a56e8273db435de8553437db052fe799a0e02f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/cd2838d2-cef2-449d-9e99-f873b0c61685",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12111",
+      "sourceUrl": "https://timdo24h.com/roi-vali-to-hinh-minion-tren-duong-bien-hoi-an-quang-ngai",
+      "originalKind": "lost",
+      "title": "RƠI VALI TO HÌNH MINION TRÊN ĐƯỜNG BIỂN – HỘI AN QUÃNG NGÃI",
+      "foundArea": "Đường biển Hội An Quảng Nam, Quảng Nam",
+      "images": [
+        {
+          "file": "timdocom-12111/photo-1.jpeg",
+          "bytes": 170834,
+          "width": 600,
+          "height": 800,
+          "sha256": "61a1c831524d4bffcd04b2150f2bee1f6d994df175c96557ffd50ffef0845e16"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e9f3ea45-944e-4fe1-a179-7bb1136ada40",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12114",
+      "sourceUrl": "https://timdo24h.com/minh-lam-roi-tui-may-anh-o-doan-tu-ksan-a-la-carte-tu-duong-di-den-valley",
+      "originalKind": "lost",
+      "title": "Túi máy ảnh Canon",
+      "foundArea": "Đường dọc Bãi Cháy từ khách sạn A La Carte đến Valley, Hạ Long, Quảng Ninh",
+      "images": [
+        {
+          "file": "timdocom-12114/photo-1.jpg",
+          "bytes": 59794,
+          "width": 691,
+          "height": 829,
+          "sha256": "789c5e5e86246b3b7166ddfba719157af13cfb80ffa1654f6a2eb08d43fc298c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/34e7aec2-6013-4318-89d4-3d5988127364",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12129",
+      "sourceUrl": "https://timdo24h.com/da-e-de-quen-tui-do-cho-bat-xe-buyss-aone-len-xe-thi-quen-ben-trong-co-gau",
+      "originalKind": "lost",
+      "title": "Dạ e để quên túi đồ chỗ bắt xe buyss aone lên xe thì quên bên trong có gấu bông và 1 chiếc áo nắng",
+      "foundArea": "Điểm bắt xe buys aone, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-12129/photo-1.jpeg",
+          "bytes": 1167328,
+          "width": 1920,
+          "height": 2560,
+          "sha256": "aa8bab21541556336cdbf241ce91b3359a281bbd892b6eaff9caa04731776698"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0f110bb5-a60d-4fed-9dd0-a2dd9de47ddc",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12155",
+      "sourceUrl": "https://timdo24h.com/tim-nhan-bi-that-lac-o-da-nang",
+      "originalKind": "lost",
+      "title": "Tìm nhẫn bị thất lạc ở Đà Nẵng",
+      "foundArea": "Nhà xe Tân Kim Chi, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-12155/photo-1.png",
+          "bytes": 1116220,
+          "width": 616,
+          "height": 1337,
+          "sha256": "9b201cf3fd3dd95ed1f7e3b5d435616bc665bf2dc7de50d59414fba2f2e4676e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a9cc3b2c-987b-4d75-a9f2-ae9066850d67",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12157",
+      "sourceUrl": "https://timdo24h.com/tim-dong-ho-bi-roi-mat-dong-ho-thong-minh-aolon-tetra-r4-o-ha-noi",
+      "originalKind": "lost",
+      "title": "Đồng hồ Aolon Tetra R4",
+      "foundArea": "Phường Giảng Võ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-12157/photo-1.webp",
+          "bytes": 29250,
+          "width": 608,
+          "height": 1080,
+          "sha256": "adf52addcfb8955702befbc737f0e0735c3bc161c73a19365d87a6403c78a7ab"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b913094c-9e19-465e-90b7-e33219acc89a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12408",
+      "sourceUrl": "https://timdo24h.com/roi-tui-vai-mau-den-dung-q-ao",
+      "originalKind": "lost",
+      "title": "rơi túi vải màu đen đựng q áo",
+      "foundArea": "từ ngõ 208 hồ đắc di đến khu ktx đại học tn",
+      "images": [
+        {
+          "file": "timdocom-12408/photo-1.png",
+          "bytes": 1497943,
+          "width": 859,
+          "height": 1145,
+          "sha256": "82df7ba911d430eee90b0b8a866db8775efcbc01cd593dec988ba9a98f23ee84"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/017f92e9-7029-4778-8dd5-0c5e03509136",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12463",
+      "sourceUrl": "https://timdo24h.com/gap-a",
+      "originalKind": "lost",
+      "title": "Túi Coach nâu và máy ảnh Pentax Espio 115M",
+      "foundArea": "mongo land hoặc pink valley, Lâm Đồng",
+      "images": [
+        {
+          "file": "timdocom-12463/photo-1.jpeg",
+          "bytes": 79319,
+          "width": 909,
+          "height": 751,
+          "sha256": "3d37a9bf253b12c7dcfbed333eaf6356822e8d91e4eaa2d70551366f5075438e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2a1fd684-93f3-42ef-b29e-f0217953a94c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12501",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-32",
+      "originalKind": "lost",
+      "title": "iPhone 14 Plus",
+      "foundArea": "Hưng Tiến 2, xã Lam Thành, Nghệ An",
+      "images": [
+        {
+          "file": "timdocom-12501/photo-1.webp",
+          "bytes": 58584,
+          "width": 1296,
+          "height": 1920,
+          "sha256": "be65d6e9ce53bc3c1c14bcf520d9aae3fa4abaa3f2cd90d93d8c5f0cdf05fa40"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d37eb69e-8c29-4477-85dd-217ac773cdb0",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12573",
+      "sourceUrl": "https://timdo24h.com/roi-airpod-may-doc-sach-va-tui-do",
+      "originalKind": "lost",
+      "title": "Máy đọc sách Kobo và AirPods",
+      "foundArea": "Từ ngã tư Thủ Đức dọc Xa lộ Hà Nội đến Suối Tiên, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-12573/photo-1.png",
+          "bytes": 1513814,
+          "width": 874,
+          "height": 874,
+          "sha256": "f575bcbbab8852bf555a7a38435f75c3accb599bed48de94db8870a3707c4a62"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9b5a957f-ae04-4c3e-bc97-24cacd8d56b7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12638",
+      "sourceUrl": "https://timdo24h.com/tim-gio-vai-den-ben-trong-co-do-tu-trang-ca-nhan",
+      "originalKind": "lost",
+      "title": "Giỏ vải đen thất lạc tại Hồ Con Rùa",
+      "foundArea": "Hồ con rùa TPHCM, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-12638/photo-1.jpeg",
+          "bytes": 28910,
+          "width": 406,
+          "height": 282,
+          "sha256": "13cb688334ecc6616882541ac34fe3b494292f39c0c162513ebe3c2eba82c1ee"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/4830a3f1-afb2-4f62-bcb7-dce49dab5ae6",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12675",
+      "sourceUrl": "https://timdo24h.com/tim-day-chuyen-o-tay-ninh",
+      "originalKind": "lost",
+      "title": "Tìm dây chuyền ở Tây Ninh",
+      "foundArea": "rơi ở Ngoài đường Hoà Thành Tây Ninh, Tây Ninh",
+      "images": [
+        {
+          "file": "timdocom-12675/photo-1.jpeg",
+          "bytes": 75141,
+          "width": 800,
+          "height": 450,
+          "sha256": "c38fae5267b998a8cc6439505871767f90829559a9e68a4345186db1b5a08cc3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d19f9ba3-25ac-4154-b1a5-978115649f87",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12793",
+      "sourceUrl": "https://timdo24h.com/em-co-lam-roi-kinh-mat-den-parada",
+      "originalKind": "lost",
+      "title": "Em có làm rơi kính mát đen Parada",
+      "foundArea": "Chợ Thủ Đức, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-12793/photo-1.jpeg",
+          "bytes": 128724,
+          "width": 1280,
+          "height": 1280,
+          "sha256": "4db0ebec8df4550b0a949d0f1283f467a4fcb8c56a3063fa7d7547c4155930aa"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/63560d13-9a86-4962-b319-cff08e72e707",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12873",
+      "sourceUrl": "https://timdo24h.com/mo-hinh-do-an-1",
+      "originalKind": "lost",
+      "title": "Thùng mô hình đồ án và linh kiện điện tử",
+      "foundArea": "Võ Chí Công, Nam Kỳ Khởi Nghĩa, khu đô thị FPT Complex, Trường Sa hướng Hội An, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-12873/photo-1.jpg",
+          "bytes": 275678,
+          "width": 917,
+          "height": 1920,
+          "sha256": "7edc5207adc4f9a44d76d43c2dc5f57e457b8ea8c805331839ab99407009a777"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/56ed2757-4af3-4ba3-80b1-57a7d84578d4",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-12931",
+      "sourceUrl": "https://timdo24h.com/tim-vong-da-phong-thuy-roi-o-trung-van-tu-liem-ha-noi",
+      "originalKind": "lost",
+      "title": "Vòng đá phong thủy thất lạc tại Trung Văn",
+      "foundArea": " gần nhà CT3, đơn nguyên 1, khu đô thị mới Trung văn, từ liêm, Hà nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-12931/photo-1.jpeg",
+          "bytes": 133273,
+          "width": 960,
+          "height": 1280,
+          "sha256": "57a3b3ed2930aa04a192683c3bb3d9c11d351a548864e3a44eb84ad777bbfd21"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/8bffaf8d-c4fa-41df-8e13-dfc8de0267d2",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13079",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-bi-roi-tren-quoc-lo-3-thi-tran-dong-anh",
+      "originalKind": "lost",
+      "title": "Chùm chìa khóa ô tô",
+      "foundArea": "Quốc lộ 3, thị trấn Đông Anh, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13079/photo-1.webp",
+          "bytes": 51198,
+          "width": 1440,
+          "height": 1920,
+          "sha256": "7c68b4eaa432bc7771f32c72b8de54e23277750a2f0a79a3158643355eb92edc"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/886578a8-51c5-40b5-a81d-290de4ed74d4",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13119",
+      "sourceUrl": "https://timdo24h.com/nhat-duoc-chia-khoa-honda",
+      "originalKind": "found",
+      "title": "Nhặt được chìa khóa honda",
+      "foundArea": "đầu Ngách 15 ngõ Gốc Đề Hoàng Mai, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13119/photo-1.jpeg",
+          "bytes": 57807,
+          "width": 804,
+          "height": 774,
+          "sha256": "6b5664690aa46100f1f0b31419a1edd453d5eb81bfb012991757a3c14b17d3fc"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/96523a91-9921-41b1-8bef-3842c6282f72",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13155",
+      "sourceUrl": "https://timdo24h.com/tim-goi-bi-roi-o-duong-truong-sa",
+      "originalKind": "lost",
+      "title": "Tìm gối bị rơi ở đường Trường Sa",
+      "foundArea": "Trường Sa, Ngũ Hành Sơn, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-13155/photo-1.webp",
+          "bytes": 209560,
+          "width": 1440,
+          "height": 1920,
+          "sha256": "7077beb37c20704a32d567192f796903ae9ccb2ec19ee1b8e66c58c9a1ed61ec"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6496261a-6467-4cf5-858a-4c6f6d00251e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13187",
+      "sourceUrl": "https://timdo24h.com/em-danh-roi-tui-do",
+      "originalKind": "lost",
+      "title": "Em đánh rơi túi đồ",
+      "foundArea": "Chung cư Five stars Khương Đình Hà Nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13187/photo-1.webp",
+          "bytes": 41638,
+          "width": 864,
+          "height": 1920,
+          "sha256": "2192e15f7d5fe78f5300be80276a5e3a5d30e51d066b0a75a4e75a7bdd193c74"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/46d3c9d0-511c-49ca-8b98-b81b57755816",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13227",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-iphone-13-thuong-mau-den-2",
+      "originalKind": "lost",
+      "title": "iPhone 13 màu đen",
+      "foundArea": "Xa lộ Hà Nội rẽ vào Đỗ Xuân Hợp",
+      "images": [
+        {
+          "file": "timdocom-13227/photo-1.jpg",
+          "bytes": 140377,
+          "width": 920,
+          "height": 1817,
+          "sha256": "e598664f9df77fc4dc449cac09c8a21ef15c12a6fd78ef0c0c78294945673489"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/69e73095-04a2-48d7-a13f-ab4574904b72",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13290",
+      "sourceUrl": "https://timdo24h.com/goc-tim-do-20",
+      "originalKind": "lost",
+      "title": "Túi Co.opmart xanh lá thất lạc tại Củ Chi",
+      "foundArea": "QL 22 Củ Chi cắt ngang đường Nguyễn Thị Rành, Củ Chi, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-13290/photo-1.jpeg",
+          "bytes": 255016,
+          "width": 1246,
+          "height": 2560,
+          "sha256": "aee6b2a066329c45f6cb7c6f003672f202004ce6047936060feb61be0bd8a18b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/fd30feb1-af5c-40e9-9a83-f4c1b0e2b835",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13398",
+      "sourceUrl": "https://timdo24h.com/chia-khoa-xe-vision",
+      "originalKind": "lost",
+      "title": "Chìa khoá xe Vision",
+      "foundArea": "Trương Công Gai, Cầu Giấy, Hà Nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13398/photo-1.jpeg",
+          "bytes": 75507,
+          "width": 405,
+          "height": 720,
+          "sha256": "4777ec5fa34825255b77c538fdee83085503eb1cdc5d318803ac3e20ce204ffa"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/82a82ee0-614e-4bcb-b421-bb9cf73a580a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13407",
+      "sourceUrl": "https://timdo24h.com/tim-giay-bi-rot-tai-buon-ma-thuot",
+      "originalKind": "lost",
+      "title": "Giày thất lạc tại Buôn Ma Thuột",
+      "foundArea": "Buôn Ma Thuột, Đắk Lắk",
+      "images": [
+        {
+          "file": "timdocom-13407/photo-1.jpeg",
+          "bytes": 292375,
+          "width": 1180,
+          "height": 2560,
+          "sha256": "c859b7ce4d95804ed7dc3b82535bbd47eb2239041217c893db6dacd001690703"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7d41927c-f913-4dfa-919f-e246349ec5ad",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13538",
+      "sourceUrl": "https://timdo24h.com/minh-bi-roi-chia-khoa-o-to-o-duong-vo-nguyen-giap-da-nang",
+      "originalKind": "lost",
+      "title": "Mình bị rơi chìa khoá ô tô ở đường Võ Nguyên Giáp Đà Nẵng",
+      "foundArea": "Phường An Hải, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-13538/photo-1.jpeg",
+          "bytes": 185544,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "6120149216780a42b4a3ab3ad00e9c36eeac920a8d232c4f406332001b9c4fe1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/49efda5f-cbe8-42c5-be2d-525086523879",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13553",
+      "sourceUrl": "https://timdo24h.com/tim-tui-deo-cheo-mat-o-cong-co-quan-canh-sat-dieu-tra-trang-thi-trang-tien",
+      "originalKind": "lost",
+      "title": "TÌM TÚI ĐEO CHÉO - MẤT Ở CỔNG CƠ QUAN CẢNH SÁT ĐIỀU TRA (TRÀNG THI-TRÀNG TIỀN)",
+      "foundArea": "Cổng cơ quan cảnh sát điều tra - 2 Tràng Thi, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13553/photo-1.jpeg",
+          "bytes": 1279164,
+          "width": 3024,
+          "height": 4032,
+          "sha256": "52543f88c46de255e8441d0217cc8c7da0aa50d28865b87fc0604c0d2931c4fe"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/8b3e8160-6d14-479e-853e-736ba4924658",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13607",
+      "sourceUrl": "https://timdo24h.com/tim-do-bi-roi-17",
+      "originalKind": "lost",
+      "title": "TÌM ĐỒ BỊ RƠI",
+      "foundArea": "Cầu diễn, bắc từ liêm, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13607/photo-1.jpeg",
+          "bytes": 129496,
+          "width": 1170,
+          "height": 956,
+          "sha256": "6026bacdbd32efb7356abce4b5a5278c37b62e22175489a730f2ad851987047b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/69ed62c7-fb9b-49b0-9131-883fcc7e9654",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13667",
+      "sourceUrl": "https://timdo24h.com/tui-ke-dung-3c-ao",
+      "originalKind": "lost",
+      "title": "Túi kẻ đựng 3c áo",
+      "foundArea": "Phạm Ngọc Thạch- Đặng Văn Ngữ- Tôn Thất Tùng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13667/photo-1.jpeg",
+          "bytes": 98124,
+          "width": 960,
+          "height": 1280,
+          "sha256": "f6f685e423ca9b4506580a324de16c8340e29689db24ab41263100c5a1aa37c3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/1884f49d-db77-4a43-ba65-9e4e93d8bc6e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13699",
+      "sourceUrl": "https://timdo24h.com/bi-roi-dien-thoai-iphone-14-promax",
+      "originalKind": "lost",
+      "title": "iPhone 14 Pro Max",
+      "foundArea": "Ngã ba Hà Huy Tập và Thái Thị Bôi, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-13699/photo-1.webp",
+          "bytes": 65780,
+          "width": 1440,
+          "height": 1920,
+          "sha256": "701190beeb14c0388a674c76b9ea24ff7eb256763cffdb0740c1cd6a7cb390a8"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/135fe003-0d06-459a-bdab-932798ae760c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13731",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-roi-o-cau-giay-ba-dinh-ha-noi",
+      "originalKind": "lost",
+      "title": "Tìm chìa khoá - rơi ở Cầu Giấy/ Ba Đình Hà Nội",
+      "foundArea": "Cầu Giấy, Ba Đình, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13731/photo-1.jpeg",
+          "bytes": 127189,
+          "width": 832,
+          "height": 825,
+          "sha256": "6224c7a87ff404e85928a236e024d885addad1244a0311d7c85b1235e481ee88"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b7fb2dcd-7924-431b-83e3-e2453d3f7f92",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13797",
+      "sourceUrl": "https://timdo24h.com/tim-chiec-tui-den-vai-du",
+      "originalKind": "lost",
+      "title": "tìm chiếc túi đen vải dù",
+      "foundArea": "phường hải châu từ đường 2/9 đến bạch đằng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-13797/photo-1.jpeg",
+          "bytes": 404884,
+          "width": 1170,
+          "height": 1315,
+          "sha256": "cd7a3303824f9adc53d9cbcda055336d3c014471d95320f122dd9662c2ab15cd"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/83a428fa-2485-4d21-b32d-1a416e87223f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13875",
+      "sourceUrl": "https://timdo24h.com/roi-trang-suc-bac",
+      "originalKind": "lost",
+      "title": "Rơi trang sức bạc",
+      "foundArea": "Đầm Trấu, Phường Bạch Đằng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-13875/photo-1.png",
+          "bytes": 790590,
+          "width": 884,
+          "height": 667,
+          "sha256": "fe3cdd620f3faf7aab19596f508db33e10a644d26a75c58bfb8374cdfd4d3d29"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/59e5437a-23ab-4867-a0e5-fcd828c8ae10",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-13897",
+      "sourceUrl": "https://timdo24h.com/chia-khoa-tu-xe-ab-dien-bien-phu-quan-3-ho-chi-minh-sai-gon-1",
+      "originalKind": "lost",
+      "title": "Chìa khóa từ xe AB",
+      "foundArea": "Điện Biên Phủ giao Pasteur hoặc Phạm Ngọc Thạch, quận 3, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-13897/photo-1.jpg",
+          "bytes": 68805,
+          "width": 500,
+          "height": 500,
+          "sha256": "c987eb6b3bed8a8d91606fd5f543be3ff15b452c11ccc0bce3e6894191d59eac"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/1471bca0-0a32-425e-b333-ed7e05e33aa9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-1726",
+      "sourceUrl": "https://timdo24h.com/tim-ba-lo-roi",
+      "originalKind": "lost",
+      "title": "Tìm ba lô rơi",
+      "foundArea": "Phố An Dương, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-1726/photo-1.jpeg",
+          "bytes": 81963,
+          "width": 720,
+          "height": 1280,
+          "sha256": "34b26d0256581ee9715c043a63ea33eda104517e54485d7d57d878cb4e124a44"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/20eb0e18-3ad5-4461-b683-e59732ecbf3f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-1778",
+      "sourceUrl": "https://timdo24h.com/roi-bich-giay-quan-trong-le-nghia-roi-o-ben-xe-buy",
+      "originalKind": "lost",
+      "title": "Bịch giày thất lạc tại trạm xe buýt Đỗ Mười",
+      "foundArea": "Đỗ Mười Linh Xuân Thủ Đức, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-1778/photo-1.jpeg",
+          "bytes": 132431,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "3570ebb546d731857be2a9a6d8cd5fa7c12eefdb4d470178e847bf5260c6cff7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6e5e12b5-7cab-4f63-927b-1b67cb5beee1",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-2647",
+      "sourceUrl": "https://timdo24h.com/tim-tui-tote-vp-bank",
+      "originalKind": "lost",
+      "title": "Tìm túi tote Vp bank",
+      "foundArea": "Trần Quý Cáp—> Đường tàu Lê Duẩn, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-2647/photo-1.jpeg",
+          "bytes": 150603,
+          "width": 861,
+          "height": 1151,
+          "sha256": "2dd4da96f7a6dfb730df3b343d9507ed8046fa7945918799f929aebeeeeb3080"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5e286b50-08ca-4f42-948b-40475a37d27e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-2923",
+      "sourceUrl": "https://timdo24h.com/roi-vico-it-tien-matmot-buc-anh-gia-dinhco-hai-dua",
+      "originalKind": "lost",
+      "title": "Ví thất lạc gần Trường tiểu học Trần Quốc Toản",
+      "foundArea": "trường tiểu học trần quốc toản,phố nhà chung,đối diện cơ sở cảnh sát của phường,tp Hà nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-2923/photo-1.png",
+          "bytes": 1334242,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "326a79867b9531735b39005d8d69027f8f8306d4f9f321f0366596001a009207"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/911b6cb1-d6d1-466f-841f-9b89f6886c07",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3120",
+      "sourceUrl": "https://timdo24h.com/roi-vong-o-da-nang",
+      "originalKind": "lost",
+      "title": "Rơi vòng ở Đà Nẵng",
+      "foundArea": "Khu vực bãi biển Mỹ Khê hoặc khách sạn Sea Queen, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3120/photo-1.jpeg",
+          "bytes": 49797,
+          "width": 445,
+          "height": 790,
+          "sha256": "1aa98035cc3e8e469123c077dd7aa314ba4d8a22eaac7e036bb2880e03f93cc1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6bcbe455-e81b-4e94-9ea2-a4683446979e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3214",
+      "sourceUrl": "https://timdo24h.com/tim-do-that-lac-phu-kien-trang-suc-ben-duoc-dung-t",
+      "originalKind": "lost",
+      "title": "Tìm đồ thất lạc, phụ kiện trang sức bên được dựng trong túi tote màu đen đỏ",
+      "foundArea": "Khu vực từ mẫn thái Sơn trà tới Đại học đông á, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3214/photo-1.jpeg",
+          "bytes": 76198,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "3fe908cee300542a4ff61c8ebb775b008fb12b0c93f1e0cecd9db031babae3bc"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6cfce420-518c-454f-af65-3b35eb944643",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3320",
+      "sourceUrl": "https://timdo24h.com/roi-lac-tay-tren-doan-duong-tu-tinh-lo-10-den-kcn-",
+      "originalKind": "lost",
+      "title": "Rơi lắc tay trên đoạn đường từ Tỉnh Lộ 10 đến KCN An Hạ Bình Chánh",
+      "foundArea": "Bình Tân, Bình Chánh , TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-3320/photo-1.jpeg",
+          "bytes": 464403,
+          "width": 1080,
+          "height": 2400,
+          "sha256": "bd40a84d3c447af5325fbb9488558bbf4088daf10345ba65e9543c4a2844c5f8"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/58ee4c09-197f-406c-bd26-6fa08d020d9c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3500",
+      "sourceUrl": "https://timdo24h.com/roi-tui-deo-cheo-mau-den",
+      "originalKind": "lost",
+      "title": "rơi túi đeo chéo màu đen",
+      "foundArea": "trường thcs nguyễn huệ đường quang trung dọc theo trần cao vân tới lê độ, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3500/photo-1.png",
+          "bytes": 2704917,
+          "width": 1242,
+          "height": 2688,
+          "sha256": "e347de6edc5079fb4886737d34f1d71b6ad0ca689eb8ac606b024c288d651925"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/782d963f-c5e3-4343-8e24-4125b0d1eca4",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3516",
+      "sourceUrl": "https://timdo24h.com/roi-tui-xach-bao-gom-giay-to-tuy-than-quan-trong-1",
+      "originalKind": "lost",
+      "title": "Túi xách đen thất lạc tại Đà Nẵng",
+      "foundArea": "Khu vực dọc đường Lê Văn Hiến - Ngũ Hành Sơn - đến đoạn cầu Rồng, hướng từ Hội An ra Đà Nẵng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3516/photo-1.jpeg",
+          "bytes": 333363,
+          "width": 1284,
+          "height": 1767,
+          "sha256": "ff221bfc36b3b5be1357f272dc19a662ab9782b5a91e26e8bca0c6f4a38606c0"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/24f3dcfc-a21f-4b73-abcd-381e87257a9d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3520",
+      "sourceUrl": "https://timdo24h.com/tim-doi-giay-adidas-sampa-bi-roi-gan-khu-vuc-pham-",
+      "originalKind": "lost",
+      "title": "Tìm đôi giầy Adidas Sampa bị rơi gần khu vực Phạm Ngọc Thạch, Đông Tác, Phương Maiq",
+      "foundArea": "đông tác Phương Mai, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-3520/photo-1.jpeg",
+          "bytes": 847388,
+          "width": 1920,
+          "height": 2560,
+          "sha256": "30d6786da3d39d02247f8519a4e16f70f7b7cbdd7baabded0e78437bb0ed94b4"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/f79c29eb-5629-49b6-8cab-9168b9b56fb7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3735",
+      "sourceUrl": "https://timdo24h.com/tim-vot-cau-long-bi-mat",
+      "originalKind": "lost",
+      "title": "💬 [TÌM VỢT CẦU LÔNG BỊ MẤT]",
+      "foundArea": "Sân văn hóa tổ 6, thị trấn Vinh Quang huyện Hoàng Su Phì tỉnh Hà Giang",
+      "images": [
+        {
+          "file": "timdocom-3735/photo-1.jpeg",
+          "bytes": 36290,
+          "width": 668,
+          "height": 891,
+          "sha256": "4aa69be31459e78879b5fe24d5a944feb4848e3b58dc57b545647791c95764ce"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/aa6806a1-e3cb-4cbf-910f-94713e8b9ab3",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3760",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-thong-minh-smartkey-xe-sh-mode-roi-o",
+      "originalKind": "lost",
+      "title": "Tìm chìa khoá thông minh (smartkey) xe SH Mode rơi ở Đà Nẵng",
+      "foundArea": "Cẩm Lệ, Hoà Xuân, Điện Bàn Đông, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3760/photo-1.png",
+          "bytes": 2772057,
+          "width": 1080,
+          "height": 1920,
+          "sha256": "35627b37a44e04354da858f5f8845e8852ab71102307c147b7d281ba9c910c9b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/8f99bd6c-a59f-480a-8cab-4df354878e5c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3858",
+      "sourceUrl": "https://timdo24h.com/mat-chia-khoa-xe-dien-vinfast-o-mall-royal-city-ha",
+      "originalKind": "lost",
+      "title": "Mất chìa khoá xe điện vinfast ở Mall Royal City Hà Nội",
+      "foundArea": "Mall Royal City Hà Nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-3858/photo-1.jpeg",
+          "bytes": 9028,
+          "width": 68,
+          "height": 179,
+          "sha256": "d69a3f096348990b7baa189b4cc6b351cbe4b370fb075d183073f881af0ab6fc"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5c9e3ccd-9deb-482b-bfa4-9da52143c453",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-3981",
+      "sourceUrl": "https://timdo24h.com/roi-nhan-cuoi-tran-quang-khoa-1994-o-benh-vien-gia",
+      "originalKind": "lost",
+      "title": "Nhẫn cưới thất lạc tại Bệnh viện Gia Đình Đà Nẵng",
+      "foundArea": "Bệnh viện gia đình, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-3981/photo-1.jpeg",
+          "bytes": 180565,
+          "width": 1285,
+          "height": 749,
+          "sha256": "b6bb433b46e3b4dab25c452d149f44a0f45317b84479971454add9b0230714da"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b280174a-8197-490b-a7ab-e0a8f2778d73",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-4206",
+      "sourceUrl": "https://timdo24h.com/tim-do-roi-bi-that-lac-bi-roi-tren-duong",
+      "originalKind": "lost",
+      "title": "Túi đựng đồ màu đen thất lạc tại Hà Nội",
+      "foundArea": "Hoàng Quốc Việt, Phạm Văn Đồng, Vành Đai 1, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-4206/photo-1.png",
+          "bytes": 3580750,
+          "width": 1170,
+          "height": 2532,
+          "sha256": "80feeeee78bee549cc4f6ae328203527eb37291e12446805ac01f605a82cccd7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/525e2377-ea04-4c63-9275-545a52ab6dd2",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-4246",
+      "sourceUrl": "https://timdo24h.com/roi-tui-do-pickleball-o-hung-dung-tp-vinh-nghe-an",
+      "originalKind": "lost",
+      "title": "Rơi túi đồ pickleball ở Hưng Dũng, TP Vinh, Nghệ An",
+      "foundArea": "Thành phố Vinh, Nghệ An",
+      "images": [
+        {
+          "file": "timdocom-4246/photo-1.jpeg",
+          "bytes": 197144,
+          "width": 646,
+          "height": 885,
+          "sha256": "3d6ed49755a357377347dd70336f263f5f3c3c26de32a297893fd625e528bead"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e2dff51e-35d1-4265-9a7c-15af288c44b9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-4596",
+      "sourceUrl": "https://timdo24h.com/tim-lac-tay",
+      "originalKind": "lost",
+      "title": "Tìm lắc tay",
+      "foundArea": "Đà Nẵng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-4596/photo-1.jpeg",
+          "bytes": 22472,
+          "width": 300,
+          "height": 225,
+          "sha256": "930a118ec1612d4f1e1ffb23d6abeb1b806a47e6d0788eaa20a4c06da731beff"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/57d68c33-5099-42e3-8501-1d76868d46f7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-4668",
+      "sourceUrl": "https://timdo24h.com/em-can-tim-tui-o-quan-2-tui-lv-a",
+      "originalKind": "lost",
+      "title": "Em cần tìm túi ở quận 2. Túi LV ạ",
+      "foundArea": "Quận 2, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-4668/photo-1.jpeg",
+          "bytes": 924235,
+          "width": 1290,
+          "height": 820,
+          "sha256": "90c9cb270836a80c26f0cba236ea7f0e2f6551af63f9dc24ab8bd12a6679d8f6"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/02580720-eede-4a93-8d35-64d517b303e2",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-4914",
+      "sourceUrl": "https://timdo24h.com/roi-tui-den-o-chua-lang-cau-giay-tran-duy-hung",
+      "originalKind": "lost",
+      "title": "Rơi túi đen ở CHÙA LÁNG, CẦU GIẤY, TRẦN DUY HƯNG",
+      "foundArea": "Chùa Láng, Cầu Giấy, Trần Duy Hưng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-4914/photo-1.jpeg",
+          "bytes": 315475,
+          "width": 952,
+          "height": 1920,
+          "sha256": "8cc541bba346b1fc55faee0d83d9636bbaa913c109107bcba4c6d5525ca46c3e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/fd315ffe-baa2-49fe-9be0-13f7412e0929",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5008",
+      "sourceUrl": "https://timdo24h.com/roi-nhan",
+      "originalKind": "lost",
+      "title": "Rơi nhẫn",
+      "foundArea": "Royal City, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-5008/photo-1.jpeg",
+          "bytes": 474965,
+          "width": 1482,
+          "height": 2043,
+          "sha256": "b2ca15f41e17a4115339f98a9141c2f9a5e57fb5f137eaeb77f11c50b11dd86b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9995100f-43cf-4452-8c9f-04b1648b888c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5231",
+      "sourceUrl": "https://timdo24h.com/tim-lai-doi-giay-the-thao-tai-sieu-thi-fujimart-ta",
+      "originalKind": "lost",
+      "title": "Tìm lại đôi giày thể thao tại siêu thị fujimart tây sơn ngày 10/11/2025",
+      "foundArea": "Fujimart Tây Sơn, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-5231/photo-1.jpeg",
+          "bytes": 480787,
+          "width": 1280,
+          "height": 1387,
+          "sha256": "b463eef3ad50077d37ae5dfd85f42669e493b8abfdabf9bce31d7f4da909b2ad"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b8e07a5e-b79c-4e08-8d2a-ac6fa21130a6",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5335",
+      "sourceUrl": "https://timdo24h.com/roi-vong-tay-bac-o-cho-non-nuoc-ngu-hanh-son-da-na",
+      "originalKind": "lost",
+      "title": "Rơi vòng tay bạc ở chợ Non Nước, Ngũ Hành Sơn, Đà Nẵng",
+      "foundArea": "Chợ Non Nước, Ngũ Hành Sơn, Đà Nẵng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-5335/photo-1.jpeg",
+          "bytes": 52985,
+          "width": 451,
+          "height": 600,
+          "sha256": "4af0c8185da602d20e2269f2bd24291917ef76b26e86ad9834b454a344f32422"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5e7dbb65-98fd-47fb-b6be-e7c88486ccc2",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5489",
+      "sourceUrl": "https://timdo24h.com/roi-tai-nghe-airpods-o-chua-linh-ung-da-nang-1411",
+      "originalKind": "lost",
+      "title": "AirPods có vỏ nhân vật màu vàng",
+      "foundArea": "Chùa Linh Ứng, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-5489/photo-1.jpg",
+          "bytes": 844500,
+          "width": 1242,
+          "height": 1004,
+          "sha256": "a5e71c5a588c7f72259d2e6bc9f79d2378c27f040ab8071ef313abf75585a0b3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/80adce42-8389-4700-8ab6-e3f56b14c451",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5500",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-roi-mat-o-vincom-xuan-khanh-can-tho",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro màu xanh",
+      "foundArea": "Vincom Xuân Khánh, Cần Thơ",
+      "images": [
+        {
+          "file": "timdocom-5500/photo-1.jpg",
+          "bytes": 603181,
+          "width": 1080,
+          "height": 2460,
+          "sha256": "decdd0370ad16351601abcab4a113e3c32ff3492f12ac9ebfd583b0f8f0693d6"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0da8977c-f9ab-45e5-a1e2-dcac74b787bf",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5545",
+      "sourceUrl": "https://timdo24h.com/roi-tui-do-dien-tu-trinh-anh-quy-1996-roi-o-dang-1",
+      "originalKind": "lost",
+      "title": "Thiết bị điện tử BOSS AD-5",
+      "foundArea": "Đường Đằng Hải, Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-5545/photo-1.jpg",
+          "bytes": 375984,
+          "width": 878,
+          "height": 675,
+          "sha256": "5a209151718b2cfa9c1ee34b2a5f03d0a1fac8b641765b5b1e02867592deb110"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/91b48c40-b207-4d83-964e-806e487fd1da",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5717",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-tai-duong-hoang-dieu-xong-re-vao--1",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max có ốp trang trí",
+      "foundArea": "Trưng Nữ Vương, Nguyễn Hữu Thọ, Hoàng Diệu, Huỳnh Thúc Kháng, Nguyễn Văn Linh, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-5717/photo-1.jpg",
+          "bytes": 229297,
+          "width": 744,
+          "height": 744,
+          "sha256": "5811d6cbb62ffc29aa4bd1421285f84c6ff26900450adc70bae43f813ee99c97"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9e49417f-a46d-4821-b829-6bf7c0de1b03",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5748",
+      "sourceUrl": "https://timdo24h.com/nhan-cau-hon-nun-tr-nho-nhan-ma-roi-o-ha-noi-co--1",
+      "originalKind": "lost",
+      "title": "Nhẫn cầu hôn thất lạc tại Syrena Tây Hồ",
+      "foundArea": "Syrena Shopping Center, 51 Xuân Diệu, Tây Hồ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-5748/photo-1.jpeg",
+          "bytes": 1514701,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "ff3e8cc30523a48f73e6614bb3375c299bcdbd336b66aa7b312829c903d08c6a"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/462d1bbc-f05c-42c3-8032-05f8f620046c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5813",
+      "sourceUrl": "https://timdo24h.com/mat-dt-ip-12-thuong-roi-o-gigamal-thu-duc",
+      "originalKind": "lost",
+      "title": "iPhone 12 tại Gigamall Thủ Đức",
+      "foundArea": "Gigamall, Phạm Văn Đồng, Hiệp Bình, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-5813/photo-1.jpg",
+          "bytes": 231833,
+          "width": 937,
+          "height": 1665,
+          "sha256": "2cc377994a2d19ca2a4ba2b120e73f78c7e4ac0633ce9a001d61beb08a129da7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d592b8e3-342d-4e68-9407-7b531403453b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-5955",
+      "sourceUrl": "https://timdo24h.com/tim-iphone-12-pro-bi-roi-tren-xe-buyt-603-1",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro",
+      "foundArea": "Tuyến xe buýt 603, Đinh Bộ Lĩnh, Hồ Chí Minh đến Lê Duẩn, Long Thành, Đồng Nai",
+      "images": [
+        {
+          "file": "timdocom-5955/photo-1.png",
+          "bytes": 339761,
+          "width": 358,
+          "height": 574,
+          "sha256": "32827cb61fde86bb48c35405993f8a5f82c0cc7a150859c55170106d9beaa989"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e2b88afc-9019-4b97-9e15-84d5a5e10baf",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6103",
+      "sourceUrl": "https://timdo24h.com/51-minh-di-tu-nga-ba-thuong-thong-dong-tien-ve-tru",
+      "originalKind": "lost",
+      "title": "Thiết bị cầm tay",
+      "foundArea": "Ngã ba Thượng Thông, Đông Tiến đến Trung Bạn, Yên Phong, Bắc Ninh",
+      "images": [
+        {
+          "file": "timdocom-6103/photo-1.jpg",
+          "bytes": 368747,
+          "width": 1180,
+          "height": 2560,
+          "sha256": "4e76c8d59a52d1e476e12cd2318eefafd54fe84db518b986df5322dd77d2ac47"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9ee45749-8fc8-4c7c-9c38-0b41d1672982",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6171",
+      "sourceUrl": "https://timdo24h.com/roi-mat-do-tu-trang",
+      "originalKind": "lost",
+      "title": "Rơi mất đồ tư trang",
+      "foundArea": "Tp Nha Trang, Khánh Hòa",
+      "images": [
+        {
+          "file": "timdocom-6171/photo-1.jpeg",
+          "bytes": 715337,
+          "width": 1689,
+          "height": 1587,
+          "sha256": "6cb2f6e93af79275b6fb1baa2452dc61067374d49d9f4c8b1f94db9e62db063b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/98e04f29-8157-4f78-a683-1864f7038915",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6187",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-iphone-hong-o-cau-dien-ha-noi",
+      "originalKind": "lost",
+      "title": "iPhone 15 màu hồng",
+      "foundArea": "Đỗ Đức Dục, cầu Trịnh Văn Bô, phố Kiều Mai, Cầu Diễn, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6187/photo-1.jpg",
+          "bytes": 94762,
+          "width": 522,
+          "height": 917,
+          "sha256": "cbc2c2251e13a12360915e8094d17032b3b65de6a519eb2ebf888cdd2b5abb3b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e2c57654-fb21-4799-af27-7c90ca445439",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6332",
+      "sourceUrl": "https://timdo24h.com/tim-tui-bi-that-lac",
+      "originalKind": "lost",
+      "title": "TÌM TÚI BỊ THẤT LẠC",
+      "foundArea": "Chợ An Đồng ( BV Việt Tiệp 2 ), Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-6332/photo-1.jpeg",
+          "bytes": 418756,
+          "width": 960,
+          "height": 1280,
+          "sha256": "4d2226a78c660fef1928a9b024930330aec39480ceedd229e1f247f5d0b8fed1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7e4bfda4-180b-4aa8-9b83-dd7a5e927daa",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6372",
+      "sourceUrl": "https://timdo24h.com/e-roi-dien-thoai-ip14prm",
+      "originalKind": "lost",
+      "title": "iPhone 14 Pro Max màu đen",
+      "foundArea": "Cầu Đăm đến Văn Tiến Dũng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6372/photo-1.png",
+          "bytes": 625477,
+          "width": 764,
+          "height": 648,
+          "sha256": "2b2a2eb00dd8248671003e562c242326c11b3d14ede9397dc2861d4ad19f2970"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/42a18a26-970a-48eb-96d9-fa03d0716b20",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6412",
+      "sourceUrl": "https://timdo24h.com/roi-chia-khoa-smartkey-xe-vision",
+      "originalKind": "lost",
+      "title": "Chìa khóa smartkey Vision có móc xanh",
+      "foundArea": "Yên Xá, Phạm Tu, Hoàng Đạo Thành, Kim Giang, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6412/photo-1.png",
+          "bytes": 4965655,
+          "width": 1242,
+          "height": 2688,
+          "sha256": "ec52671044e5e58d0a8b87cb79976934c811641eaeb0740b132065a11fe9ef3f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/55880a2f-0955-47aa-b668-bd836971c095",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6414",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-that-lac-3",
+      "originalKind": "lost",
+      "title": "iPhone 14 Pro Max màu tím",
+      "foundArea": "Đường Thăng Long, Chương Dương, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-6414/photo-1.jpg",
+          "bytes": 9401,
+          "width": 176,
+          "height": 284,
+          "sha256": "2d89428b3c329e47ae5ce8a7c4982091b7f83aaba9d33438a5c3aafbbec2a35b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/1508ba9e-9be3-4ddb-a901-2e532a768d55",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6475",
+      "sourceUrl": "https://timdo24h.com/roi-hop-kinh-o-hoai-duc-ha-noi",
+      "originalKind": "lost",
+      "title": "Rơi hộp kính ở Hoài Đức - Hà Nội",
+      "foundArea": "Kim Chung, Hoài Đức, Hà Nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6475/photo-1.jpeg",
+          "bytes": 227460,
+          "width": 2560,
+          "height": 1152,
+          "sha256": "8398cb3339a95bb66f6f43c4b2a69baaae5a942edf2454081083f29c767d00f2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a34e3fab-69fc-4b0e-af62-eef1c5d965c4",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6489",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-12-prm-mau-vang-gold-bi-that-lac-to",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max màu vàng gold",
+      "foundArea": "Cổng làng Phú Đô, khu vực sân vận động Mỹ Đình, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6489/photo-1.jpg",
+          "bytes": 36471,
+          "width": 263,
+          "height": 452,
+          "sha256": "116ae7834aad0e230d11cd732002f50ad202bfefb363916435c7fe899244fa3c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/1cdacf0e-e288-4de5-aac7-472fa6c5b51b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6596",
+      "sourceUrl": "https://timdo24h.com/tim-do-mat-cap",
+      "originalKind": "lost",
+      "title": "Laptop Lenovo Yoga có hình dán",
+      "foundArea": "Bệnh viện Thống Nhất, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-6596/photo-1.jpg",
+          "bytes": 65464,
+          "width": 1091,
+          "height": 642,
+          "sha256": "0e19cfb3bcb90161b76efd57532962fc737cda43637a0cd6632fca6e3dce54a6"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/919b89f9-9f79-489e-929b-571e0b5b069d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6734",
+      "sourceUrl": "https://timdo24h.com/tui-dung-may-1",
+      "originalKind": "lost",
+      "title": "Túi đựng máy",
+      "foundArea": "226 P. Trung Kính, Yên Hoà, Cầu Giấy, Hà Nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6734/photo-1.jpeg",
+          "bytes": 408013,
+          "width": 1080,
+          "height": 2400,
+          "sha256": "c4165cf18e96e7ce463f80f626a238336749f161baae00ab384b0bb1a5e8746c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2fbdeb5b-8a9e-436b-a126-c87045a48d37",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6739",
+      "sourceUrl": "https://timdo24h.com/roi-tui-do-tre-so-sinh-chieu-12-tai-phao-dai-lang",
+      "originalKind": "lost",
+      "title": "Rơi túi đồ trẻ sơ sinh chiều 1/2 tại Pháo Đài Láng",
+      "foundArea": "Nhà văn hoá phố Pháo Đài Láng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6739/photo-1.jpeg",
+          "bytes": 42143,
+          "width": 439,
+          "height": 711,
+          "sha256": "f4f412693c3f46e494fa393a8ab3a79fc5ed6a67429699664d9ba5955408202d"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/73926ef1-7c35-4df1-a3c4-3fb3fe6c92af",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6749",
+      "sourceUrl": "https://timdo24h.com/roi-tui-do-ca-nhan-le-thi-hong-ngoc-2006-roi-o-ha-",
+      "originalKind": "lost",
+      "title": "Túi đen có đồ cá nhân",
+      "foundArea": "Đường Trịnh Văn Bô, đèn đỏ trường Cao đẳng FPT, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6749/photo-1.jpg",
+          "bytes": 153620,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "b5f495e9d50aa42b0f663659832a30dd226d13aa05a531e7314f16f5a3ae0ff5"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/73918f09-b3f8-4219-ab14-8d00c8c21d71",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6798",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-iphone-11-thuong-o-ha-noi-1",
+      "originalKind": "lost",
+      "title": "iPhone 11 màu tím",
+      "foundArea": "Ngõ 66 Kim Giang rẽ sang Phạm Tu, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6798/photo-1.jpg",
+          "bytes": 709077,
+          "width": 1080,
+          "height": 2400,
+          "sha256": "ead277f6e8f1f6322146a879828808c640a6bbcb3bcc1fb0d5420829c0674522"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/1a80664c-03d3-47ca-ad78-f6e1335e4b0a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6812",
+      "sourceUrl": "https://timdo24h.com/roi-chia-khoa-nha",
+      "originalKind": "lost",
+      "title": "Chìa khóa cửa cuốn kèm gấu bông hồng",
+      "foundArea": "ngõ 25 vũ ngọc phan, nguyễn chí thanh, pháo đài láng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6812/photo-1.jpeg",
+          "bytes": 311035,
+          "width": 828,
+          "height": 1472,
+          "sha256": "955d6d88faf47fbe2c5de198d54152ba5d1e97ef8fdcb636ff9a3f43e65ca082"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/83ba37f6-1ff4-4369-b317-61750e6ff8b9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6821",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-danh-roi-o-ha-noi",
+      "originalKind": "lost",
+      "title": "tìm chìa khoá đánh rơi ở Hà Nội",
+      "foundArea": "Phường Trung Tự, ngõ 95 Chùa Bộc, từ nhà để xe đại học thuỷ lợi đến quán ăn anji dãy nhà B tập thể đại học thuỷ lợi , Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6821/photo-1.jpeg",
+          "bytes": 58710,
+          "width": 422,
+          "height": 422,
+          "sha256": "f2933ef32dcc2676c9d4156744422076d3adf2f5d62373854618e2ad5b96b9a2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/3064b843-ddcb-4e68-b2d1-d4c98c9803e0",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6884",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-roi-o-cho-phung-khoang",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max màu vàng gold",
+      "foundArea": "Chợ Phùng Khoang, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6884/photo-1.jpg",
+          "bytes": 17352,
+          "width": 112,
+          "height": 194,
+          "sha256": "7a8c0daf106f74fb1d87977170203dcd760b4b8786180bab7b4f0489d78cf705"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/37926079-6532-4840-9dc4-8783f9c4566c",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6935",
+      "sourceUrl": "https://timdo24h.com/tim-nhan-bi-that-lac",
+      "originalKind": "lost",
+      "title": "Tìm Nhẫn Bị Thất Lạc",
+      "foundArea": "Chợ Tự Phát - đường Kim Đồng - Đà Lat, Lâm Đồng",
+      "images": [
+        {
+          "file": "timdocom-6935/photo-1.jpeg",
+          "bytes": 56373,
+          "width": 1080,
+          "height": 1920,
+          "sha256": "d0395d03be646399c6845eacf6699782e37794a3db92606af65f67c61d61c938"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b9ff2bd7-d01a-4375-a640-a3db6f01e869",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6970",
+      "sourceUrl": "https://timdo24h.com/tim-nhan-o-ha-noi-mat-tu-sau-21122025",
+      "originalKind": "lost",
+      "title": "Tìm nhẫn ở Hà Nội, mất từ sau 21/12/2025",
+      "foundArea": "Thành phố Hà Nội, Việt Nam, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6970/photo-1.jpeg",
+          "bytes": 14484,
+          "width": 201,
+          "height": 213,
+          "sha256": "f2b16530b589a129f1f7e3957b51436ecbbfa65b36ab0ac277b9c93573f82291"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b016cf98-6f1d-4740-ac61-83ca05d4f876",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6972",
+      "sourceUrl": "https://timdo24h.com/tim-may-anh-canon-m10-mau-trang",
+      "originalKind": "lost",
+      "title": "Canon M10 màu trắng trong túi cá voi xám",
+      "foundArea": "Khu Park Hill Times City, gần Highland Park 8 và Park 9, Park 10, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-6972/photo-1.jpg",
+          "bytes": 265423,
+          "width": 839,
+          "height": 713,
+          "sha256": "a15b4db69302ac5d38fbc95835e5c2778cf7e919f75a7b13a96886b50b374f12"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b3bae4dc-7da3-4de2-99eb-3b9801972d86",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-6988",
+      "sourceUrl": "https://timdo24h.com/ao-hang-atino-mau-xam-size-xxl-van-con-nguyen-boc-",
+      "originalKind": "lost",
+      "title": "Áo hãng Atino màu xám size XXl vẫn còn nguyên bọc và tem ở Hải Phòng",
+      "foundArea": "Lạch Tray - Chợ Con - Hồ Sen, Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-6988/photo-1.jpeg",
+          "bytes": 2158045,
+          "width": 3000,
+          "height": 4000,
+          "sha256": "c2cf34aeeee86e48d46536574a889b461854ed9fe00d46a4c8a4f8676db67101"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/13982cc7-8a8d-4f25-9ed6-147061f34077",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7008",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-iphone-11-tai-duong-3-thang-2-da--1",
+      "originalKind": "lost",
+      "title": "iPhone 11 có ốp nhiều màu",
+      "foundArea": "Đường 3 tháng 2, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-7008/photo-1.jpg",
+          "bytes": 45030,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "7bd8682233bcf654deadab656cb4ec777b8d800f8b9e37a554462701d1fa7f65"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5a0a35fe-57b9-43d3-a1ed-25f144a280a7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7038",
+      "sourceUrl": "https://timdo24h.com/roi-vong-tay",
+      "originalKind": "lost",
+      "title": "Rơi vòng tay",
+      "foundArea": "Từ kim lũ đến vườn hoa phù lỗ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7038/photo-1.png",
+          "bytes": 3900982,
+          "width": 1125,
+          "height": 2436,
+          "sha256": "5cca73dc3b8f4ced8f526efc35ad776bae2d2d255c0ca91b0dd17f3af3aea7d3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/06387330-d94f-4233-82d6-0aebf1e62170",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7065",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-bi-rot-1",
+      "originalKind": "lost",
+      "title": "Samsung Galaxy A02s",
+      "foundArea": "Đường Trần Quang Khải gần quảng trường, Rạch Giá",
+      "images": [
+        {
+          "file": "timdocom-7065/photo-1.jpg",
+          "bytes": 188001,
+          "width": 800,
+          "height": 800,
+          "sha256": "243474fc694d5eeadada86be36e5ea5ea5d3e35a59e5bd315b87246467c3c71b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0d5f0b9a-038c-4a21-8cd3-1726e17b06cd",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7138",
+      "sourceUrl": "https://timdo24h.com/tim-giup-toi-chiec-dong-ho-nay-ai-nhat-duoc-xin-tr",
+      "originalKind": "lost",
+      "title": "Đồng hồ đeo tay màu đen",
+      "foundArea": "Biển nhân tạo Đại Nam, khu phòng thay đồ nam, Bình Dương",
+      "images": [
+        {
+          "file": "timdocom-7138/photo-1.jpg",
+          "bytes": 11858,
+          "width": 151,
+          "height": 139,
+          "sha256": "b9ce056f04b95b95f5bb18bba4d4a5e4f88b3628be8fc8372e8ac773c25fb504"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/df1e8b79-4a9c-4c7d-9f14-ce8ff90a0f25",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7225",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-xe-oto",
+      "originalKind": "lost",
+      "title": "Tìm chìa khoá xe oto",
+      "foundArea": "Phường An Khê, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-7225/photo-1.jpeg",
+          "bytes": 9604,
+          "width": 92,
+          "height": 180,
+          "sha256": "61cee9f847e6bcc38af0defd8a5dbbe63cd6a9ad672d5bea21b06f2aff96bd25"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/eaee4233-0daa-4b04-a17c-b44a86411c84",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7245",
+      "sourceUrl": "https://timdo24h.com/tha-thiet-tim-lai-a",
+      "originalKind": "lost",
+      "title": "Tha thiết tìm lại ạ",
+      "foundArea": "Khu vực Hàng Lược, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7245/photo-1.jpeg",
+          "bytes": 116461,
+          "width": 944,
+          "height": 2046,
+          "sha256": "eaadb2844cb1ba407a2733dd7100e50de5496a66cf9e7986fe00e470f50f8ea7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/4c73e832-718a-4b95-8923-2ed3e0ebf80f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7246",
+      "sourceUrl": "https://timdo24h.com/em-mat-vi-may-trang-co-hinh-may-con-tho-den-1",
+      "originalKind": "lost",
+      "title": "em mất ví mày trắng có hình mấy con thỏ đen",
+      "foundArea": "Siêu thị Go, Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-7246/photo-1.jpeg",
+          "bytes": 97943,
+          "width": 597,
+          "height": 856,
+          "sha256": "58172a142e79731b0f7a264c84bdf683507fb9a4614f39e1bdedf653a3521e73"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5f1667d6-0c9c-4630-88a7-4b26e8104a08",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7253",
+      "sourceUrl": "https://timdo24h.com/roi-dien-thoai-8",
+      "originalKind": "lost",
+      "title": "Điện thoại iPhone có ốp hồng",
+      "foundArea": "Lạc Long Quân, Xuân Đỉnh, Xuân La, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7253/photo-1.jpg",
+          "bytes": 9480,
+          "width": 171,
+          "height": 357,
+          "sha256": "6f1a6fae3056a3dd336077c401a5b648781b6839a8e0900cb016bed16479a164"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/31992a5e-b3a1-42df-8740-b4ea4e02e495",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7362",
+      "sourceUrl": "https://timdo24h.com/tim-vong-that-lac-roi-o-cho-khu-tai-dinh-cu",
+      "originalKind": "lost",
+      "title": "Tìm vòng thất lạc rơi ở chỗ khu tái định cư",
+      "foundArea": "Từ khi tái định cư đến đường tàu Đồng Quang, gần với đèn xanh đèn đỏ phía bên tay phai",
+      "images": [
+        {
+          "file": "timdocom-7362/photo-1.jpeg",
+          "bytes": 2517593,
+          "width": 3024,
+          "height": 4032,
+          "sha256": "f0703324493b7ab1cb97dfedfd6d062001db0d265ea756265d1e6bb8954eadb9"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b116a57e-7cb6-4a81-a298-cca328db0f32",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7435",
+      "sourceUrl": "https://timdo24h.com/em-bi-mat-chiec-lac-tennis-helios-o-da-lat",
+      "originalKind": "lost",
+      "title": "Em bị mất chiếc lắc Tennis Helios ở Đà Lạt",
+      "foundArea": "Trần Bình Trọng , Lâm Đồng",
+      "images": [
+        {
+          "file": "timdocom-7435/photo-1.jpeg",
+          "bytes": 139895,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "0f44846b6d32e3b28da73899a676de8f5ee42b5977fffbebf960d597d11859dd"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a95d2017-0a40-4e65-b75e-d8ee5231e5ac",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7447",
+      "sourceUrl": "https://timdo24h.com/roi-tui-may-quay-pocket-3-o-hai-phong",
+      "originalKind": "lost",
+      "title": "Túi máy quay DJI Pocket 3",
+      "foundArea": "Lô 9 Đằng Hải, Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-7447/photo-1.jpg",
+          "bytes": 122887,
+          "width": 1266,
+          "height": 1255,
+          "sha256": "cd1a375026107ecf910e25f2baebcdf85f0ffd3caf6b55403bb5fb13a716f33c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/923392e7-310a-4045-9b41-a7853cfe4345",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7488",
+      "sourceUrl": "https://timdo24h.com/gap-tim-do-that-lac",
+      "originalKind": "lost",
+      "title": "Gấp Tìm Đồ Thất Lạc",
+      "foundArea": "Tuyến Đường Thanh Sơn - Ông Ích Khiêm - Đinh Tiên Hoàng - Bắc Đẩu - Nguyễn Tất Thành - Khu Đô Thị Đa Phước, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-7488/photo-1.jpeg",
+          "bytes": 1399530,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "cd209beccf286e19913b1837d5c6265ab82b17771a72bad6c9953d3f7e3a19c6"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/ffe4d5d1-1787-41e0-95d8-70379fa91642",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7494",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-20",
+      "originalKind": "lost",
+      "title": "iPhone XS Max có ốp màu hồng",
+      "foundArea": "Vòng xuyến đường Lê Trọng Tấn gần The LinC Parkcity, Hà Đông, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7494/photo-1.jpg",
+          "bytes": 51248,
+          "width": 299,
+          "height": 504,
+          "sha256": "fe03e66c934f9429abd6024038a4db7b99d2edf51bfe8420e55187e58b7bf22e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/8d1e2e80-8d5b-4fc7-8ef6-01369faa3ef1",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7537",
+      "sourceUrl": "https://timdo24h.com/roi-airpod-4-ban-anc-tai-hang-gai-ha-noi",
+      "originalKind": "lost",
+      "title": "AirPods 4 bản ANC",
+      "foundArea": "Hàng Gai, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7537/photo-1.png",
+          "bytes": 3974072,
+          "width": 1284,
+          "height": 2778,
+          "sha256": "fb8d4714bde3a71362ee729e41ade80972f81d7b5ae89f20abd1fff2bb82d468"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2bf1f327-b58e-4e8a-b2ac-fd64fb3e0599",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7546",
+      "sourceUrl": "https://timdo24h.com/tim-balo-that-lac-tai-ho-guom-rang-sang-0803",
+      "originalKind": "lost",
+      "title": "Tìm balo thất lạc tại Hồ Gươm rạng sáng 08/03",
+      "foundArea": "Vườn hoa ven hồ Gươm, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7546/photo-1.jpeg",
+          "bytes": 827284,
+          "width": 1020,
+          "height": 991,
+          "sha256": "f90194e9739f13032be1c84311a6a04d4664c6c3bd4abdac1150befdeb4a17a2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7398a8ac-7592-4685-a5e2-e1ae928fe94e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7731",
+      "sourceUrl": "https://timdo24h.com/roi-vong-tay-1",
+      "originalKind": "lost",
+      "title": "Rơi vòng tay",
+      "foundArea": "Gò Vấp, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-7731/photo-1.jpeg",
+          "bytes": 33898,
+          "width": 369,
+          "height": 491,
+          "sha256": "771f11835f75523e98511482927c2dcee0a480c86a272c185cb11d6f05f2fe56"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d7ee7d22-fdfd-4774-878e-e4da16effb04",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7812",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-redmi-12-5g-mau-xanh-roi-o-ha-noi",
+      "originalKind": "lost",
+      "title": "Redmi 12 5G màu xanh",
+      "foundArea": "Nguyễn Văn Luyện, Tố Hữu, Nguyễn Xiển, Hoàng Đạo Thành, Kim Giang, Định Công, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7812/photo-1.jpg",
+          "bytes": 61140,
+          "width": 453,
+          "height": 698,
+          "sha256": "e96a074943cae090471bc1574af5763a624c73345665c69203fe4aa26491f228"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b61bd0d9-9e60-498c-8e57-f0a8e8911877",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7903",
+      "sourceUrl": "https://timdo24h.com/roi-tai-nghe-ss-galaxy-buds-fe-vo-trang-trong-den",
+      "originalKind": "lost",
+      "title": "Hộp Samsung Galaxy Buds FE màu trắng",
+      "foundArea": "Vinhomes Green Bay, Vũ Trọng Khánh, Hà Đông đến Chương Mỹ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-7903/photo-1.jpg",
+          "bytes": 64728,
+          "width": 647,
+          "height": 775,
+          "sha256": "e655b15c66f9cc11f758173dedf21d2f20f2e9809e5d0fcf3abd2eed5cb32e75"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/979a3489-b480-4af3-aa68-585e036b2167",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-7990",
+      "sourceUrl": "https://timdo24h.com/bi-rot-mat-cap-laptop-o-doan-duong-bau-cat-quan-ta",
+      "originalKind": "lost",
+      "title": "Cặp laptop họa tiết hoa",
+      "foundArea": "Đường Bàu Cát, phường 14, quận Tân Bình, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-7990/photo-1.jpg",
+          "bytes": 388741,
+          "width": 920,
+          "height": 1181,
+          "sha256": "1303e421d9d12c477ccf484a50db6aa6c3d872a5147d866ee21331fb4212227f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e30cea94-4bad-4ba7-9028-e32ff757cf3a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8093",
+      "sourceUrl": "https://timdo24h.com/nguyen-minh-kha-2432007-roi-o-binh-duong-thu-dau-m",
+      "originalKind": "lost",
+      "title": "Ví màu đen thất lạc tại Thủ Dầu Một",
+      "foundArea": "Đường lê hồng phong phú hoà, Bình Dương",
+      "images": [
+        {
+          "file": "timdocom-8093/photo-1.jpeg",
+          "bytes": 201163,
+          "width": 978,
+          "height": 903,
+          "sha256": "d2881d595c67ab483715c1ecb812ae5f0486c7eb0002dc6d9982b55429eefabb"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/3543332a-39bd-47b2-8865-7b0480209c54",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8169",
+      "sourceUrl": "https://timdo24h.com/roi-iphonex-256gb-mau-bac-tren-tuyen-xe-buyt-so-06",
+      "originalKind": "lost",
+      "title": "iPhone X 256 GB màu bạc",
+      "foundArea": "Trạm xe buýt số 06, đường Trần Cao Vân, quận 3, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8169/photo-1.jpg",
+          "bytes": 32516,
+          "width": 940,
+          "height": 151,
+          "sha256": "09d04086bc89a0512c06dddbf8bfaf12efe513d1a5be7419f0c0cb58811c5629"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/01c330d1-3392-42b7-89a5-af8f339df51b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8232",
+      "sourceUrl": "https://timdo24h.com/tim-tui-va-laptop-roi-o-cmt8-tphcm-1",
+      "originalKind": "lost",
+      "title": "Túi tote có laptop Lenovo Xiaoxin",
+      "foundArea": "Cách Mạng Tháng Tám, đoạn Bến Thành qua Xuân Hòa đến Nhiêu Lộc, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8232/photo-1.jpg",
+          "bytes": 259226,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "71f9245420b1ce7474bfb04e30522c998222e9c968380414107ee654acdbd3ee"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/907fa01b-4306-47c3-8ab3-2a0e793f0cc8",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8258",
+      "sourceUrl": "https://timdo24h.com/tim-kinh",
+      "originalKind": "lost",
+      "title": "tìm kính",
+      "foundArea": "87 chế lan viên -> luỹ bán bích -> tân hoà đông, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8258/photo-1.jpeg",
+          "bytes": 323451,
+          "width": 790,
+          "height": 748,
+          "sha256": "fef3d3c21fdd88fe859c9fa16bccc479e694e068fecd6dbb90086b457fa0e395"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/44d2e249-43c1-4845-9bd5-be02d85b5ef7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8275",
+      "sourceUrl": "https://timdo24h.com/mat-do-5",
+      "originalKind": "lost",
+      "title": "DJI Osmo Mobile 7P trong hộp màu xám",
+      "foundArea": "Chân cầu Nguyễn Tri Phương, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8275/photo-1.jpg",
+          "bytes": 249847,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "eeb289dde8ad2a7859cc734f87ce3192565590d91f127c376dcef3f976a7d635"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c0fa343f-b3cd-4ddd-99fa-8f941664b24f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8395",
+      "sourceUrl": "https://timdo24h.com/sang-nay-khoang-6h-minh-co-danh-roi-mot-chiec-dong",
+      "originalKind": "lost",
+      "title": "Đồng hồ Apple Watch",
+      "foundArea": "Lạc Long Quân, Tây Hồ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8395/photo-1.png",
+          "bytes": 7318642,
+          "width": 1290,
+          "height": 2796,
+          "sha256": "01eee0eb6598d4847283f94ac14be6316d0d3538514a645da3c3dc237c37e0ff"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/23dcc870-0541-436a-88cf-976b99ed9632",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8409",
+      "sourceUrl": "https://timdo24h.com/em-bi-roi-balo-o-ha-noi",
+      "originalKind": "lost",
+      "title": "em bị rơi Balo ở Hà Nội",
+      "foundArea": "Đội Cấn → Giang Văn Minh → Giảng Võ (quay đầu) → Hào Nam → Hoàng Cầu (đi dọc hồ) → Đặng Tiến Đông → Láng, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8409/photo-1.jpeg",
+          "bytes": 237710,
+          "width": 828,
+          "height": 1792,
+          "sha256": "a7059f9314831b1b755a8e2870e89ac81f173574e7498c0fad22aa757cd3a25f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/40283eda-e95c-48fa-a7da-651485bab8f1",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8429",
+      "sourceUrl": "https://timdo24h.com/tim-lai-vong-tay-bi-danh-roi-luc-di-lam-a-vong-tay",
+      "originalKind": "lost",
+      "title": "tìm lại vòng tay bị đánh rơi lúc đi làm ạ😭 vòng tay Pandora",
+      "foundArea": "từ khu D gleximco lê trọng tấn qua an phú dương nội, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8429/photo-1.png",
+          "bytes": 1459656,
+          "width": 1020,
+          "height": 1020,
+          "sha256": "176485933ed7217846a3f86a64448a6dc2a4e455d713623143ff55bb329831a3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/736ff901-bfb2-41d5-b547-5141d5cb2d67",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8448",
+      "sourceUrl": "https://timdo24h.com/em-co-roi-1-con-gau-khi-di-tu-vinhome-s5-long-bien",
+      "originalKind": "lost",
+      "title": "Em có rơi 1 con gấu khi đi từ vinhome s5 long biên đến aone long biên vào ngày8/4",
+      "foundArea": "S5 Vinhome, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8448/photo-1.jpeg",
+          "bytes": 106899,
+          "width": 1042,
+          "height": 912,
+          "sha256": "fa2adf80ef3916c9969be0d378d10bfd3032517148de4ebe013eec716750c1ff"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/bff18e3c-8505-4a35-8f8e-eccbbe847595",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8521",
+      "sourceUrl": "https://timdo24h.com/tim-tui-xach-tay-dai-hoc-duy-tan",
+      "originalKind": "lost",
+      "title": "Tìm túi xách tay đại học duy tân",
+      "foundArea": "Đoạn đường từ cầu tiên sơn đến cầu nguyễn tri phương đường 2/9, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-8521/photo-1.jpeg",
+          "bytes": 53636,
+          "width": 398,
+          "height": 431,
+          "sha256": "106e73d294f3d46bff240962f1379c5327e3730634c21a19fd8467e4893db02f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/87bce648-7f61-4cde-a5cb-9881e649c084",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8548",
+      "sourceUrl": "https://timdo24h.com/tim-do-da-nang-roi-dien-thoai-xiaomi-15t-pro-op--1",
+      "originalKind": "lost",
+      "title": "Xiaomi 15T Pro, ốp One Piece",
+      "foundArea": "CGV Vincom Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-8548/photo-1.png",
+          "bytes": 493807,
+          "width": 382,
+          "height": 773,
+          "sha256": "211ec2e6040d979c27d5710c65e6666f68dd49f08db77711a04eaf93089d9af1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/dc1d86d4-88ca-4e7d-8a36-bd2239635f24",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8557",
+      "sourceUrl": "https://timdo24h.com/tim-dien-thoai-ip-14-plus-mau-tim-roi-o-aeon-mall-",
+      "originalKind": "lost",
+      "title": "iPhone 14 Plus màu tím",
+      "foundArea": "Aeon Mall Hà Đông, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8557/photo-1.jpg",
+          "bytes": 119895,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "e01334f3fc29d7224d6e0deab7dc19bce29b99cd4cab4dd4506b9b89158cb96e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c517661d-393b-42f4-abb1-3e0003862302",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8558",
+      "sourceUrl": "https://timdo24h.com/tim-vong-tay-bi-roi",
+      "originalKind": "lost",
+      "title": "TÌM VÒNG TAY BỊ RƠI",
+      "foundArea": "Văn Quán Hà Đông, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8558/photo-1.jpeg",
+          "bytes": 31383,
+          "width": 516,
+          "height": 720,
+          "sha256": "202b0b9d2cfeace6950565da5d2b660fc33ee64a424e8bd9cf2a58487d58ee9d"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d52df613-4c54-49fa-aee8-d3ff197e4e21",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8565",
+      "sourceUrl": "https://timdo24h.com/tim-lac-bi-roi-o-vung-tau-1",
+      "originalKind": "lost",
+      "title": "Lắc tay thất lạc tại Vũng Tàu",
+      "foundArea": "katinat trần phú tới khu vực mấy cây hoa giấy ạ",
+      "images": [
+        {
+          "file": "timdocom-8565/photo-1.jpeg",
+          "bytes": 357479,
+          "width": 1920,
+          "height": 2560,
+          "sha256": "61d6a83e0a3d557f61a03f713e2f91db7067babd6710399729be674c1842fa2f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/ccf14a7a-268e-41c8-8fe7-cd64fa854246",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8613",
+      "sourceUrl": "https://timdo24h.com/that-lac-tui-do-o-ben-xe-mien-tay",
+      "originalKind": "lost",
+      "title": "Thất lạc túi đồ ở bến xe miền Tây",
+      "foundArea": "bến xe miền tây, khu vực liên khách 8-9 về miền tây , TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8613/photo-1.jpeg",
+          "bytes": 1425532,
+          "width": 2877,
+          "height": 3836,
+          "sha256": "12e973b1c3f5d97525ef76dc4f630ec269632337e783306d90f8b450478e443b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d413883d-9aad-4cb9-9632-e7efd997743d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8668",
+      "sourceUrl": "https://timdo24h.com/em-bi-mat-tai-nghe-a",
+      "originalKind": "lost",
+      "title": "Tai nghe AirPods có móc trang trí",
+      "foundArea": "Trần Nguyên Đán đến công viên Định Công, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8668/photo-1.jpg",
+          "bytes": 128687,
+          "width": 1080,
+          "height": 1920,
+          "sha256": "0064bd74fdc4557acf32f6acecc1c3b9633a7d98e029c2ebf71063ccf8d513a7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2113af72-2485-47ae-bf2d-a1caeb785bc9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8760",
+      "sourceUrl": "https://timdo24h.com/roi-ip-11-tai-cong-vien-phung-khoang",
+      "originalKind": "lost",
+      "title": "iPhone 11 có ốp hình quả cà chua",
+      "foundArea": "Công viên Phùng Khoang, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-8760/photo-1.jpg",
+          "bytes": 373541,
+          "width": 800,
+          "height": 800,
+          "sha256": "5c8ad2bf3de7ef50c7e0c9299251da51dbd52ba462b368165e7ab1800cc904cd"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7f75b2cb-402d-407c-96c7-5ac70f2e4a42",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8800",
+      "sourceUrl": "https://timdo24h.com/tim-may-anh-1",
+      "originalKind": "lost",
+      "title": "Máy ảnh Ricoh GR3x HDF",
+      "foundArea": "Đại học Kiến trúc, Nguyễn Xí, Hàm Nghi, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8800/photo-1.jpg",
+          "bytes": 194724,
+          "width": 1948,
+          "height": 2047,
+          "sha256": "2e0e8f3fdb35106100af9274d9a77c37f7b55763875ff8d40ade789d26c1b93a"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/186af441-477b-4409-86e2-60ba2ed98db7",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8814",
+      "sourceUrl": "https://timdo24h.com/ai-rot-chia-khoa-nhu-z-ib-mik-nha",
+      "originalKind": "found",
+      "title": "Chìa khóa smartkey có móc vàng",
+      "foundArea": "Đường 53, phường An Hội Tây, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8814/photo-1.jpg",
+          "bytes": 103861,
+          "width": 720,
+          "height": 1280,
+          "sha256": "444eebe5de636a8b0463d0bf05bd1b3079a7c30c90caeddae5fb2679f7f37f62"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/d9e7d5e1-ab48-4fa3-99f8-9f8d456abb78",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8852",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-smartkey",
+      "originalKind": "lost",
+      "title": "Chìa khóa smartkey xe AB",
+      "foundArea": "Lý Thánh Tông, Nguyễn Tất Thành, Tôn Thất Đạm, Trần Cao Vân, Quang Trung, Nguyễn Thị Minh Khai, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-8852/photo-1.jpg",
+          "bytes": 9606,
+          "width": 205,
+          "height": 342,
+          "sha256": "d9fa10b0036042690521ec9c88662738af2f06b385907c58efa97121f4536b46"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/122db6ea-486f-43c2-b7d7-6ec0927f634d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8877",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-xe-1",
+      "originalKind": "lost",
+      "title": "Chìa khóa xe",
+      "foundArea": "Bến xe đến Trần Cao Vân, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdocom-8877/photo-1.jpg",
+          "bytes": 523136,
+          "width": 1125,
+          "height": 1506,
+          "sha256": "6ff46c579dbb926efe20530334ee30541b45d3b11313f4151df97a08edd589c7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/bea2a339-c379-4c8f-aa39-5f3c64bd6739",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8952",
+      "sourceUrl": "https://timdo24h.com/tai-nghe-tro-thinh",
+      "originalKind": "lost",
+      "title": "Hộp đựng tai nghe trợ thính",
+      "foundArea": "Thủ Đức, Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-8952/photo-1.jpg",
+          "bytes": 168576,
+          "width": 679,
+          "height": 640,
+          "sha256": "48ab2a88c02837986944e7da39c7ea745b08a45467a6b42841b1cd6bc4e0dbc2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/8dbe756e-3924-4688-99e7-6d04e8869b73",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-8977",
+      "sourceUrl": "https://timdo24h.com/tim-chu-nhan-bi-mat-do",
+      "originalKind": "found",
+      "title": "TÌM CHỦ NHÂN BỊ MẤT ĐỒ",
+      "foundArea": "Bãi xe Khu 2 Đồ Sơn, Hải Phòng",
+      "images": [
+        {
+          "file": "timdocom-8977/photo-1.jpeg",
+          "bytes": 2533010,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "fb3bb48ecd6bac7f9c3e8cfdb22b70e46c8f77c080af9e2661d33a9c08ff3daf"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/69c62ce9-15a9-4f88-9dd2-acc71366b37a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9030",
+      "sourceUrl": "https://timdo24h.com/that-lac-vali-kim-loai-mau-xam-o-tuyen-duong-thanh",
+      "originalKind": "lost",
+      "title": "Thất lạc vali kim loại màu xám ở tuyến đường Thanh Hoá-HN",
+      "foundArea": "TH-HN, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-9030/photo-1.jpeg",
+          "bytes": 727014,
+          "width": 1242,
+          "height": 1124,
+          "sha256": "da89381bc3da5164aeb7a1218af4eb81bb5baef78e7a54d0eadcc977ed3793a1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/89ef60b7-d592-4d57-bcbf-1542db26803b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9105",
+      "sourceUrl": "https://timdo24h.com/tim-be-tho-bong-bi-lac",
+      "originalKind": "lost",
+      "title": "Thỏ bông thất lạc trên tuyến xe buýt 18",
+      "foundArea": "Cây xăng satra 17, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-9105/photo-1.jpeg",
+          "bytes": 1246407,
+          "width": 3280,
+          "height": 2460,
+          "sha256": "6b889130ea7be8613dd1101c8efdeab32f407a41531af84789120cb844183e74"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/f46e5f5f-d1ec-494e-a279-bb8b748f5772",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9193",
+      "sourceUrl": "https://timdo24h.com/roi-smartkey-o-ho-chi-minh-1",
+      "originalKind": "lost",
+      "title": "Rơi smartkey ở Hồ Chí Minh",
+      "foundArea": "Landmart 81 đến nhà sách Hải An, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-9193/photo-1.jpeg",
+          "bytes": 1309849,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "3085d7ba4399f3c80d9b100f249a8e026a5ccfab4d304442cf6c0f1bfe8aa4c5"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/140f40bc-eef1-43fb-b679-c7fde33aeb5a",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9211",
+      "sourceUrl": "https://timdo24h.com/tim-do-di-ship-bi-roi-a",
+      "originalKind": "lost",
+      "title": "Tìm đồ đi ship bị rơi ạ",
+      "foundArea": "Khoảng từ đường hoàng Hoa thám tới cầu chương dương, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-9211/photo-1.jpeg",
+          "bytes": 4577346,
+          "width": 3472,
+          "height": 4624,
+          "sha256": "7431c10c25deccbde3f1837c4e34f7f0eef8b2cb3ac0f7914b3a6699ac39c808"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/39f67036-e4eb-44e7-9430-292da7f20dc3",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9302",
+      "sourceUrl": "https://timdo24h.com/tim-vi-bi-danh-roi-8",
+      "originalKind": "lost",
+      "title": "Tìm ví bị đánh rơi",
+      "foundArea": "Trường Đại Học Khoa Học, Cầu Gỗ Lim, có thể là Quán cafe Bến Xưa , Thừa Thiên Huế",
+      "images": [
+        {
+          "file": "timdocom-9302/photo-1.jpeg",
+          "bytes": 92152,
+          "width": 860,
+          "height": 816,
+          "sha256": "be10e0876ea89abc5b1420675247214fa97c80e0a623207f2d2cb932ee227697"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c89ca7ea-6b5c-4f71-a6fd-77f3bfba82f5",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9312",
+      "sourceUrl": "https://timdo24h.com/minh-co-danh-roi-dien-thoai-cong-viec",
+      "originalKind": "lost",
+      "title": "Google Pixel 8 Pro màu xanh dương",
+      "foundArea": "Dĩ An, quốc lộ 1K, Kha Vạn Cân, Hoàng Diệu 2, khu vực Thủ Đức",
+      "images": [
+        {
+          "file": "timdocom-9312/photo-1.jpg",
+          "bytes": 338734,
+          "width": 1536,
+          "height": 2048,
+          "sha256": "df6192951d505a7ae0b8d68ed5802518e35fb750fbb81e072c080586c317c401"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6559df75-edaa-4aa9-acd8-4b26707f0560",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9492",
+      "sourceUrl": "https://timdo24h.com/roi-vong",
+      "originalKind": "lost",
+      "title": "Rơi vòng",
+      "foundArea": "Khu vực công viên Phú Lâm, vòng xoay Mũi Tàu và dọc đường An Dương Vương ( chợ cùng tên), TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-9492/photo-1.jpeg",
+          "bytes": 29829,
+          "width": 359,
+          "height": 427,
+          "sha256": "f03a1c1502170d24a845609f53f375956a13b456f7b873ac8f29a0e17b6a4504"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/955a4b48-7700-4daa-8e03-1aba28453f8d",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9655",
+      "sourceUrl": "https://timdo24h.com/tim-chia-khoa-xe-vision-roi-o-ha-noi",
+      "originalKind": "lost",
+      "title": "tìm chìa khoá xe vision rơi ở hà nội",
+      "foundArea": "Trung Kính về Long Biên ạ, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-9655/photo-1.jpeg",
+          "bytes": 78853,
+          "width": 658,
+          "height": 967,
+          "sha256": "a9c5bdb5e938019652e6b3679fc8ac93c3488dc932bd6bdfe8f4fbe831724d53"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0d71e9b4-cb8c-4c09-9651-f41d014dd889",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9702",
+      "sourceUrl": "https://timdo24h.com/minh-co-lam-roi-vong-tay-luc-18h-den-19h30-o-khu-vuc-bai-truoc-vung-tau",
+      "originalKind": "lost",
+      "title": "Mình có làm rơi vòng tay lúc 18h đến 19h30 ở khu vực bãi trước Vũng Tàu lúc đi lễ phật đản",
+      "foundArea": "Bãi Trước, Tp Vũng Tàu",
+      "images": [
+        {
+          "file": "timdocom-9702/photo-1.jpeg",
+          "bytes": 24620,
+          "width": 244,
+          "height": 415,
+          "sha256": "553ec3b6f4fabff3885f483d0e4bc0608b7b45f5dccf069069ad79b14f8376d5"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/492e39c5-fa9a-4664-815a-68a2573ebbe1",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9742",
+      "sourceUrl": "https://timdo24h.com/em-bi-rot-mat-hang",
+      "originalKind": "lost",
+      "title": "Em bị rớt mất hàng",
+      "foundArea": "Tân Bình , TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdocom-9742/photo-1.jpeg",
+          "bytes": 134558,
+          "width": 720,
+          "height": 1280,
+          "sha256": "f0f241c6f47041d01aceafa2333042c36877684c911c37b75b4b654fb316930f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/bd0e29a7-0692-44e4-95d6-11e664b39fe9",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdocom-9900",
+      "sourceUrl": "https://timdo24h.com/tim-vong-tay",
+      "originalKind": "lost",
+      "title": "Tìm vòng tay",
+      "foundArea": "Chùa quán tính, Hà Nội",
+      "images": [
+        {
+          "file": "timdocom-9900/photo-1.jpeg",
+          "bytes": 1529071,
+          "width": 4032,
+          "height": 3024,
+          "sha256": "4070120e802321d964d95a1c3cfc4c47a4dac63c7320603bef224c34b8edca3b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2fef4567-baba-464a-9d17-e0ce36833dcb",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1015",
+      "sourceUrl": "https://timdothatlac.vn/post/1015",
+      "originalKind": "lost",
+      "title": "Chìa khóa xe máy thất lạc tại Hải Phòng",
+      "foundArea": "Đoạn Hùng Vương hướng An Hồng, Hải Phòng",
+      "images": [
+        {
+          "file": "timdothatlac-1015/photo-1.webp",
+          "bytes": 34134,
+          "width": 1200,
+          "height": 801,
+          "sha256": "a179d2582b662c3498c776651e00076e4aa41ca025219e2e9a5875edd2ce27e7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e29912c5-fc4a-4c67-b9ad-bd1733804368",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1079",
+      "sourceUrl": "https://timdothatlac.vn/post/1079",
+      "originalKind": "lost",
+      "title": "Vòng tay Pandora thất lạc tại Đầm Sen Nước",
+      "foundArea": "Khu đu dây Đầm Sen Nước, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-1079/photo-1.webp",
+          "bytes": 22504,
+          "width": 591,
+          "height": 1200,
+          "sha256": "bc4d31f547151777aaaec9096196cace14380e428c0c55b1e8ec3213ee6e0efc"
+        },
+        {
+          "file": "timdothatlac-1079/photo-2.webp",
+          "bytes": 32428,
+          "width": 872,
+          "height": 1200,
+          "sha256": "6582ebb787319f580a73dd7f57444b7bde66c01b890c8e114d6d242513a168d2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0ad546fd-14a3-451f-a5f9-635cdaab2322",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1092",
+      "sourceUrl": "https://timdothatlac.vn/post/1092",
+      "originalKind": "lost",
+      "title": "Túi xách màu xanh lá thất lạc tại TP. Hồ Chí Minh",
+      "foundArea": "TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-1092/photo-1.webp",
+          "bytes": 55652,
+          "width": 637,
+          "height": 723,
+          "sha256": "8cd2d7434c783397a4ff8f0e0f72c4ab7b40758b5545c8696107de50755453e4"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6c8b42a4-2aaa-4e7f-ae67-f8e620331166",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1142",
+      "sourceUrl": "https://timdothatlac.vn/post/1142",
+      "originalKind": "lost",
+      "title": "Túi xách thất lạc tại Hà Nội",
+      "foundArea": "Hà Nội",
+      "images": [
+        {
+          "file": "timdothatlac-1142/photo-1.webp",
+          "bytes": 28748,
+          "width": 1067,
+          "height": 1200,
+          "sha256": "d7600ae71f424e332ffebd47b63142e221d03471a0a877879d1bda01cde50c4f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/7d4228ff-507d-4813-aaa0-f002843c0c0b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1189",
+      "sourceUrl": "https://timdothatlac.vn/post/1189",
+      "originalKind": "lost",
+      "title": "Túi đeo thất lạc trên đường tới VSIP Hải Phòng",
+      "foundArea": "Từ cầu Triều tới cổng khu công nghiệp VSIP Hải Phòng",
+      "images": [
+        {
+          "file": "timdothatlac-1189/photo-1.webp",
+          "bytes": 62694,
+          "width": 800,
+          "height": 800,
+          "sha256": "cef70f6ef42543d1da2161d670c4b2917716b70b005ada480bc8d2550464915e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/ebff6a07-f029-4859-8828-7468f4d984fb",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1195",
+      "sourceUrl": "https://timdothatlac.vn/post/1195",
+      "originalKind": "lost",
+      "title": "Chìa khóa cửa cuốn với móc khóa hình công an",
+      "foundArea": "Hải Phòng",
+      "images": [
+        {
+          "file": "timdothatlac-1195/photo-1.webp",
+          "bytes": 41568,
+          "width": 869,
+          "height": 741,
+          "sha256": "6daac49b01c735be05bf395745d367d4b5b97e72c3468cb020366a9fa28f861a"
+        },
+        {
+          "file": "timdothatlac-1195/photo-2.webp",
+          "bytes": 148240,
+          "width": 900,
+          "height": 1200,
+          "sha256": "142548ac7a1609767a606fe9189b1c667af0f276814e61bf64ab8a1e2b9c3c78"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9344f107-dc7d-44b9-aeaa-5019ab3ee9b9",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1197",
+      "sourceUrl": "https://timdothatlac.vn/post/1197",
+      "originalKind": "lost",
+      "title": "Bịch quần áo thất lạc tại Phan Đăng Lưu",
+      "foundArea": "Đường Phan Đăng Lưu, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-1197/photo-1.webp",
+          "bytes": 82570,
+          "width": 675,
+          "height": 1200,
+          "sha256": "9b1a79a1962f59019d9b1e4c6f1019cc7863f7556e066d57cc98dd7d10f432d1"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c9918636-ec8a-49f4-b43b-b925a535374b",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1276",
+      "sourceUrl": "https://timdothatlac.vn/post/1276",
+      "originalKind": "lost",
+      "title": "iPhone 15 Pro Max màu trắng, ốp hồng",
+      "foundArea": "Từ 25 Duy Tân, An Cựu tới ngã rẽ qua Trần Phú, Huế",
+      "images": [
+        {
+          "file": "timdothatlac-1276/photo-1.webp",
+          "bytes": 15988,
+          "width": 342,
+          "height": 449,
+          "sha256": "c8db4da7f1112529e3ca500c580f3d97afb90365e672610ae687b6d3af910e1b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/35157193-3028-46b1-8451-edd49a25b097",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1448",
+      "sourceUrl": "https://timdothatlac.vn/post/1448",
+      "originalKind": "lost",
+      "title": "Túi xách trắng và điện thoại iPhone 12 Pro",
+      "foundArea": "Trạm dừng chân Minh Phát 2, Đồng Tháp",
+      "images": [
+        {
+          "file": "timdothatlac-1448/photo-1.webp",
+          "bytes": 31368,
+          "width": 554,
+          "height": 1200,
+          "sha256": "5b452e01ae45e8b7db955a0ea637878275a17aaab19aa04e42cf52f8140601fc"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/24d8ba8d-fe9d-4f8a-a462-22123d926557",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1501",
+      "sourceUrl": "https://timdothatlac.vn/post/1501",
+      "originalKind": "lost",
+      "title": "Túi xách thất lạc tại chân cầu Nguyễn Hoàng",
+      "foundArea": "Chân cầu Nguyễn Hoàng, Huế",
+      "images": [
+        {
+          "file": "timdothatlac-1501/photo-1.webp",
+          "bytes": 18270,
+          "width": 552,
+          "height": 1200,
+          "sha256": "d774216f6783e4ef0e32149377d68cdad9f89c1c9f33021d8fb4d193d2d456ad"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2a4df723-147c-4516-878a-b414977f9e1e",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1524",
+      "sourceUrl": "https://timdothatlac.vn/post/1524",
+      "originalKind": "lost",
+      "title": "Túi xách đen bị cầm nhầm tại Hải Vân phía Nam",
+      "foundArea": "Trạm trung chuyển Hải Vân phía Nam, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdothatlac-1524/photo-1.webp",
+          "bytes": 72894,
+          "width": 946,
+          "height": 1005,
+          "sha256": "2664d695a3730d887ee912c771bc973b7559b54df3d57cdfbdac0af14a5db2d7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2fad5624-0f92-459f-9854-b3e6365eb7e6",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1599",
+      "sourceUrl": "https://timdothatlac.vn/post/1599",
+      "originalKind": "lost",
+      "title": "Túi đồ thể thao Coolmate, găng boxing và giày Asics",
+      "foundArea": "Lê Văn Lương – cầu Tân Thuận 1 – Quận 4 – cầu Sài Gòn, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-1599/photo-1.webp",
+          "bytes": 146292,
+          "width": 881,
+          "height": 1200,
+          "sha256": "245976a116a34339434f4b982fc9db925ca1714ca0fc56dd46f7f0a6edb1bc49"
+        },
+        {
+          "file": "timdothatlac-1599/photo-2.webp",
+          "bytes": 57844,
+          "width": 781,
+          "height": 1200,
+          "sha256": "39e06d4d9346a6c82b1fde2aa31d890e4f793b97236595db034bdadb797b831f"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0e2d17fb-c165-4bb3-8cff-c1fd5faccb5d",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1708",
+      "sourceUrl": "https://timdothatlac.vn/post/1708",
+      "originalKind": "lost",
+      "title": "iPhone 12 Pro Max màu xanh đen với ốp lưng",
+      "foundArea": "Kiệt 85 An Dương Vương, TP. Huế",
+      "images": [
+        {
+          "file": "timdothatlac-1708/photo-1.webp",
+          "bytes": 62410,
+          "width": 906,
+          "height": 1200,
+          "sha256": "1b3f23f98a23e61f52701eecb899bba11d7ca7581a3b35ea41fcb98749451b6e"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/9b438b1b-138c-42e6-9c0e-64dfc0e87458",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1802",
+      "sourceUrl": "https://timdothatlac.vn/post/1802",
+      "originalKind": "lost",
+      "title": "Túi xách đen và ví trắng thất lạc tại Hồ Gươm",
+      "foundArea": "Khu vực Hồ Gươm gần Mixue và Bingxue, Hà Nội",
+      "images": [
+        {
+          "file": "timdothatlac-1802/photo-1.webp",
+          "bytes": 17020,
+          "width": 828,
+          "height": 522,
+          "sha256": "eb696c02b6f93eb1725f8e0fda56342fb5a9a029fee5997d4f259b264839b7a3"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e5bbf478-6270-4d55-b0d4-3fa4109f63de",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1890",
+      "sourceUrl": "https://timdothatlac.vn/post/1890",
+      "originalKind": "lost",
+      "title": "Túi xách thất lạc gần Starbucks đường Lê Lợi",
+      "foundArea": "Gần Starbucks đường Lê Lợi, Thừa Thiên Huế",
+      "images": [
+        {
+          "file": "timdothatlac-1890/photo-1.webp",
+          "bytes": 41440,
+          "width": 552,
+          "height": 1200,
+          "sha256": "bba7621d22218446703abb6efbd5f60a1ee23c9bd768fc9cd24ad27b4bdc0703"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/f0ea5e3c-a798-43f1-b365-30f672ea3a84",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-1996",
+      "sourceUrl": "https://timdothatlac.vn/post/1996",
+      "originalKind": "lost",
+      "title": "Túi trắng có thú bông thất lạc tại Hội An",
+      "foundArea": "Khu phố cổ Hội An, Quảng Nam",
+      "images": [
+        {
+          "file": "timdothatlac-1996/photo-1.webp",
+          "bytes": 93468,
+          "width": 940,
+          "height": 1200,
+          "sha256": "84218b794e656117e7de4831931d532953bf297fbb3369a26bf6fa251d11421c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/f00a5fff-2685-418a-b185-2c0e73190da4",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2123",
+      "sourceUrl": "https://timdothatlac.vn/post/2123",
+      "originalKind": "lost",
+      "title": "iPhone 14 Pro Max màu vàng thất lạc ở cầu Hóa An",
+      "foundArea": "Dốc cầu Hóa An, Đồng Nai",
+      "images": [
+        {
+          "file": "timdothatlac-2123/photo-1.webp",
+          "bytes": 26722,
+          "width": 831,
+          "height": 1200,
+          "sha256": "a8243a120281d9d65f15d7f911f34d7712d9c827c1e1309823b7cdc82dd2f313"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/a99c07a6-7353-4a32-ac37-a0029eb073fd",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2220",
+      "sourceUrl": "https://timdothatlac.vn/post/2220",
+      "originalKind": "lost",
+      "title": "Túi thất lạc trên đường tới chùa Phật Ngọc Xá Lợi",
+      "foundArea": "Từ Toyota thập nhất Phong tới chùa Phật Ngọc Xá Lợi, TP. Vĩnh Long",
+      "images": [
+        {
+          "file": "timdothatlac-2220/photo-1.webp",
+          "bytes": 62802,
+          "width": 900,
+          "height": 1200,
+          "sha256": "dc6bab60f42f9be2509fd5c41e56f41fc824f4ae7def31000ab7441ef305b7ea"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/02aae6ea-a8fa-4855-8d4c-af9494c5fd22",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2279",
+      "sourceUrl": "https://timdothatlac.vn/post/2279",
+      "originalKind": "lost",
+      "title": "Ba lô và túi xách để quên tại Huế",
+      "foundArea": "Đường Đặng Thái Thân, Huế",
+      "images": [
+        {
+          "file": "timdothatlac-2279/photo-1.webp",
+          "bytes": 34600,
+          "width": 758,
+          "height": 1200,
+          "sha256": "09b623553829317103a86b57e0aae118152176ad76ed17dd3fa1cbbac07cc49f"
+        },
+        {
+          "file": "timdothatlac-2279/photo-2.webp",
+          "bytes": 64994,
+          "width": 823,
+          "height": 1200,
+          "sha256": "15984a2016995fc374211fec1a36c772dbc4d07cba0784ceafad2a1e3cfd9f1b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/e7270d9f-b2c3-4e6b-b7af-911206ed66db",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2321",
+      "sourceUrl": "https://timdothatlac.vn/post/2321",
+      "originalKind": "lost",
+      "title": "Vòng tay thất lạc trên đường Cổ Nhuế – Trần Cung",
+      "foundArea": "Trục đường Cổ Nhuế – Phạm Văn Đồng – Trần Cung, Hà Nội",
+      "images": [
+        {
+          "file": "timdothatlac-2321/photo-1.webp",
+          "bytes": 76564,
+          "width": 900,
+          "height": 1200,
+          "sha256": "d0e8aef438cf25fbea304efc119bc81dbe8188578b5c8067de39e05e1d109196"
+        },
+        {
+          "file": "timdothatlac-2321/photo-2.webp",
+          "bytes": 35758,
+          "width": 900,
+          "height": 1200,
+          "sha256": "4f682819e24a65bb4f04405dd192742304b7aafdad3598cd9dd8f58b3dbc7db6"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/58738f7b-f293-44eb-9e0c-5d7a64d7262a",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2449",
+      "sourceUrl": "https://timdothatlac.vn/post/2449",
+      "originalKind": "lost",
+      "title": "Vòng tay Pandora charm trái tim vô cực",
+      "foundArea": "Bún mắm Mệ Bừ, 115 Bà Triệu – Phạm Văn Đồng – homestay An Nhiên, 38 Nguyễn Đình Tứ, Huế",
+      "images": [
+        {
+          "file": "timdothatlac-2449/photo-1.webp",
+          "bytes": 79784,
+          "width": 900,
+          "height": 1200,
+          "sha256": "89fdd3af7dd51b6734be8806334590882029d66a8eeb5892a3d62efa69ca1b72"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c8cce3c8-03a2-4687-8fb0-178a4725dc89",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2484",
+      "sourceUrl": "https://timdothatlac.vn/post/2484",
+      "originalKind": "lost",
+      "title": "Vòng tay thất lạc tại Đà Nẵng",
+      "foundArea": "Đà Nẵng",
+      "images": [
+        {
+          "file": "timdothatlac-2484/photo-1.webp",
+          "bytes": 9944,
+          "width": 554,
+          "height": 1200,
+          "sha256": "3c742bee9a4c4bb5742449855d7665c335f78e768dda8ade80714084b9d641a5"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/72e08c49-ae18-4f4f-a606-d2d816b4a1ac",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2491",
+      "sourceUrl": "https://timdothatlac.vn/post/2491",
+      "originalKind": "lost",
+      "title": "Vòng vàng kiểu dáng Na Tra thất lạc ở Đà Nẵng",
+      "foundArea": "Từ Highlands 24 Bạch Đằng qua Trần Phú – Lê Duẩn – Ngô Gia Tự, Đà Nẵng",
+      "images": [
+        {
+          "file": "timdothatlac-2491/photo-1.webp",
+          "bytes": 9292,
+          "width": 426,
+          "height": 584,
+          "sha256": "cb86ea2bc0dd543a956218c628c4cdaa2e6f432f8c497fa12a229eba076116a7"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/af91668e-ba0e-4cd0-a7d0-04cc9266ffb0",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2618",
+      "sourceUrl": "https://timdothatlac.vn/post/2618",
+      "originalKind": "lost",
+      "title": "Túi kẹo cau Trung Quốc thất lạc ở Nha Trang",
+      "foundArea": "Đoạn từ Diên Khánh đến Tô Hiến Thành, Nha Trang, Khánh Hòa",
+      "images": [
+        {
+          "file": "timdothatlac-2618/photo-1.webp",
+          "bytes": 88068,
+          "width": 900,
+          "height": 1200,
+          "sha256": "5505f25e622fc07e03a30557c5759e5758d2150d03c3de84ad67058f15f7b47e"
+        },
+        {
+          "file": "timdothatlac-2618/photo-2.webp",
+          "bytes": 97510,
+          "width": 1200,
+          "height": 900,
+          "sha256": "92fdc5f9e27c15b2f0760d4d906e3b928e4a9e7af772dd95ba7ac1ab98816340"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/2daaf7fa-1fbc-46fa-ba6d-ebc7e3cbbac6",
+      "importedProcessedImages": 2,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2662",
+      "sourceUrl": "https://timdothatlac.vn/post/2662",
+      "originalKind": "lost",
+      "title": "Vòng Pandora cứng với 7 charm",
+      "foundArea": "Hà Nội",
+      "images": [
+        {
+          "file": "timdothatlac-2662/photo-1.webp",
+          "bytes": 63356,
+          "width": 900,
+          "height": 1200,
+          "sha256": "ba85a3be7fc29080425a5c541c66a5b3dec99223c007881ff0bb9faec725977c"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/6437d3c4-9e68-4fcd-8386-97e0e7b22a7f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-2859",
+      "sourceUrl": "https://timdothatlac.vn/post/2859",
+      "originalKind": "lost",
+      "title": "Túi xách để quên trên yên xe tại Quận 7",
+      "foundArea": "Chung cư Sunrise, Quận 7 và cung đường từ Quận 7 sang Quận 2, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-2859/photo-1.webp",
+          "bytes": 18558,
+          "width": 356,
+          "height": 730,
+          "sha256": "6d5401a965d1b13d72f9c7823632b4fe919a8c722b102cde6f3a5751236ed12b"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/0bbd8de7-9c88-4ae5-8784-b20b00877ff3",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-3061",
+      "sourceUrl": "https://timdothatlac.vn/post/3061",
+      "originalKind": "lost",
+      "title": "Túi hồ sơ thất lạc dọc Quốc lộ 13",
+      "foundArea": "Đường 17 Hiệp Bình Chánh tới UBND phường Hiệp Bình, dọc Quốc lộ 13, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-3061/photo-1.webp",
+          "bytes": 114202,
+          "width": 675,
+          "height": 1200,
+          "sha256": "fe1276a555447134ff5ea4be4301e610f1e025ef28f1ef870fd7eafe8cad1600"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/c5139f43-4299-4c04-ac8a-0ddae49827e5",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-3207",
+      "sourceUrl": "https://timdothatlac.vn/post/3207",
+      "originalKind": "lost",
+      "title": "Ba lô Sony màu xám thất lạc tại TP. Hồ Chí Minh",
+      "foundArea": "Nguyễn Sơn – Phạm Vấn – Lê Thúc Hoạch – Phạm Văn Xảo – Đàm Thuận Huy – Tân Hương – Võ Công Tồn – Tân Quý – khu Celadon City, TP. Hồ Chí Minh",
+      "images": [
+        {
+          "file": "timdothatlac-3207/photo-1.webp",
+          "bytes": 19674,
+          "width": 309,
+          "height": 410,
+          "sha256": "1d5c87ab0fcaefe33fd610e0e38b39d20482a47179a6c78d40f1b7edcfde97b2"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/3ecc85f0-c714-459a-977f-439576798cc0",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-3412",
+      "sourceUrl": "https://timdothatlac.vn/post/3412",
+      "originalKind": "lost",
+      "title": "Túi đeo nữ màu trắng thất lạc tại Hồ Tây",
+      "foundArea": "Khu vực hai con rồng, Hồ Tây, Hà Nội",
+      "images": [
+        {
+          "file": "timdothatlac-3412/photo-1.webp",
+          "bytes": 79832,
+          "width": 1005,
+          "height": 1200,
+          "sha256": "2c91f3e57933ccb81235668e6e0ef8e6fb1581481ac91a100ad7b182f14653af"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/5720550c-d962-40b5-9cbe-6f9c63eab479",
+      "importedProcessedImages": 1,
+      "state": "published"
+    },
+    {
+      "sourceId": "timdothatlac-980",
+      "sourceUrl": "https://timdothatlac.vn/post/980",
+      "originalKind": "lost",
+      "title": "Dây chuyền thất lạc tại Đà Lạt",
+      "foundArea": "Solena Đà Lạt, Lâm Đồng",
+      "images": [
+        {
+          "file": "timdothatlac-980/photo-1.webp",
+          "bytes": 60386,
+          "width": 900,
+          "height": 1200,
+          "sha256": "dd22ea6e45a6fb3695849686a63d19f6e1193b9372e6fc78d9a569c53a35ecbb"
+        }
+      ],
+      "itemUrl": "http://127.0.0.1:5173/items/b76f5a92-8d93-4aa1-bd99-f120ec54a32f",
+      "importedProcessedImages": 1,
+      "state": "published"
+    }
+  ]
+}

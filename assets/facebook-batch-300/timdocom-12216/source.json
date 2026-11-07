@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-12216",
+  "sourceUrl": "https://timdo24h.com/12216",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:51.214790+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/78598c46-f294-4c44-a527-aab02803be3c.webp"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "ceac7609f3eb49b75ff9692adc2d5a38a312dfdaeca8d1a00645f18b90287b53",
+    "metadataChanged": false,
+    "sourceSha256": "029c747c844214c09c907584d1dac843e4b58ca60ce37ba2ab9bbaa0f0abc534",
+    "sha256": "029c747c844214c09c907584d1dac843e4b58ca60ce37ba2ab9bbaa0f0abc534"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, Đà Nẵng (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-09-22"
+  }
+}

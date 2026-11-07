@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdothatlac-3474",
+  "sourceUrl": "https://timdothatlac.vn/post/3474",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:06.489569+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví",
+  "sourceText": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: UEL. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: UEL. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "UEL",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793761315564-hc06ygjs32v.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "939044774f8a0723f2d4eb33f432396650ae7656613ed6a76b4e980619e009d8",
+    "metadataChanged": false,
+    "sourceSha256": "cd11a6abc48e8da0250b4db9b49c07409851cd698e07ce606b54ea918f3be759",
+    "sha256": "cd11a6abc48e8da0250b4db9b49c07409851cd698e07ce606b54ea918f3be759"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-22T06:15:00+07:00"
+  }
+}

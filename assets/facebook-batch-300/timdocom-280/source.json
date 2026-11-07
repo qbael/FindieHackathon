@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-280",
+  "sourceUrl": "https://timdo24h.com/280",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:32.204724+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại iPhone",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/726e6e01-7ff6-4848-87eb-88026de2f349.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "f9702952c5f7e3d1fadc68062b91753e68f52dae8f75f915a0abaa38a74be9a3",
+    "metadataChanged": true,
+    "sourceSha256": "dfc642b4c939438d77be8ac6b3673b488a1cb209de3340b118212af4b8cadfcc",
+    "sha256": "d3fa700c3485e89e2cb24e0129424fe65aa1f7a82f74680cff1f298bbe1ba4c3"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-04T11:35:00+07:00",
+    "foundUntil": "2026-07-04T12:50:00+07:00"
+  }
+}

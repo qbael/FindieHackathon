@@ -6,6 +6,7 @@ import {
   statusLabels,
   type Item,
 } from "../lib/api";
+import { paginationPages } from "../lib/pagination";
 
 const paths = {
   search: "m21 21-4.4-4.4M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0Z",
@@ -243,10 +244,10 @@ export function SafetyNote() {
 
 export function Pagination({
   page,
-  hasMore,
+  totalPages,
 }: {
   page: number;
-  hasMore: boolean;
+  totalPages: number;
 }) {
   function href(value: number) {
     const query = new URLSearchParams(window.location.search);
@@ -255,19 +256,42 @@ export function Pagination({
   }
   return (
     <nav className="pagination" aria-label="Phân trang">
-      {page > 1 && (
-        <a className="button button-secondary" href={href(page - 1)}>
+      <span className="pagination-summary">
+        {page <= totalPages ? `Trang ${page} / ${totalPages}` : `Tổng ${totalPages} trang`}
+      </span>
+      <div className="pagination-controls">
+        <a className="button button-secondary" href={page > 1 ? href(1) : undefined} aria-disabled={page <= 1}>
+          Trang đầu
+        </a>
+        <a className="button button-secondary" href={page > 1 ? href(Math.min(page - 1, totalPages)) : undefined} aria-disabled={page <= 1} rel="prev">
           <Icon name="back" size={16} />
           Trang trước
         </a>
-      )}
-      <span>Trang {page}</span>
-      {hasMore && page < 10000 && (
-        <a className="button button-secondary" href={href(page + 1)}>
+      </div>
+      <div className="pagination-pages">
+        {paginationPages(page, totalPages).map((value, index) => value === "ellipsis" ? (
+          <span className="pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
+        ) : (
+          <a
+            className={`button pagination-page${value === page ? "" : " button-secondary"}`}
+            key={value}
+            href={href(value)}
+            aria-label={`Trang ${value}`}
+            aria-current={value === page ? "page" : undefined}
+          >
+            {value}
+          </a>
+        ))}
+      </div>
+      <div className="pagination-controls">
+        <a className="button button-secondary" href={page < totalPages ? href(page + 1) : undefined} aria-disabled={page >= totalPages} rel="next">
           Trang tiếp
           <Icon name="arrow" size={16} />
         </a>
-      )}
+        <a className="button button-secondary" href={page !== totalPages ? href(totalPages) : undefined} aria-disabled={page === totalPages}>
+          Trang cuối
+        </a>
+      </div>
     </nav>
   );
 }

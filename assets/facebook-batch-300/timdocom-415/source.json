@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-415",
+  "sourceUrl": "https://timdo24h.com/415",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:41.820983+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu đen kèm giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví màu đen kèm giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví màu đen kèm giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/3fec2942-c4c8-4a55-9340-773db246acf1.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "667af980932d40d2e562789bc6380be9df87043bcc802cfbe30091ab7d7c3117",
+    "metadataChanged": true,
+    "sourceSha256": "246c2f7808264c06e07ca2e25b7c2acc81eddd1a7aadcb1ae4d72c47ff060d33",
+    "sha256": "03e56b0fffd45f7344f03de10210c7c7b05f3bf30e71b8729a3d0f0502c731aa"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-06"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceId": "timdocom-13937",
+  "sourceUrl": "https://timdo24h.com/13937",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:51.565469+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/df17c13e-a5fc-4c49-b62e-86d1c3605c05.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "3ac38d361bffecb0e9099736d3daf972dbfd65a0ac55b9df02e9fef8356e31d5",
+    "metadataChanged": true,
+    "sourceSha256": "dc9452f2ab24448365a4759784a85d31449702fb8722529c3f7e33ad6451e77a",
+    "sha256": "fe4b220eea18db9b10a5e477890a273a7929ed64dbca678864189a7c98ca1c9e"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000003",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-08T11:35:00+07:00"
+  }
+}

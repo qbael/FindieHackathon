@@ -1,4 +1,4 @@
-"""Pinned Qwen text/image embedding for the Colab gateway; no model import on CPU."""
+"""Pinned Qwen text/image/joint embedding for the Colab gateway; no model import on CPU."""
 
 import base64
 import binascii
@@ -81,6 +81,7 @@ class QwenEmbedding:
     model_id = MODEL_ID
     digest = MODEL_DIGEST
     dimensions = DIMENSIONS
+    supports_image_text = True
 
     def __init__(self):
         import torch
@@ -114,11 +115,16 @@ class QwenEmbedding:
     def embed(self, value):
         if isinstance(value, str) and value.strip() and len(value) <= 20000:
             content = [{"type": "text", "text": value}]
-        elif isinstance(value, dict) and set(value) == {"image"}:
+        elif isinstance(value, dict) and set(value) in ({"image"}, {"image", "text"}):
+            if "text" in value and (not isinstance(value["text"], str) or not value["text"].strip()
+                                    or len(value["text"]) > 5000):
+                raise ValueError("Joint image text must contain 1 to 5000 characters.")
             content = [{"type": "image", "image": _decode_image(value["image"]),
                         "min_pixels": PROFILE["min_pixels"], "max_pixels": PROFILE["max_pixels"]}]
+            if "text" in value:
+                content.append({"type": "text", "text": value["text"]})
         else:
-            raise ValueError("Use nonblank text of at most 20000 characters or one base64 image.")
+            raise ValueError("Use nonblank text of at most 20000 characters or one base64 image with optional text.")
         conversation = [
             {"role": "system", "content": [{"type": "text", "text": PROFILE["instruction"]}]},
             {"role": "user", "content": content},
@@ -126,7 +132,7 @@ class QwenEmbedding:
         with self.torch.inference_mode():
             prompt = self.processor.apply_chat_template([conversation], add_generation_prompt=True, tokenize=False)
             images, videos = self.process_vision_info([conversation], image_patch_size=PROFILE["image_patch_size"])
-            if content[0]["type"] == "image" and not images:
+            if any(part["type"] == "image" for part in content) and not images:
                 raise RuntimeError("Image preprocessing failed; no text fallback is allowed.")
             inputs = self.processor(
                 text=prompt, images=images, videos=videos, padding=True, do_resize=False, return_tensors="pt",

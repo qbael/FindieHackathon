@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdothatlac-835",
+  "sourceUrl": "https://timdothatlac.vn/post/835",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:46:43.092250+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví",
+  "sourceText": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Cần Thơ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Cần Thơ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Cần Thơ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1779691822835-j44dezpvm9.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8ff7b551cda7722e59416d0013524560007ba77ad8f0d3aff5b1db400fa1c76a",
+    "metadataChanged": false,
+    "sourceSha256": "26493a5f99227e37211f232c3ae7eaed56d14e69f69e14795d6ebb4006c446fd",
+    "sha256": "26493a5f99227e37211f232c3ae7eaed56d14e69f69e14795d6ebb4006c446fd"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, Cần Thơ (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-10-31T18:30:00+07:00",
+    "foundUntil": "2026-10-31T22:00:00+07:00"
+  }
+}

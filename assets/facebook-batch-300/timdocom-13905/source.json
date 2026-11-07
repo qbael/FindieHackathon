@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-13905",
+  "sourceUrl": "https://timdo24h.com/13905",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:44.975205+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước, giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/8db6092e-3789-43f5-bd3b-2257def04092.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "12ea2563b262bf1a11f50b77c63d2d18f6aa843ea363216dab223ad901a657b7",
+    "metadataChanged": false,
+    "sourceSha256": "7133efc9107c48d2b49f699ed3d44d69a15ce6e57714b20c35b78add942938fc",
+    "sha256": "7133efc9107c48d2b49f699ed3d44d69a15ce6e57714b20c35b78add942938fc"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-14T07:40:00+07:00",
+    "foundUntil": "2026-09-14T08:10:00+07:00"
+  }
+}

@@ -647,6 +647,12 @@ label > .field-hint {
   padding-top: 21px;
   border-top: 1px dashed #dce6e5;
 }
+.search-lost-time {
+  grid-column: 1 / -1;
+}
+.search-context .search-lost-time {
+  max-width: 360px;
+}
 .input-icon {
   position: relative;
   margin-top: 7px;
@@ -1063,7 +1069,7 @@ label > .field-hint {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 8px;
   margin-top: 25px;
   font-size: 11px;
   color: #71817b;
@@ -1072,6 +1078,28 @@ label > .field-hint {
   font-size: 11px;
   min-height: 36px;
   padding: 7px 12px;
+}
+.pagination-summary {
+  flex-basis: 100%;
+  text-align: center;
+}
+.pagination-controls,
+.pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+.pagination .pagination-page {
+  min-width: 36px;
+}
+.pagination-ellipsis {
+  padding: 0 4px;
+}
+.pagination [aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
 }
 .detail-topline {
   display: flex;
@@ -2147,6 +2175,7 @@ input::file-selector-button {
     font-size: 14px;
   }
   .icon-button,
+  .pagination .pagination-page,
   .image-previews button {
     min-width: 44px;
     min-height: 44px;

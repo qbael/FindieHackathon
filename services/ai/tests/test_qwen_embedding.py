@@ -1,4 +1,5 @@
 import base64
+import ast
 from contextlib import nullcontext
 import hashlib
 import importlib.util
@@ -70,6 +71,7 @@ class QwenEmbeddingTests(unittest.TestCase):
     def test_pinned_identity_includes_profile_and_matches_notebook01(self):
         self.assertEqual(module.MODEL_ID, "Qwen/Qwen3-VL-Embedding-2B")
         self.assertEqual(module.DIMENSIONS, 2048)
+        self.assertTrue(module.QwenEmbedding.supports_image_text)
         self.assertRegex(module.MODEL_DIGEST, r"^[a-f0-9]{64}$")
         provenance = {
             "model_id": module.MODEL_ID, "model_revision": module.MODEL_REVISION,
@@ -110,6 +112,10 @@ class QwenEmbeddingTests(unittest.TestCase):
         embedder = fake_embedder()
         for value in (None, True, 3, [], "", "  ", "a" * 20001,
                       {}, {"text": "hello"}, {"image": "abcd", "text": "hello"},
+                      {"image": "abcd", "text": None}, {"image": "abcd", "text": True},
+                      {"image": "abcd", "text": ""}, {"image": "abcd", "text": "  "},
+                      {"image": "abcd", "text": "a" * 5001},
+                      {"image": "abcd", "text": "hello", "extra": "not allowed"},
                       {"image": 3}, {"image": "https://example.test/image.png"},
                       {"image": "file:///tmp/image.png"}, {"image": "YWJj\n"},
                       {"image": ""}, {"image": base64.b64encode(b"not an image").decode()}):
@@ -172,6 +178,63 @@ class QwenEmbeddingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "token budget"):
             embedder.embed("short text")
         embedder.model.assert_not_called()
+
+    def test_joint_encoding_sends_both_modalities_through_one_forward_pass(self):
+        embedder = fake_embedder()
+        image = Image.new("RGB", (32, 32))
+        embedder.process_vision_info.return_value = ([image], None)
+        value = {"image": picture(image, format="PNG"), "text": "Thẻ sinh viên. MSSV: 12345678"}
+        vector = embedder.embed(value)
+        self.assertEqual(vector[3], 1)
+        self.assertAlmostEqual(math.hypot(*vector), 1)
+        embedder.model.assert_called_once()
+        embedder.processor.assert_called_once()
+        content = embedder.process_vision_info.call_args.args[0][0][1]["content"]
+        self.assertEqual([part["type"] for part in content], ["image", "text"])
+        self.assertEqual(content[1]["text"], value["text"])
+        self.assertIsInstance(content[0]["image"], Image.Image)
+        self.assertEqual(embedder.processor.call_args.kwargs["images"], [image])
+
+    def test_joint_encoding_never_falls_back_to_text_or_truncates(self):
+        embedder = fake_embedder()
+        value = {"image": picture(Image.new("RGB", (32, 32)), format="PNG"), "text": "a" * 5000}
+        with self.assertRaisesRegex(RuntimeError, "preprocessing"):
+            embedder.embed(value)
+        embedder.model.assert_not_called()
+        embedder.process_vision_info.return_value = ([Image.new("RGB", (32, 32))], None)
+        self.assertEqual(embedder.embed(value)[3], 1)
+        embedder.model.reset_mock()
+        embedder.processor.return_value["input_ids"] = np.ones((1, 2049)).view(Tensor)
+        with self.assertRaisesRegex(ValueError, "token budget"):
+            embedder.embed(value)
+        embedder.model.assert_not_called()
+
+    def test_notebook01_joint_helper_matches_single_forward_input_contract(self):
+        notebook = json.loads((ROOT / "notebooks/colab/01_qwen_embedding.ipynb").read_text())
+        source = next("".join(cell["source"]) for cell in notebook["cells"]
+                      if "embedding-validation" in cell.get("metadata", {}).get("tags", []))
+        node = next(node for node in ast.parse(source).body
+                    if isinstance(node, ast.FunctionDef) and node.name == "encode_one")
+        node.decorator_list = []
+        embedder = fake_embedder()
+        scope = {"np": np, "Image": Image, "PROFILE": module.PROFILE, "INSTRUCTION": module.PROFILE["instruction"],
+                 "processor": embedder.processor, "process_vision_info": embedder.process_vision_info,
+                 "torch": embedder.torch, "model": embedder.model, "F": embedder.F,
+                 "validate_vector": lambda vector: vector}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), "notebook-joint-helper", "exec"), scope)
+        image = Image.new("RGB", (32, 32))
+        embedder.process_vision_info.return_value = ([image], None)
+        # The notebook uses numpy() on the final tensor, whereas the gateway returns a list.
+        with patch.object(Tensor, "numpy", create=True, new=lambda value: np.asarray(value)):
+            vector = scope["encode_one"](image=image, text="MSSV: 12345678")
+        self.assertEqual(vector[3], 1)
+        embedder.model.assert_called_once()
+        content = embedder.process_vision_info.call_args.args[0][0][1]["content"]
+        self.assertEqual([part["type"] for part in content], ["image", "text"])
+        self.assertEqual(content[1]["text"], "MSSV: 12345678")
+        for text in ("", " ", True, "a" * 5001):
+            with self.subTest(text=str(text)[:20]), self.assertRaises(ValueError):
+                scope["encode_one"](image=image, text=text)
 
     def test_invalid_vectors_never_escape(self):
         for value in ([0.] * 2048, [1.] * 3, [True] * 2048,

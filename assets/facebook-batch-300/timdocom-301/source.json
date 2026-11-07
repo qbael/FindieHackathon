@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-301",
+  "sourceUrl": "https://timdo24h.com/301",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:28.509370+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại iPhone",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại iPhone. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/5a007c60-4901-4163-9b0e-695de417c999.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "36f7e039961a181cc4acdc58f1d3d948816225e9b4d14c5ae7b599f0e5bf0ac0",
+    "metadataChanged": true,
+    "sourceSha256": "1e5fdfe27ebeb8a4db142ddb8ef9c2b415a2e4412e3d7b4bdd49a1d7539dce39",
+    "sha256": "522cc827c1146ac0ca44c51e57f5be8b6876381f699032b7b844b8d0b920c4f3"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy bảo vệ tòa nhà (giả định)",
+      "address": "Quầy bảo vệ, sảnh chính, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi trong khung 07:00–19:00; mô tả món đồ và thời điểm thất lạc."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

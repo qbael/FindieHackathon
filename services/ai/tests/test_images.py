@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image, ImageDraw, PngImagePlugin
 import pytest
 
-from findie_ai.images import MAX_BYTES, Regions, normalize, redact
+from findie_ai.images import MAX_BYTES, Regions, coarse_preview, normalize, redact, reviewed_mask
 
 
 def encoded(format="PNG", *, size=(80, 60), **options):
@@ -18,16 +18,35 @@ def encoded(format="PNG", *, size=(80, 60), **options):
     return buffer.getvalue()
 
 
+def test_coarse_preview_accepts_uniform_tiles_and_rejects_hidden_detail():
+    with Image.new("RGB", (12, 4), "white") as grid:
+        grid.putpixel((1, 1), (0, 42, 85))
+        with grid.resize((192, 64), Image.Resampling.NEAREST) as image:
+            valid = BytesIO()
+            image.save(valid, format="PNG")
+            output, metadata = coarse_preview(valid.getvalue(), "image/png")
+            assert metadata["sha256"] == sha256(output).hexdigest()
+            assert (metadata["width"], metadata["height"], metadata["sensitiveRegions"]) == (192, 64, [])
+            image.putpixel((17, 17), (1, 2, 3))
+            detailed = BytesIO()
+            image.save(detailed, format="PNG")
+            with pytest.raises(ValueError, match="invalid_coarse_preview"):
+                coarse_preview(detailed.getvalue(), "image/png")
+
+
 class Detector:
-    def __init__(self, regions, refined=()):
+    def __init__(self, regions, refined=(), documents=()):
         self.regions = regions
         self.refined = refined
+        self.documents = documents
         self.input = None
         self.calls = []
 
-    async def detect_regions(self, image, *, address_only=False):
+    async def detect_regions(self, image, *, address_only=False, document_only=False):
         self.input = image
         self.calls.append((image, address_only))
+        if document_only:
+            return self.documents
         if address_only and isinstance(self.refined, Exception):
             raise self.refined
         return self.refined if address_only else self.regions
@@ -35,7 +54,7 @@ class Detector:
 
 def test_redaction_masks_real_pixels_and_returns_matching_clean_metadata():
     body = encoded()
-    detector = Detector([{"label": "phone", "bbox": [250, 250, 750, 750]}])
+    detector = Detector([{"label": "face", "bbox": [250, 250, 750, 750]}])
     output, metadata = asyncio.run(redact(detector, body, "image/png"))
     with Image.open(BytesIO(output)) as image:
         pixels = np.array(image)
@@ -43,11 +62,25 @@ def test_redaction_masks_real_pixels_and_returns_matching_clean_metadata():
         assert (pixels[0, 0] == 255).all()
         assert image.size == (80, 60) and not image.getexif() and not image.info
     assert detector.input == body
-    assert len(detector.calls) == 1
+    assert len(detector.calls) == 2
     assert metadata == {"contentType": "image/png", "sha256": sha256(output).hexdigest(),
                         "byteSize": len(output), "width": 80, "height": 60,
-                        "sensitiveRegions": [{"label": "phone", "bbox": [250, 250, 750, 750]}]}
+                        "sensitiveRegions": [{"label": "face", "bbox": [250, 250, 750, 750]}]}
     assert output != body
+
+
+def test_face_only_result_checks_printed_document_fields_before_masking():
+    face = {"label": "face", "bbox": [50, 250, 250, 750]}
+    identifier = {"label": "identity_number", "bbox": [400, 300, 800, 375]}
+    code = {"label": "qr_code", "bbox": [850, 100, 950, 250]}
+    detector = Detector([face], documents=[identifier, code])
+    output, metadata = asyncio.run(redact(detector, encoded(size=(400, 240)), "image/png"))
+    assert metadata["sensitiveRegions"] == [face, identifier, code]
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[72:90, 160:256] == 0).all()
+        assert (pixels[72:90, 256:320] == 255).all()
+        assert (pixels[24:60, 340:380] == 0).all()
 
 
 def test_selected_fields_leave_other_comparison_details_visible():
@@ -60,8 +93,10 @@ def test_selected_fields_leave_other_comparison_details_visible():
     output, metadata = asyncio.run(redact(detector, encoded(size=(400, 240)), "image/png"))
     with Image.open(BytesIO(output)) as image:
         pixels = np.array(image)
-        assert (pixels[72:90, 160:320] == 0).all()
-        assert (pixels[120:138, 160:320] == 0).all()
+        assert (pixels[72:90, 160:256] == 0).all()
+        assert (pixels[72:90, 256:320] == 255).all()
+        assert (pixels[120:138, 160:256] == 0).all()
+        assert (pixels[120:138, 256:320] == 255).all()
         assert (pixels[60:180, 20:100] == 0).all()
         assert (pixels[24:60, 340:380] == 0).all()
         assert (pixels[100:110, 160:320] == 255).all()
@@ -70,6 +105,32 @@ def test_selected_fields_leave_other_comparison_details_visible():
         assert (pixels[72:90, 158:160] == 0).all()
         assert (pixels[:15] == 255).all()
     assert len(metadata["sensitiveRegions"]) == 4
+
+
+@pytest.mark.parametrize("label", ["identity_number", "identifier_number", "phone"])
+@pytest.mark.parametrize("bbox,start,cut,end", [
+    ([100, 250, 900, 750], 10, 58, 90),
+    ([0, 250, 1000, 750], 0, 60, 100),
+    ([990, 250, 1000, 750], 99, 100, 100),
+])
+def test_numeric_masks_cover_prefix_and_preserve_suffix_without_internal_padding(label, bbox, start, cut, end):
+    detector = Detector([{"label": label, "bbox": bbox}])
+    output, metadata = asyncio.run(redact(detector, encoded(size=(100, 40)), "image/png"))
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[10:30, start:cut] == 0).all()
+        assert (pixels[10:30, cut:end] == 255).all()
+    assert metadata["sensitiveRegions"] == [{"label": label, "bbox": bbox}]
+
+
+def test_numeric_suffix_does_not_override_an_overlapping_full_privacy_mask():
+    detector = Detector([
+        {"label": "face", "bbox": [500, 250, 1000, 750]},
+        {"label": "identity_number", "bbox": [0, 250, 1000, 750]},
+    ])
+    output, _ = asyncio.run(redact(detector, encoded(size=(100, 40)), "image/png"))
+    with Image.open(BytesIO(output)) as image:
+        assert (np.array(image)[10:30, :] == 0).all()
 
 
 def test_address_refinement_uses_original_crop_and_maps_outward_to_full_image():
@@ -249,3 +310,24 @@ def test_model_error_does_not_return_raw_input_as_output():
 
     with pytest.raises(RuntimeError, match="model_unavailable"):
         asyncio.run(redact(BrokenDetector(), encoded(), "image/png"))
+
+
+def test_reviewed_masks_cover_complete_fields_without_changing_surrounding_pixels():
+    regions = [{"label": "identity_number", "bbox": [250, 250, 750, 750]}]
+    output, metadata = reviewed_mask(encoded(size=(400, 240)), "image/png", regions)
+    with Image.open(BytesIO(output)) as image:
+        pixels = np.array(image)
+        assert (pixels[60:180, 100:300] == 0).all()
+        assert (pixels[:50] == 255).all()
+        assert (pixels[:, :90] == 255).all()
+        assert image.size == (400, 240) and not image.info
+    assert metadata["sha256"] == sha256(output).hexdigest()
+    assert metadata["sensitiveRegions"] == regions
+    empty, _ = reviewed_mask(encoded(), "image/png", [])
+    assert empty == encoded()
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded(), "image/png", [{"label": "face", "bbox": [750, 0, 250, 1000]}])
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded("JPEG"), "image/jpeg", regions)
+    with pytest.raises(ValueError):
+        reviewed_mask(encoded(), "image/png", regions * 33)

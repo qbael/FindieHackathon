@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdocom-8596",
+  "sourceUrl": "https://timdo24h.com/8596",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:05.399631+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/c7bf25b3-21e4-4a82-b588-8be9cf540371.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "2c54e047f1291228589152cc6b8d53bb43229dec41a7218e5bcc64449cc91399",
+    "metadataChanged": true,
+    "sourceSha256": "33518031a9a2c0141569f1c87fb0503804bde9452b7cafbdc7ab27ef7a80d39e",
+    "sha256": "557c6ef83e617eb95bf4293ae183bbf0cc5647fe44de6fdad80a19de40eeb3e7"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-08-09"
+  }
+}

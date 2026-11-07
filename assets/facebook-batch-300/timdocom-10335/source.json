@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-10335",
+  "sourceUrl": "https://timdo24h.com/10335",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:58.488987+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/65bbeb6d-fb9d-4acd-b8ac-64ca69a16630.webp"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "0103b6c5a12dcb50011cfd464d31e408c5e0dcc7a8df4e09d53cfdbc2e8a54bf",
+    "metadataChanged": false,
+    "sourceSha256": "c897b2ed6f95e4c7effaf1388e7dffbbd6f301adaa523fff34fca0e7e5b9ace2",
+    "sha256": "c897b2ed6f95e4c7effaf1388e7dffbbd6f301adaa523fff34fca0e7e5b9ace2"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy bảo vệ tòa nhà (giả định)",
+      "address": "Quầy bảo vệ, sảnh chính, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi trong khung 07:00–19:00; mô tả món đồ và thời điểm thất lạc."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

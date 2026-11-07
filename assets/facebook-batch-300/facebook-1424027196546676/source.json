@@ -1,0 +1,37 @@
+{
+  "sourceId": "facebook-1424027196546676",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=1424027196546676&set=gm.1639096557714771&idorvanity=744873257137110",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "lost",
+  "originalKindInferred": true,
+  "title": "Ví đựng giấy tờ",
+  "sourceText": "Bài đăng Facebook công khai về ví đựng giấy tờ. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Ví đựng giấy tờ được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=1424027196546676&set=gm.1639096557714771&idorvanity=744873257137110"
+    }
+  ],
+  "sourceImageSha256": "66d42de0ce7c6ca7b5b24143c2b4d068ae3b57824d9cc26910f90b775a1ee545",
+  "sourceImageSize": [
+    507,
+    565
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Văn phòng quản lý bãi xe (giả định)",
+      "address": "Chốt quản lý gần lối ra, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Hỏi nhân viên ca trực và mô tả nơi để xe hoặc nơi đánh rơi."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

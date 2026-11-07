@@ -39,8 +39,11 @@ public sealed class IntakeService(IRecoveryRepository repository, RecoveryWorkfl
             throw new ApiException(404, "Intake not found.");
         return Response(intake);
     }
-    public async Task<PageResponse<IntakeResponse>> ListAsync(Guid actor, Guid? pointId, int page, int size, CancellationToken ct) =>
-        RecoveryWorkflow.Page((await repository.IntakesAsync(actor, pointId, page, size, ct)).Select(Response).ToList(), page, size);
+    public async Task<PageResponse<IntakeResponse>> ListAsync(Guid actor, Guid? pointId, int page, int size, CancellationToken ct)
+    {
+        var (items, totalCount) = await repository.IntakesAsync(actor, pointId, page, size, ct);
+        return RecoveryWorkflow.Page(items.Select(Response).ToList(), page, size, totalCount);
+    }
     public async Task<IntakeResponse> DecideAsync(Guid actor, Guid key, Guid id, IntakeDecisionRequest request, CancellationToken ct)
     {
         await workflow.WriteAsync(actor, key, $"intake.decide:{id}", request, "intake", 200, async () =>

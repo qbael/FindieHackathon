@@ -27,10 +27,11 @@ static class BrokerChecks
         await using var worker = await connection.CreateChannelAsync(new CreateChannelOptions(true, true));
         foreach (var suffix in new[] { "index", "image", "query", "results" })
             await worker.QueueDeclareAsync(prefix + "-" + suffix, suffix is "index" or "results", suffix is "image" or "query", suffix is "image" or "query",
-                new Dictionary<string, object?> { ["x-message-ttl"] = suffix == "image" ? 300000 : 30000, ["x-max-length"] = 64 });
+                new Dictionary<string, object?> { ["x-message-ttl"] = suffix == "image" ? 940000 : 30000, ["x-max-length"] = 64 });
         var errors = new ConcurrentQueue<Exception>();
         var transientQueues = new ConcurrentBag<string>();
         var imageSeen = false;
+        var batchSeen = false;
         var indexSeen = false;
         var consumer = new AsyncEventingBasicConsumer(worker);
         consumer.ReceivedAsync += async (_, command) =>
@@ -38,11 +39,19 @@ static class BrokerChecks
             try
             {
                 var metadata = JsonDocument.Parse((byte[])command.BasicProperties.Headers!["metadata"]!).RootElement.Clone();
-                if (command.BasicProperties.Type == "image.redact")
+                if (command.BasicProperties.Type is "image.embed" or "image.redact" or "search.hybrid.image")
                 {
                     Check(!command.BasicProperties.Persistent && command.Body.Span.SequenceEqual("private raw input"u8), "raw image is binary and nonpersistent");
-                    Check(command.BasicProperties.Expiration == "300000", "raw image has a five-minute TTL");
+                    Check(command.BasicProperties.Expiration == "300000", "image OCR, embedding and redaction have a five-minute TTL");
                     imageSeen = true;
+                }
+                else if (command.BasicProperties.Type == "search.hybrid.images")
+                {
+                    Check(!command.BasicProperties.Persistent && command.BasicProperties.ContentType == "application/octet-stream"
+                        && command.RoutingKey == prefix + "-image" && command.Body.Length == 3 * BoundedImage.MaxBytes,
+                        "a complete 30 MiB raw image batch reaches the image queue through transient transport");
+                    Check(command.BasicProperties.Expiration == "940000", "multimodal fusion has the complete request TTL");
+                    batchSeen = true;
                 }
                 else Check(command.BasicProperties.Expiration == "30000", "other AI requests keep their thirty-second TTL");
                 if (command.BasicProperties.Type == "index.upsert")
@@ -73,6 +82,9 @@ static class BrokerChecks
             while (!gateway.Ready && DateTimeOffset.UtcNow < deadline) await Task.Delay(50);
             Check(gateway.Ready, "long-lived AMQP connection and consumers start");
             await Query("image.redact", "private raw input"u8.ToArray(), "image/png");
+            await Query("image.embed", "private raw input"u8.ToArray(), "image/png");
+            await Query("search.hybrid.image", "private raw input"u8.ToArray(), "image/png");
+            await Query("search.hybrid.images", new byte[3 * BoundedImage.MaxBytes], "application/octet-stream");
             await Query("index.upsert", "{}"u8.ToArray(), "application/json", true);
             await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Query("search.hybrid", "{}"u8.ToArray(), "application/json")));
             await Query("test.duplicate", [], "application/json");
@@ -85,7 +97,7 @@ static class BrokerChecks
             }
             await Task.Delay(300);
             await Query("search.hybrid", [], "application/json");
-            Check(imageSeen && indexSeen && transientQueues.Distinct().Count() == 1, "temporary reply queue is reused across requests, duplicates and late replies are discarded");
+            Check(imageSeen && batchSeen && indexSeen && transientQueues.Distinct().Count() == 1, "temporary reply queue is reused across requests, duplicates and late replies are discarded");
             await worker.QueueDeleteAsync(prefix + "-query");
             try { await Query("search.hybrid", [], "application/json"); throw new InvalidOperationException("Unroutable publish should fail."); }
             catch (ApiException error) when (error.StatusCode == 503) { }

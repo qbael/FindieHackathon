@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdothatlac-3475",
+  "sourceUrl": "https://timdothatlac.vn/post/3475",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:06.275843+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu đen",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu đen. Khu vực được ghi nhận: Đường Nguyễn thị định. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu đen. Khu vực được ghi nhận: Đường Nguyễn thị định. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đường Nguyễn thị định",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793764305615-l86ekuvb38q.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "7045b23b47aca85bf61b88d26f545bee659eda2ceade3acdf4de263a071e33b2",
+    "metadataChanged": false,
+    "sourceSha256": "08bb86a33bc212215e68018d60ced915fd14f1c95fe2cf616686fbe876820c3d",
+    "sha256": "08bb86a33bc212215e68018d60ced915fd14f1c95fe2cf616686fbe876820c3d"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-15"
+  }
+}

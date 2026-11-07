@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-2713",
+  "sourceUrl": "https://timdo24h.com/2713",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:17.380184+00:00",
+  "sourceVisibility": "public",
+  "title": "Chìa khóa",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả chìa khóa. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/1e201d80-1ea5-4c52-a019-4d4224c4aaf9.jpeg"
+  ],
+  "itemType": "keys",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "aed0d6eb906f7532aeee21bba1a5464858621e5ae7029dfd81ee1ddff82cb7d8",
+    "metadataChanged": true,
+    "sourceSha256": "0f404ad9001d2521ac9239f7ee8ec5d7b4cdefe54a5dbc742bf003a4a2b4fbd4",
+    "sha256": "d55a40d45667c11129a2ccdb627719833e9fa7d6269ead46d90bd56363bc6310"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000005",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-06-29T09:05:00+07:00",
+    "foundUntil": "2026-06-29T11:20:00+07:00"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdocom-10333",
+  "sourceUrl": "https://timdo24h.com/10333",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:10.796901+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ kèm giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/d56f974d-81a3-44ae-ba29-4d3568a654e4.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Giấy phép lái xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "c6fbbb4ad2a95a67b4caf111927dc4538a13d7c1979eef2d7c614fdecbeafd53",
+    "metadataChanged": false,
+    "sourceSha256": "ff6a2a9d4007bbda56460f9987c3510dec56ab5f3e6ce19aa2d5831df67e46ee",
+    "sha256": "ff6a2a9d4007bbda56460f9987c3510dec56ab5f3e6ce19aa2d5831df67e46ee"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-27"
+  }
+}

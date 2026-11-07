@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdothatlac-840",
+  "sourceUrl": "https://timdothatlac.vn/post/840",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:46:41.983151+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví",
+  "sourceText": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hồ Chí Minh",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1779691829682-cucgyhfpp4p.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "72337ba17257d207c1de5bcdfcf2b306f31b6cf93b412bbc20fdb2dee238b29a",
+    "metadataChanged": false,
+    "sourceSha256": "ba6559aa8f06d0be4881bac71a4632cc70bac5e7acb1065c3c91f1c95f16beab",
+    "sha256": "ba6559aa8f06d0be4881bac71a4632cc70bac5e7acb1065c3c91f1c95f16beab"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000004",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-14T14:45:00+07:00"
+  }
+}

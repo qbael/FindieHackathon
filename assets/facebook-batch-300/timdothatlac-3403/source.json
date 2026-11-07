@@ -1,0 +1,40 @@
+{
+  "sourceId": "timdothatlac-3403",
+  "sourceUrl": "https://timdothatlac.vn/post/3403",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:22.016897+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: phố đi bộ Nguyễn Huệ , đường Huỳnh Thúc Kháng, takashiyama. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: phố đi bộ Nguyễn Huệ , đường Huỳnh Thúc Kháng, takashiyama. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "phố đi bộ Nguyễn Huệ , đường Huỳnh Thúc Kháng, takashiyama",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793435342850-7mkj78xwm2n.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "f5e984e8eabb4342791f01c0fb6598e9d5afbde42e89e9e4caf5da7b26eb98e6",
+    "metadataChanged": false,
+    "sourceSha256": "e0b5c3c45a5c9af1994e139219d604166c2b7e96a1514aa4545d1bdc1dba14e0",
+    "sha256": "e0b5c3c45a5c9af1994e139219d604166c2b7e96a1514aa4545d1bdc1dba14e0"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Văn phòng quản lý bãi xe (giả định)",
+      "address": "Chốt quản lý gần lối ra, phố đi bộ Nguyễn Huệ , đường Huỳnh Thúc Kháng, takashiyama (địa điểm mô phỏng).",
+      "instructions": "Hỏi nhân viên ca trực và mô tả nơi để xe hoặc nơi đánh rơi."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

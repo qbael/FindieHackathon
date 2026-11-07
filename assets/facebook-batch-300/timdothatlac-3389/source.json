@@ -1,0 +1,39 @@
+{
+  "sourceId": "timdothatlac-3389",
+  "sourceUrl": "https://timdothatlac.vn/post/3389",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:29.272962+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ ngân hàng, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, giấy đăng ký xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793404917598-ltwksbtg9dg.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "c4efbf0ce3a802b7fe5c3df7aa5832122b27d4d385249e1a2859b8638ad5b6d9",
+    "metadataChanged": false,
+    "sourceSha256": "ac576609c0cb2112dc629cf9d2367fc48bf8884418de5e79db6b9cfcf8cab219",
+    "sha256": "ac576609c0cb2112dc629cf9d2367fc48bf8884418de5e79db6b9cfcf8cab219"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000002",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-30"
+  }
+}

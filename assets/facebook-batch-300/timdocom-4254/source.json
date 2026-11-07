@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-4254",
+  "sourceUrl": "https://timdo24h.com/4254",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:15.141706+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ kèm giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ kèm giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/ce7d6be5-fa73-44e9-a931-3b07eac130c0.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "eec9e68234166a8ee65c499a15684df172317b12cb4203bd5ba3ae841a9a3814",
+    "metadataChanged": true,
+    "sourceSha256": "32e1fba189dac3b5f19deba3572d8e47e6fffe5f3f76673059b8a134c49dc0fc",
+    "sha256": "4e8d9eb3e54d58f7d0092b94ad1b0e9216d47d0dcc9ff045a8751ccabe1c13b1"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-08-11"
+  }
+}

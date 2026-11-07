@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdothatlac-3476",
+  "sourceUrl": "https://timdothatlac.vn/post/3476",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:45:06.137436+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ căn cước",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: quận 7,quận 8. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ căn cước. Khu vực được ghi nhận: quận 7,quận 8. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "quận 7,quận 8",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://timdothatlac.vn/uploads/posts/1793764844023-1ul3z3qa4dm.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "58edeeb519c866f8165259b663a361ecfd6612ad4ed2d01421258e70c1a426fb",
+    "metadataChanged": false,
+    "sourceSha256": "dfab7fbb836b9faa9e64a38617ca617665fe21ebd1a4ac6ddd601b64d1ee2683",
+    "sha256": "dfab7fbb836b9faa9e64a38617ca617665fe21ebd1a4ac6ddd601b64d1ee2683"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-20T09:05:00+07:00"
+  }
+}

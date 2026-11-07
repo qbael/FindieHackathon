@@ -1,0 +1,41 @@
+{
+  "sourceId": "timdocom-13695",
+  "sourceUrl": "https://timdo24h.com/13695",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:57.757165+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví màu trắng kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví màu trắng kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví màu trắng kèm thẻ căn cước, giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/3e641024-410a-4495-b5e5-6eb408ac31de.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "249ac7aa704e99a69e551e82483dde163da47b5fab05c6ac7b18d01b892bbd81",
+    "metadataChanged": true,
+    "sourceSha256": "9f6c4e841dbd295085fce5447a24bd27078884c29969bd932accde653978924b",
+    "sha256": "87ccc97ee79a5e307632085beb7517991864eacd81ca848802c6bb0c1fc9142e"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Văn phòng quản lý bãi xe (giả định)",
+      "address": "Chốt quản lý gần lối ra, Hà Nội (địa điểm mô phỏng).",
+      "instructions": "Hỏi nhân viên ca trực và mô tả nơi để xe hoặc nơi đánh rơi."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-17T16:55:00+07:00"
+  }
+}

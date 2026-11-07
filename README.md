@@ -11,11 +11,12 @@ Findie là nền tảng tìm và trao trả đồ thất lạc. Hướng dẫn n
 | Python AI worker + FastAPI | Máy local — `http://127.0.0.1:8000` | Nhận job qua RabbitMQ, xử lý ảnh, lập chỉ mục và tìm kiếm |
 | PostgreSQL 17 + pgvector | Docker — `127.0.0.1:5432` | Database nghiệp vụ `findie` và database tìm kiếm `findie_search` |
 | RabbitMQ | Docker — AMQP `127.0.0.1:5672`; [trang quản trị cổng 15672](http://127.0.0.1:15672) | Chuyển job và kết quả giữa .NET/Python |
+| Redis | Docker — `127.0.0.1:6379` | Cache ứng viên từ khóa và vị trí, TTL mặc định 60 giây |
 | Model embedding và vision | GPU Colab, qua gateway HTTPS ngrok có token | Tạo vector văn bản/ảnh và nhận diện vùng cần che |
 | Cloudflare R2 | Bucket private trên tài khoản Cloudflare của bạn | Lưu ảnh đầu ra đã xử lý |
 | Google OAuth | Google Cloud project của bạn | Đăng nhập ứng dụng |
 
-**Docker Compose chỉ chạy PostgreSQL và RabbitMQ.** `make local-run` chạy worker, API và web; model AI cần có phiên GPU riêng đang hoạt động. Máy local không cần cài Ollama hoặc có GPU khi dùng notebook 04.
+**Docker Compose chạy PostgreSQL, RabbitMQ và Redis.** `make local-run` chạy worker, API và web; model AI cần có phiên GPU riêng đang hoạt động. Máy local không cần cài Ollama hoặc có GPU khi dùng notebook 04.
 
 Thứ tự thực hiện: **cài công cụ → tạo `.env` → cấu hình Google/R2 → `make local-setup` → chạy notebook 04 → import cấu hình → `make local-run` → đăng nhập/cấp quyền Hub → kiểm tra hệ thống**.
 
@@ -148,6 +149,8 @@ Kết quả: hai container ở trạng thái chạy/healthy; script kết thúc 
 
 Chạy lại không reset dữ liệu hoặc thay credential đã có trong `.env`. Nếu dùng database bootstrap cũ có dữ liệu, migration có thể dừng để bảo toàn dữ liệu; cần kế hoạch chuyển đổi riêng. Không nhập `docs/database/database-schema.sql` thay cho EF migrations. DSN tùy chỉnh được giữ nguyên và `local-setup` sẽ dừng nếu chúng không trỏ đúng database/role local mà script quản lý.
 
+Nếu database đặt trên AWS RDS, xem [hướng dẫn vận hành database AWS](docs/guides/aws-database.md) để dùng đúng kết nối, quản lý truy cập và quay lại bản local khi cần.
+
 ## 5. Chạy model AI trên Colab và mở gateway ngrok
 
 Dùng **[04_full_stack_ollama_ngrok.ipynb](notebooks/colab/04_full_stack_ollama_ngrok.ipynb)**. Notebook 01–03 là thử nghiệm riêng, không thay thế notebook 04 cho luồng đầy đủ.
@@ -263,7 +266,7 @@ Trong terminal chạy `make local-run`, nhấn **Ctrl+C** để dừng web/API/w
 make local-stop
 ```
 
-Lệnh dừng PostgreSQL và RabbitMQ, **giữ volume dữ liệu**. Khi kết thúc phiên GPU, dùng **Runtime → Disconnect and delete runtime** trên Colab để dừng model/gateway. Không dùng `docker compose down -v` nếu cần giữ dữ liệu.
+Lệnh dừng PostgreSQL, RabbitMQ và Redis, **giữ volume dữ liệu**. Khi kết thúc phiên GPU, dùng **Runtime → Disconnect and delete runtime** trên Colab để dừng model/gateway. Không dùng `docker compose down -v` nếu cần giữ dữ liệu.
 
 ### Chạy lại những lần sau
 
@@ -315,7 +318,7 @@ Lệnh phát lại snapshot/tombstone hiện hành để lập chỉ mục, khô
 Xem log web/API/worker trong terminal đang chạy. Log hạ tầng:
 
 ```sh
-docker compose logs --tail=100 db rabbitmq
+docker compose logs --tail=100 db rabbitmq redis
 ```
 
 ## 11. Các lệnh kiểm thử
@@ -326,7 +329,7 @@ Chạy sau khi đã cài dependency bằng `make setup` hoặc `make local-setup
 | --- | --- |
 | `make check` | Test bootstrap/notebook, Python, build/smoke API, test và build web; không cần model thật |
 | `make api-integration` hoặc `make db-check` | Migration/API với PostgreSQL/RabbitMQ tạm; cần Docker |
-| `make ai-integration` | Worker/kho tìm kiếm với PostgreSQL/RabbitMQ tạm và model giả lập; cần Docker |
+| `make ai-integration` | Worker/kho tìm kiếm với PostgreSQL/RabbitMQ/Redis tạm và model giả lập; cần Docker |
 
 Các bộ integration tạo/dọn container riêng, không ghi vào database local của project. Một số test kho tìm kiếm trong `make check` được bỏ qua nếu thiếu database test; dùng `make ai-integration` để chạy nhóm này. Các test không thay thế bước kiểm OAuth, R2 và inference GPU thật ở bước 8.
 

@@ -1,0 +1,43 @@
+{
+  "sourceId": "timdocom-10824",
+  "sourceUrl": "https://timdo24h.com/10824",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:33.384153+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/2dde19e7-8026-4ab3-865a-7b3e7f4f7a0c.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Thẻ bảo hiểm y tế"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "1098f3e281a7047c405886d50a8347b4f05ec86f229ee997ec42d49e4139705a",
+    "metadataChanged": false,
+    "sourceSha256": "cef6eba36fec44281f56f9e8ff1d64d4d67cb4358d008b19f20de92d1fe3b4cd",
+    "sha256": "cef6eba36fec44281f56f9e8ff1d64d4d67cb4358d008b19f20de92d1fe3b4cd"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-10-28T14:45:00+07:00",
+    "foundUntil": "2026-10-28T16:00:00+07:00"
+  }
+}

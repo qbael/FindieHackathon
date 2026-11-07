@@ -1,0 +1,34 @@
+{
+  "sourceId": "timdocom-6651",
+  "sourceUrl": "https://timdo24h.com/6651",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:14.304780+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Đà Nẵng. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đà Nẵng",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/eb3759e4-8a70-41dc-8ee4-45a15428507b.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "be5718f5f23ef56a1048cc7d738d0238d8a5c0789d837964ae563e503e3dfe94",
+    "metadataChanged": false,
+    "sourceSha256": "80edc98970a31f62d2afb1e492a5e471a68caa8df1ce6ca4543ca4111fc24f5a",
+    "sha256": "80edc98970a31f62d2afb1e492a5e471a68caa8df1ce6ca4543ca4111fc24f5a"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-25T09:05:00+07:00"
+  }
+}

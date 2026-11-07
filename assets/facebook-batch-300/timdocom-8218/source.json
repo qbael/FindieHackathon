@@ -1,0 +1,33 @@
+{
+  "sourceId": "timdocom-8218",
+  "sourceUrl": "https://timdo24h.com/8218",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:45:07.192070+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Đắk Lắk. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Đắk Lắk. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đắk Lắk",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/f6fa7723-5898-4f54-bbef-1314052e58d7.jpeg"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "5c7a15b4f9fbf3e1bd53e671dc2c187490103297e20c530874341368074fd2c7",
+    "metadataChanged": true,
+    "sourceSha256": "6727464add91d6d453178cd46dfadf840cade1913c80966e8a6a6423949e372d",
+    "sha256": "0a364f1e25265711143f5bb231a58ab608882918c56ad3fe9e32244e84449591"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

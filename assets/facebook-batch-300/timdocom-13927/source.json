@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-13927",
+  "sourceUrl": "https://timdo24h.com/13927",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:44:40.778349+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả giấy đăng ký xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/b7f06e5c-4c24-4607-8b0d-7057b17187ba.jpeg"
+  ],
+  "itemType": "registration",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "16702ed2e3099067e9edbe24d6800bea6fe062d63b1c7c0f0fe8f6549b7ff0a3",
+    "metadataChanged": true,
+    "sourceSha256": "fa8825eb9a9ea90886a5f53a3d468c2502922cd6982322bb8bb8a669fd49f41c",
+    "sha256": "916d980c0e5bbc17a751a9ef46954a1577ebf60244f088f810d26738ec797e5b"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-06T07:40:00+07:00",
+    "foundUntil": "2026-07-06T08:55:00+07:00"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-13719",
+  "sourceUrl": "https://timdo24h.com/13719",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:55.678163+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví",
+  "sourceText": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/a38c4bef-d9c7-45d2-847a-0c2af3305354.jpeg"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "01f1d3087efea82c42f793f5ddc9abd975bad2e679e3611821ff35be382b68cf",
+    "metadataChanged": true,
+    "sourceSha256": "309df8cfaf6927b9feb0d5de37046bd0876e9471723f542a6217a2a863ee2201",
+    "sha256": "441bd06e0d6432cbbc5bdd3a060a5098341c61526e9df353fe1e81b0fc3b9a0c"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, Hà Nội (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-26T11:35:00+07:00",
+    "foundUntil": "2026-08-26T12:05:00+07:00"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceId": "facebook-28889431704071131",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=28889431704071131&set=a.232465293527821",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "found",
+  "originalKindInferred": true,
+  "title": "Ví đựng giấy tờ",
+  "sourceText": "Bài đăng Facebook công khai về ví đựng giấy tờ. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Ví đựng giấy tờ được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=28889431704071131&set=a.232465293527821"
+    }
+  ],
+  "sourceImageSha256": "614791b0765c4da0564dad51141772b3d1f4ffadcdd8d88156d857980c90d666",
+  "sourceImageSize": [
+    526,
+    702
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000003",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-11"
+  }
+}

@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using System.Text.RegularExpressions;
 
+PaginationChecks.Run();
 await MaintenanceChecks.RunAsync();
 if (args.Contains("--maintenance-only")) return;
 
@@ -66,7 +67,7 @@ using (var scope = factory.Services.CreateScope())
     Check(db.Model.GetEntityTypes().SelectMany(entity => entity.GetForeignKeys())
         .All(key => key.DeleteBehavior == DeleteBehavior.Restrict), "all relationships restrict deletion");
     Check(!db.Model.GetEntityTypes().SelectMany(entity => entity.GetProperties())
-        .Any(property => property.Name.Contains("Original", StringComparison.Ordinal)), "no original image storage");
+        .Any(property => property.Name.Contains("Original", StringComparison.Ordinal) && property.Name != nameof(ItemImage.OriginalEmbedding)), "no original image storage outside derived vectors");
     db.ReceptionPoints.AddRange(Enumerable.Range(0, 105).Select(index => new ReceptionPoint
     {
         Name = $"Point {index:D3}", PublicAddress = "Public campus address", Directions = "Main entrance"

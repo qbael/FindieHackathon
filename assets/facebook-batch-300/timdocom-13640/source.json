@@ -1,0 +1,38 @@
+{
+  "sourceId": "timdocom-13640",
+  "sourceUrl": "https://timdo24h.com/13640",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:04.862165+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Bình Dương. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả điện thoại. Khu vực được ghi nhận: Bình Dương. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Bình Dương",
+  "images": [
+    "photo-1.png"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/bf929dee-8956-4955-9c96-6da66563736e.png"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "a712b37a03cf10fc5f61d600ba7f3de30c83d7bd469d8b985f099f991c7032bd",
+    "metadataChanged": true,
+    "sourceSha256": "5a04f4b44c4f234c53efc6c1698681a0d0853552e5eeba2403ceed523df56850",
+    "sha256": "4a5ab9585be462262ac29104e303f8edd45a9d5ceefb89c52a4357571722ad1d"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy lễ tân (giả định)",
+      "address": "Quầy lễ tân tầng trệt, Bình Dương (địa điểm mô phỏng).",
+      "instructions": "Trao đổi sau 09:00; chuẩn bị đặc điểm nhận dạng của món đồ."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-08-20T23:45:00+07:00",
+    "foundUntil": "2026-08-21T00:15:00+07:00"
+  }
+}

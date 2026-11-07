@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-13836",
+  "sourceUrl": "https://timdo24h.com/13836",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:45.163787+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/a69482d8-1f51-49a9-877c-711c6a91b5e7.webp"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "9a2199444f9405c40b74c836620536e78d606917e42346975c09ed31982636df",
+    "metadataChanged": false,
+    "sourceSha256": "b4490f774c5d7055932159d37d915d02cb329bc0316625705b7f634c3ffe6628",
+    "sha256": "b4490f774c5d7055932159d37d915d02cb329bc0316625705b7f634c3ffe6628"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-10-02"
+  }
+}

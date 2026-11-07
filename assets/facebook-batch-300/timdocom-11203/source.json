@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-11203",
+  "sourceUrl": "https://timdo24h.com/11203",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:54.985305+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/f5f4586f-ce0b-4899-99e1-91c07b9b2889.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "24f5c94e6938b51327083e3e2651a395852a605d94cfc95b769480b15fa1fff7",
+    "metadataChanged": false,
+    "sourceSha256": "818a1d23acc9fc9e5c0cdd10cfe1adb0eeb8f88e6a4abdaa2145971056a9d05e",
+    "sha256": "818a1d23acc9fc9e5c0cdd10cfe1adb0eeb8f88e6a4abdaa2145971056a9d05e"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-07-25"
+  }
+}

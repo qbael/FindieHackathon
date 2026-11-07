@@ -1,0 +1,37 @@
+{
+  "sourceId": "timdocom-12000",
+  "sourceUrl": "https://timdo24h.com/12000",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:51.793625+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả thẻ căn cước. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/2792aa41-b236-4442-a6a9-4bb762a807b5.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "2db6389a4333c433bbd9234f97c559feef6f519e30295554fc88cf8c603085ba",
+    "metadataChanged": true,
+    "sourceSha256": "bc1fa4cbb2b3a4748e6fb811a73d11c062d4560e1b6640abd0b76a08d85e1dde",
+    "sha256": "68b4679216d7e00d2f58382b5971f87d41993ae312625860fd8069420f7ba2ad"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Văn phòng quản lý bãi xe (giả định)",
+      "address": "Chốt quản lý gần lối ra, Hà Nội (địa điểm mô phỏng).",
+      "instructions": "Hỏi nhân viên ca trực và mô tả nơi để xe hoặc nơi đánh rơi."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-14T12:20:00+07:00"
+  }
+}

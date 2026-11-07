@@ -1,0 +1,35 @@
+{
+  "sourceId": "facebook-2171550620234250",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=2171550620234250&set=gm.2225814691612506&idorvanity=431452597715400",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "found",
+  "originalKindInferred": true,
+  "title": "Thẻ ngân hàng",
+  "sourceText": "Bài đăng Facebook công khai về thẻ ngân hàng. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Thẻ ngân hàng được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=2171550620234250&set=gm.2225814691612506&idorvanity=431452597715400"
+    }
+  ],
+  "sourceImageSha256": "232e88366616804770552970cb6292bd194b26e85d01dba70772680920808096",
+  "sourceImageSize": [
+    526,
+    701
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-09-27T20:10:00+07:00"
+  }
+}

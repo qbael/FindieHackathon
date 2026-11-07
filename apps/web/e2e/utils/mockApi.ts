@@ -165,11 +165,6 @@ export async function setupDefaultApiMocks(
           it.publicDescription.toLowerCase().includes(text)
       );
     }
-    if (area) {
-      matched = matched.filter((it: any) =>
-        it.foundArea.toLowerCase().includes(area)
-      );
-    }
 
     await route.fulfill({
       status: 200,
@@ -179,7 +174,7 @@ export async function setupDefaultApiMocks(
         searchProfileId: 'mock-prof-1',
         searchProfileVersion: 1,
         partial: false,
-        filtersRelaxed: false,
+        filtersRelaxed: Boolean(area && matched.some((item: any) => !item.foundArea.toLowerCase().includes(area))),
         fallbackUrl: `/search?mode=basic&q=${encodeURIComponent(postData?.text ?? '')}`,
       },
     });
@@ -201,6 +196,7 @@ export async function setupDefaultApiMocks(
       await new Promise((res) => setTimeout(res, searchDelayMs));
     }
 
+    const area = new URL(route.request().url()).searchParams.get('area')?.toLowerCase() ?? '';
     await route.fulfill({
       status: 200,
       json: {
@@ -209,7 +205,7 @@ export async function setupDefaultApiMocks(
         searchProfileId: 'mock-prof-img',
         searchProfileVersion: 1,
         partial: false,
-        filtersRelaxed: false,
+        filtersRelaxed: Boolean(area && items.some((item: any) => !item.foundArea.toLowerCase().includes(area))),
         fallbackUrl: '/search?mode=basic',
       },
     });

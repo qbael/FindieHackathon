@@ -83,6 +83,9 @@ static class ItemDeletionChecks
             new { targetPointId = point, rowVersion = Version(item) }, 201);
         var intakePath = $"/api/intake-requests/{Id(intake)}";
         var imageId = item.GetProperty("images")[0].GetProperty("id").GetGuid();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages.Where(value => value.Id == imageId)
+                .ExecuteUpdateAsync(update => update.SetProperty(value => value.OriginalEmbedding, "{}"));
         var key = Guid.NewGuid();
         await Send(owner, HttpMethod.Delete, path, new { rowVersion = Version(item) }, 204, key);
         await Send(owner, HttpMethod.Delete, path, new { rowVersion = Version(item) }, 204, key);
@@ -131,6 +134,7 @@ static class ItemDeletionChecks
                 && await db.IntakeRequests.AnyAsync(value => value.Id == Id(intake))
                 && await db.Conversations.AnyAsync(value => value.ClaimId == Id(claim))
                 && await db.Messages.AnyAsync(value => value.Id == Id(message)), "soft deletion retains images, audit history, claims, intakes and chat");
+            Check(deleted.Images.All(value => value.OriginalEmbedding is null), "soft deletion clears private original embeddings");
             var outbox = await db.IndexOutbox.Where(value => value.ItemId == itemId).OrderBy(value => value.DocumentVersion).ToListAsync();
             using var payload = JsonDocument.Parse(outbox.Last().Payload);
             Check(outbox.Count == 3 && outbox.Last().EventKind == "tombstone"
@@ -142,7 +146,7 @@ static class ItemDeletionChecks
             var previousHandler = ai.Handler;
             ai.Handler = command => Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)),
                 JsonSerializer.SerializeToUtf8Bytes(new { candidates = new[] { new { itemId, documentVersion = deleted.DocumentVersion,
-                    sourceId = itemId, sourceVersion = deleted.ContentVersion,
+                    sourceKind = "text", sourceId = itemId, sourceVersion = deleted.ContentVersion,
                     sourceSha256 = RecoveryWorkflow.Hash(deleted.Title + "\n" + deleted.PublicDescription) } } })));
             try
             {

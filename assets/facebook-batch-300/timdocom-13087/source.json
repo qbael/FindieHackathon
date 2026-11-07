@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-13087",
+  "sourceUrl": "https://timdo24h.com/13087",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:48.940450+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy tờ",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy tờ. Khu vực được ghi nhận: Khu vực chưa được bài nguồn xác định rõ. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Khu vực chưa được bài nguồn xác định rõ",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/b26d0ad9-7bee-43c4-9bd7-1ce5752bc95e.webp"
+  ],
+  "itemType": "documents",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "2cb53a82ececcc327bb31bcd00bf9a474b35327bd2f928a5a955e6960b3dbcf4",
+    "metadataChanged": false,
+    "sourceSha256": "1b5535d9f5864b55a22899b24035845cf683790285afe4369b8f0b6476b72165",
+    "sha256": "1b5535d9f5864b55a22899b24035845cf683790285afe4369b8f0b6476b72165"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy bảo vệ tòa nhà (giả định)",
+      "address": "Quầy bảo vệ, sảnh chính, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi trong khung 07:00–19:00; mô tả món đồ và thời điểm thất lạc."
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

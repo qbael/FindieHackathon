@@ -1,0 +1,38 @@
+{
+  "sourceId": "facebook-122207299952894132",
+  "sourceUrl": "https://www.facebook.com/photo/?fbid=122207299952894132&set=a.122098043036894132",
+  "sourceVisibility": "public",
+  "capturedAt": "2026-11-06T14:50:48.865160+07:00",
+  "originalKind": "found",
+  "originalKindInferred": true,
+  "title": "Ví đựng giấy tờ",
+  "sourceText": "Bài đăng Facebook công khai về ví đựng giấy tờ. Nội dung được diễn đạt lại; không lưu tên, số giấy tờ hay thông tin liên hệ trong mô tả. Xem bài nguồn để đối chiếu.",
+  "publicDescription": "Ví đựng giấy tờ được đề cập trong bài đăng Facebook công khai, có ảnh thật từ bài nguồn. Thông tin cá nhân không được chép vào mô tả. Chưa xác nhận tình trạng hiện tại hoặc người đang giữ đồ.",
+  "foundArea": "Khu vực được đề cập tại bài nguồn",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoAttribution": [
+    {
+      "file": "photo-1.jpg",
+      "sourceUrl": "https://www.facebook.com/photo/?fbid=122207299952894132&set=a.122098043036894132"
+    }
+  ],
+  "sourceImageSha256": "05573e5d4668cb2fa484f963b81ed67e1ac998f4ee6f5d78ec4483fb96614e47",
+  "sourceImageSize": [
+    526,
+    701
+  ],
+  "privacyReviewRequired": true,
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Quầy trực cửa hàng (giả định)",
+      "address": "Quầy phục vụ gần cửa vào, khu vực mô phỏng TP. Hồ Chí Minh (địa điểm mô phỏng).",
+      "instructions": "Trao đổi với người trực ca chiều; cung cấp thời điểm và đặc điểm nhận dạng."
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-06-30T06:15:00+07:00"
+  }
+}

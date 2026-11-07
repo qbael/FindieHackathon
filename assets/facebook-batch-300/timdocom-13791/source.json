@@ -1,0 +1,40 @@
+{
+  "sourceId": "timdocom-13791",
+  "sourceUrl": "https://timdo24h.com/13791",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:54.834828+00:00",
+  "sourceVisibility": "public",
+  "title": "Thẻ căn cước kèm giấy phép lái xe, giấy đăng ký xe",
+  "sourceText": "Bài nguồn báo mất mô tả thẻ căn cước kèm giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Đồng Nai. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả thẻ căn cước kèm giấy phép lái xe, giấy đăng ký xe. Khu vực được ghi nhận: Đồng Nai. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Đồng Nai",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/d7336d79-5852-484d-add5-555664acf5d0.jpeg"
+  ],
+  "itemType": "identity-card",
+  "documentTypes": [
+    "Giấy phép lái xe",
+    "Giấy đăng ký xe"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "34603684787300d9b203cfbc937b18e10e3475feb5c817e47e93bd3e7869c3f9",
+    "metadataChanged": true,
+    "sourceSha256": "ef3d9b97d3394eea75da3320dcb04f1ace7267aa5232ae78d22e0dfbd779dfb4",
+    "sha256": "2713e2b91d560503c68d844e30fe0dbede6bd18f90868b51b67aeb5b3440762d"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, Đồng Nai (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "date",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundOn": "2026-09-29"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "sourceId": "timdocom-13922",
+  "sourceUrl": "https://timdo24h.com/13922",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:43:52.240044+00:00",
+  "sourceVisibility": "public",
+  "title": "Ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe",
+  "sourceText": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả ví kèm thẻ ngân hàng, thẻ căn cước, giấy phép lái xe. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.webp"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/a9675c12-8cf6-4319-975c-52b26c96cbaa.webp"
+  ],
+  "itemType": "wallet",
+  "documentTypes": [
+    "Thẻ ngân hàng",
+    "Thẻ căn cước",
+    "Giấy phép lái xe",
+    "Thẻ bảo hiểm y tế"
+  ],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "a7ac102a8199b58954aa58af8daabb4dbc9551064e3af6f62bb652f790d5ea54",
+    "metadataChanged": false,
+    "sourceSha256": "27f30b491fe293df99b9f975b0b845765bb43cc8e53539b5d282aa7e61a6000f",
+    "sha256": "27f30b491fe293df99b9f975b0b845765bb43cc8e53539b5d282aa7e61a6000f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "external",
+      "name": "Ban quản lý khu sinh hoạt (giả định)",
+      "address": "Văn phòng ban quản lý, Hà Nội (địa điểm mô phỏng).",
+      "instructions": "Đối chiếu loại đồ, bối cảnh đánh rơi và một chi tiết riêng trước khi nhận."
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-10-29T23:45:00+07:00",
+    "foundUntil": "2026-10-30T03:15:00+07:00"
+  }
+}

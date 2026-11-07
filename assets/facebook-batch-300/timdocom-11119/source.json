@@ -1,0 +1,36 @@
+{
+  "sourceId": "timdocom-11119",
+  "sourceUrl": "https://timdo24h.com/11119",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:43:33.147488+00:00",
+  "sourceVisibility": "public",
+  "title": "Giấy đăng ký xe",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả giấy đăng ký xe. Khu vực được ghi nhận: TP. Hồ Chí Minh. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "TP. Hồ Chí Minh",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/2d9b244f-0c00-40bc-a075-7d5d7bc05490.jpeg"
+  ],
+  "itemType": "registration",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "630db242db2fb3d1e86ecef53ada2b346340786b6570b5de654cf4d65af8f15f",
+    "metadataChanged": true,
+    "sourceSha256": "178022e813e6e035d1cf4845e1803d701b2efdabd48d6680e4b95c663335ebf5",
+    "sha256": "b2c7bea27d26d30ce5b2864bf43304ed1082b2f07665d32b90d733a47581999f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "point",
+      "pointId": "fd000000-0000-0000-0000-000000000004",
+      "confirmedPhysicalReceipt": true
+    },
+    "foundTimePrecision": "exact",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-16T14:45:00+07:00"
+  }
+}

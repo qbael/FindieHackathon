@@ -1,0 +1,7 @@
+photo-*
+processed-*
+local-import-state.json
+reviewed*.json
+masked-correction*
+publication-preview.png
+original-embedding*.json

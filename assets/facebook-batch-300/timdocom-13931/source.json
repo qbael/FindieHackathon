@@ -1,0 +1,33 @@
+{
+  "sourceId": "timdocom-13931",
+  "sourceUrl": "https://timdo24h.com/13931",
+  "originalKind": "lost",
+  "capturedAt": "2026-11-06T07:44:40.511858+00:00",
+  "sourceVisibility": "public",
+  "title": "Điện thoại Redmi",
+  "sourceText": "Bài nguồn báo mất mô tả điện thoại Redmi. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn báo mất mô tả điện thoại Redmi. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/timdo/5b21a517-7a9b-4402-b395-24ee7ab2a508.jpeg"
+  ],
+  "itemType": "phone",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "4684ae4b6955cc7ebc070d1e484423b84e12a11907b0146bcc4af987d3a38650",
+    "metadataChanged": false,
+    "sourceSha256": "c955c9a7df3403f88045f0a0dd61257c834f507e9a2c5d638b4f56dde3317728",
+    "sha256": "c955c9a7df3403f88045f0a0dd61257c834f507e9a2c5d638b4f56dde3317728"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "unknown",
+    "foundTimezone": "Asia/Ho_Chi_Minh"
+  }
+}

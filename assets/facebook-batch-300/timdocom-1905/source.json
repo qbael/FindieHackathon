@@ -1,0 +1,35 @@
+{
+  "sourceId": "timdocom-1905",
+  "sourceUrl": "https://timdo24h.com/1905",
+  "originalKind": "found",
+  "capturedAt": "2026-11-06T07:44:21.078943+00:00",
+  "sourceVisibility": "public",
+  "title": "Balo hoặc túi xách",
+  "sourceText": "Bài nguồn nhặt được / tìm chủ mô tả balo hoặc túi xách. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "publicDescription": "Bài nguồn nhặt được / tìm chủ mô tả balo hoặc túi xách. Khu vực được ghi nhận: Hà Nội. Ảnh lấy từ chính bài nguồn; tên, số định danh và thông tin liên hệ được lược khỏi mô tả mẫu.",
+  "foundArea": "Hà Nội",
+  "images": [
+    "photo-1.jpg"
+  ],
+  "photoSourceUrls": [
+    "https://d15exce06i0ecp.cloudfront.net/nhatduoc/2bbc8e2b-997d-4658-8be8-f63eefeeb33f.jpeg"
+  ],
+  "itemType": "bag",
+  "documentTypes": [],
+  "photoNormalization": {
+    "operation": "remove metadata; preserve decoded pixels and orientation",
+    "decodedPixelsSha256": "8913b8ada94e6b92149399875e1dd5f6dad0f9d6c113c61631f10fcb5cceca7d",
+    "metadataChanged": true,
+    "sourceSha256": "2447377ff6a1539c85d7479062984859f5a3c9a31b774f684fa890cddb16a9ec",
+    "sha256": "302bec443f407a197db3da02957511089715a0bc328f53eb8f81f375f0a3b15f"
+  },
+  "scenario": {
+    "custody": {
+      "kind": "person"
+    },
+    "foundTimePrecision": "range",
+    "foundTimezone": "Asia/Ho_Chi_Minh",
+    "foundFrom": "2026-07-08T23:45:00+07:00",
+    "foundUntil": "2026-07-09T01:00:00+07:00"
+  }
+}

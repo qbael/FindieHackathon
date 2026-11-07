@@ -56,7 +56,7 @@ def get_json(url, headers=None):
         endpoint = urlsplit(url)
         if endpoint.scheme not in {"http", "https"} or not endpoint.hostname or endpoint.username or endpoint.password:
             return None
-        with build_opener(NoRedirect).open(Request(url, headers=headers or {}), timeout=10) as response:
+        with build_opener(NoRedirect).open(Request(url, headers=headers or {}), timeout=20) as response:
             body = response.read(1024 * 1024 + 1)
             return json.loads(body) if len(body) <= 1024 * 1024 else None
     except (OSError, HTTPError, URLError, ValueError):
@@ -84,6 +84,7 @@ def run(environment, api_url):
         "AND to_regclass('public.\"__EFMigrationsHistory\"') IS NOT NULL;"), "run make local-setup"))
     checks.append(("Search database schema", schema_ready(environment, environment.get("SEARCH_POSTGRES_DB", "findie_search"),
         "SELECT to_regclass('public.ai_items') IS NOT NULL AND to_regclass('public.ai_documents') IS NOT NULL "
+        "AND to_regclass('public.ai_search_state') IS NOT NULL "
         "AND EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector');"), "run make local-setup"))
     checks.append(("Demo Hub staff", schema_ready(environment, environment.get("POSTGRES_DB", "findie"),
         "SELECT EXISTS (SELECT 1 FROM point_staff s JOIN reception_points p ON p.id=s.point_id "
@@ -113,7 +114,7 @@ def run(environment, api_url):
         models.get("redaction") == environment.get("AI_REDACTION_MODEL"),
         status.get("modelRevision") == environment.get("AI_EMBEDDING_REVISION"),
         status.get("redactionRevision") == environment.get("AI_REDACTION_REVISION"),
-        status.get("redactionProfileId") == environment.get("Ai__RedactionProfile", "redact-v3"),
+        status.get("redactionProfileId") == environment.get("Ai__RedactionProfile", "redact-v4"),
         str(status.get("embeddingDimensions")) == environment.get("AI_EMBEDDING_DIMENSIONS"),
         status.get("searchProfileId") == environment.get("AI_TEXT_SEARCH_PROFILE"),
         status.get("imageSearchProfileId") == environment.get("AI_IMAGE_SEARCH_PROFILE"),

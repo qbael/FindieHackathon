@@ -147,6 +147,7 @@ public sealed class FindieDbContext(DbContextOptions<FindieDbContext> options)
             entity.Property(image => image.ProcessingState).HasDefaultValue("pending");
             entity.Property(image => image.ReviewState).HasDefaultValue("pending");
             entity.Property(image => image.SensitiveRegions).HasColumnType("jsonb");
+            entity.Property(image => image.OriginalEmbedding).HasColumnType("jsonb");
             entity.HasOne(image => image.Item).WithMany(item => item.Images).HasForeignKey(image => image.ItemId);
             entity.HasOne(image => image.ProcessedObject).WithMany().HasForeignKey(image => image.ProcessedObjectId);
             entity.HasOne(image => image.Reviewer).WithMany().HasForeignKey(image => image.ReviewedBy);
