@@ -28,20 +28,20 @@ flowchart TD
 
 ## 2. DANH SÁCH CHI TIẾT CÁC BỘ TEST CASE
 
-### 2.1. Frontend Web - Unit Tests (`apps/web/src/lib/*.test.ts`)
+### 2.1. Frontend Web - Unit Tests (`apps/web/src/**/*.test.ts`)
 Bao gồm **58 unit tests** độc lập, chạy trên môi trường Node.js native (`--experimental-strip-types --test`), kiểm tra toàn bộ logic xử lý phía client:
 
 | Tệp kiểm thử | Số test | Nội dung kiểm tra chính |
 | :--- | :---: | :--- |
-| [`adminApi.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/adminApi.test.ts) | 7 | Gọi API thống kê, phân trang người dùng, gửi CSRF token khi đổi trạng thái khóa tài khoản, ẩn tin đăng, thu hồi quyền nhân viên trạm, chặn URL độc hại ngoài local route. |
-| [`api.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/api.test.ts) | 12 | Format ngày giờ chuẩn Việt Nam (UTC+7), kiểm tra CSRF token trong cookie, chuẩn hóa tham số query string, xử lý timeout và lỗi mạng. |
-| [`auth.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/auth.test.ts) | 8 | Quản lý phiên người dùng (`loadUser`), lưu trữ vai trò (`isAdmin`, `isStaff`), logic chuyển hướng đăng nhập và đăng xuất an toàn. |
-| [`images.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/images.test.ts) | 7 | Xác thực file ảnh hợp lệ (JPEG, PNG, WebP), giới hạn dung lượng 10MB/ảnh, số lượng ảnh tối đa (1–3 ảnh), chặn định dạng không an toàn (.exe, .pdf, .svg). |
-| [`intakeDecision.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/intakeDecision.test.ts) | 4 | Quy tắc duyệt/từ chối yêu cầu tiếp nhận đồ vào Findie Hub, kiểm tra ghi chú bắt buộc khi từ chối. |
-| [`itemForm.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/itemForm.test.ts) | 7 | Xây dựng draft tin đăng, xác thực 3 nhánh lưu giữ đồ (`person`, `point`, `external`), chặn thời gian nhặt trong tương lai, chuẩn hóa múi giờ Việt Nam. |
-| [`pagination.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/pagination.test.ts) | 3 | Thuật toán sinh danh sách trang hiển thị (danh sách ngắn, danh sách dài có dấu `...`, bảo đảm không lặp trang). |
-| [`search.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/search.test.ts) | 7 | Gửi request tìm kiếm đa phương thức (ảnh + mô tả + bộ lọc), xử lý fallback khi AI 503, tính năng lưu tìm kiếm (`saveSearch`) kèm Idempotency-Key và CSRF. |
-| [`status.test.ts`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/web/src/lib/status.test.ts) | 3 | Hiển thị badge trạng thái bài đăng (`draft`, `published`, `returned`, `archived`) và trạng thái ảnh (`needs_review`, `ready`, `approved`, `rejected`). |
+| [`adminApi.test.ts`](../apps/web/src/features/admin/adminApi.test.ts) | 7 | Gọi API thống kê, phân trang người dùng, gửi CSRF token khi đổi trạng thái khóa tài khoản, ẩn tin đăng, thu hồi quyền nhân viên trạm, chặn URL độc hại ngoài local route. |
+| [`api.test.ts`](../apps/web/src/shared/lib/api.test.ts) | 12 | Format ngày giờ chuẩn Việt Nam (UTC+7), kiểm tra CSRF token trong cookie, chuẩn hóa tham số query string, xử lý timeout và lỗi mạng. |
+| [`auth.test.ts`](../apps/web/src/features/account/auth.test.ts) | 8 | Quản lý phiên người dùng (`loadUser`), lưu trữ vai trò (`isAdmin`, `isStaff`), logic chuyển hướng đăng nhập và đăng xuất an toàn. |
+| [`images.test.ts`](../apps/web/src/shared/lib/images.test.ts) | 7 | Xác thực file ảnh hợp lệ (JPEG, PNG, WebP), giới hạn dung lượng 10MB/ảnh, số lượng ảnh tối đa (1–3 ảnh), chặn định dạng không an toàn (.exe, .pdf, .svg). |
+| [`intakeDecision.test.ts`](../apps/web/src/features/hubs/intakeDecision.test.ts) | 4 | Quy tắc duyệt/từ chối yêu cầu tiếp nhận đồ vào Findie Hub, kiểm tra ghi chú bắt buộc khi từ chối. |
+| [`itemForm.test.ts`](../apps/web/src/features/items/itemForm.test.ts) | 7 | Xây dựng draft tin đăng, xác thực 3 nhánh lưu giữ đồ (`person`, `point`, `external`), chặn thời gian nhặt trong tương lai, chuẩn hóa múi giờ Việt Nam. |
+| [`pagination.test.ts`](../apps/web/src/shared/lib/pagination.test.ts) | 3 | Thuật toán sinh danh sách trang hiển thị (danh sách ngắn, danh sách dài có dấu `...`, bảo đảm không lặp trang). |
+| [`search.test.ts`](../apps/web/src/features/search/search.test.ts) | 7 | Gửi request tìm kiếm đa phương thức (ảnh + mô tả + bộ lọc), xử lý fallback khi AI 503, tính năng lưu tìm kiếm (`saveSearch`) kèm Idempotency-Key và CSRF. |
+| [`status.test.ts`](../apps/web/src/features/account/status.test.ts) | 3 | Hiển thị badge trạng thái bài đăng (`draft`, `published`, `returned`, `archived`) và trạng thái ảnh (`needs_review`, `ready`, `approved`, `rejected`). |
 
 ---
 
@@ -67,14 +67,14 @@ Kiểm thử tích hợp thực thi qua `WebApplicationFactory` kết nối cont
 
 | Bộ test file | Số lượng / Trọng tâm kiểm thử |
 | :--- | :--- |
-| [`Integration.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/Integration.cs) | Kiểm tra schema DB EF Core, 22 entity model, khóa ngoại `OnDelete: Restrict`, kiểm tra tính toàn vẹn constraint và concurrency token `RowVersion`. |
+| [`Integration.cs`](../apps/api/tests/integration/Integration.cs) | Kiểm tra schema DB EF Core, 22 entity model, khóa ngoại `OnDelete: Restrict`, kiểm tra tính toàn vẹn constraint và concurrency token `RowVersion`. |
 | [`RecoveryChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/docs/api/testing.md#L35) | Kiểm tra toàn bộ vòng đời trao trả: tạo yêu cầu nhận đồ, trả lời câu hỏi xác minh, chat trao đổi giữa hai bên, bàn giao tại Hub, hoàn tất trao trả đồ. |
 | [`ItemDeletionChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/docs/api/testing.md#L36) | Kiểm tra xóa mềm (soft delete) bài đăng, phân quyền tác giả/admin, loại bỏ tức thì khỏi kết quả tìm kiếm và danh sách công khai. |
-| [`ImageSearchChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/ImageSearchChecks.cs) | Upload file ảnh, băm SHA256, kiểm tra giới hạn 10MB, đảm bảo ảnh gốc chỉ lưu tạm trong bộ nhớ và xóa ngay sau khi trích xuất vector. |
-| [`SearchQueryChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/SearchQueryChecks.cs) | Tối ưu hóa câu lệnh tìm kiếm, phân trang offset/keyset, lọc kết hợp theo ngày giờ và khu vực địa lý. |
-| [`SavedSearchChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/SavedSearchChecks.cs) | Lưu tiêu chí tìm kiếm người dùng, worker quét định kỳ và gửi notification khi có bài đăng mới phù hợp ngưỡng tương đồng. |
-| [`BrokerChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/BrokerChecks.cs) | Độ bền vững của kết nối RabbitMQ, outbox pattern, tin nhắn không bị mất khi broker khởi động lại. |
-| [`CrossServiceChecks.cs`](file:///d:/CNTT-SGU/HK7/Hackathon/FindieHackathon/apps/api/tests/integration/CrossServiceChecks.cs) | Quy trình xuyên dịch vụ: C# API gửi message sang AMQP -> Python Worker nhận & xử lý -> Cập nhật vào PostgreSQL pgvector -> C# Search query. |
+| [`ImageSearchChecks.cs`](../apps/api/tests/integration/ImageSearchChecks.cs) | Upload file ảnh, băm SHA256, kiểm tra giới hạn 10MB, đảm bảo ảnh gốc chỉ lưu tạm trong bộ nhớ và xóa ngay sau khi trích xuất vector. |
+| [`SearchQueryChecks.cs`](../apps/api/tests/integration/SearchQueryChecks.cs) | Tối ưu hóa câu lệnh tìm kiếm, phân trang offset/keyset, lọc kết hợp theo ngày giờ và khu vực địa lý. |
+| [`SavedSearchChecks.cs`](../apps/api/tests/integration/SavedSearchChecks.cs) | Lưu tiêu chí tìm kiếm người dùng, worker quét định kỳ và gửi notification khi có bài đăng mới phù hợp ngưỡng tương đồng. |
+| [`BrokerChecks.cs`](../apps/api/tests/integration/BrokerChecks.cs) | Độ bền vững của kết nối RabbitMQ, outbox pattern, tin nhắn không bị mất khi broker khởi động lại. |
+| [`CrossServiceChecks.cs`](../apps/api/tests/integration/CrossServiceChecks.cs) | Quy trình xuyên dịch vụ: C# API gửi message sang AMQP -> Python Worker nhận & xử lý -> Cập nhật vào PostgreSQL pgvector -> C# Search query. |
 
 ---
 
@@ -138,7 +138,7 @@ npx playwright show-report playwright-report
 #### Chạy Unit Tests và Kiểm tra Mã nguồn (Lint/Typecheck):
 ```bash
 # Chạy toàn bộ 58 Unit Tests phía Web
-node --experimental-strip-types --test src/lib/*.test.ts
+node --experimental-strip-types --test 'src/**/*.test.ts'
 
 # Kiểm tra cú pháp và định dạng mã nguồn (ESLint)
 npx eslint src

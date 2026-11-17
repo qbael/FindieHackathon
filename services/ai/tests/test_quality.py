@@ -1,6 +1,6 @@
 import pytest
 
-from findie_ai.quality import select_candidates
+from findie_ai.search.quality import select_candidates
 
 
 def hits(*names):

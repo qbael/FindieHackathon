@@ -8,8 +8,8 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 
-from .images import ReviewedRegion
-from .ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.privacy.images import ReviewedRegion
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
 
 
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]

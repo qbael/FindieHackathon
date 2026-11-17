@@ -11,8 +11,8 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from findie_ai.store import SnapshotConflict, Store
-from findie_ai.search_cache import SearchCache
+from findie_ai.search.store import SnapshotConflict, Store
+from findie_ai.search.search_cache import SearchCache
 
 
 @pytest.fixture

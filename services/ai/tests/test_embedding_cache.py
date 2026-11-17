@@ -10,8 +10,8 @@ import pytest
 from redis.exceptions import ConnectionError
 
 from findie_ai.config import Settings
-from findie_ai.ollama import ModelUnavailable
-from findie_ai.search_cache import SearchCache
+from findie_ai.inference.ollama import ModelUnavailable
+from findie_ai.search.search_cache import SearchCache
 from findie_ai.worker import Worker
 
 
@@ -39,7 +39,7 @@ def redis_backend(monkeypatch):
         state.clients.append(client)
         return client
 
-    monkeypatch.setattr("findie_ai.search_cache.Redis.from_url", connect)
+    monkeypatch.setattr("findie_ai.search.search_cache.Redis.from_url", connect)
     return state
 
 

@@ -8,7 +8,7 @@ from pamqp.encode import field_table
 
 from findie_ai.config import Settings
 from findie_ai.evaluate import Case, evaluate_production, metrics, query_images, search_command, validate_cases
-from findie_ai.ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
 
 
 def test_metrics_separate_queries_without_a_match_and_handle_empty_results():

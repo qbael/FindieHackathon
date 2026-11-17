@@ -8,10 +8,10 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
-from .config import Settings
-from .worker import Worker
-from .ranking import MAX_SEARCH_CANDIDATES
-from .contracts import BatchSearchMetadata, ImageEmbeddingMetadata, RedactMetadata, SearchMetadata
+from findie_ai.config import Settings
+from findie_ai.worker import Worker
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.contracts import BatchSearchMetadata, ImageEmbeddingMetadata, RedactMetadata, SearchMetadata
 
 
 @asynccontextmanager

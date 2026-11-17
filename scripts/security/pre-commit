@@ -26,8 +26,8 @@ else
     echo "⚠️ Warning: 'gitleaks' binary not found on PATH. Secret scan skipped locally."
 fi
 
-# 3. Check for raw image disk persistence patterns in apps/api/Services and apps/api/Controllers
-staged_api=$(git diff --cached --name-only | grep -E '^apps/api/(Services|Controllers)/.*\.cs$')
+# 3. Check for raw image disk persistence patterns in API feature, shared and infrastructure code
+staged_api=$(git diff --cached --name-only | grep -E '^apps/api/(Features|Shared|Infrastructure)/.*\.cs$')
 if [ -n "$staged_api" ]; then
     for f in $staged_api; do
         if git show ":$f" | grep -E '(File\.WriteAllBytes|new FileStream\(.*FileMode\.Create)' >/dev/null 2>&1; then

@@ -14,7 +14,7 @@ from PIL import Image
 
 from findie_ai.config import Settings
 from findie_ai.contracts import BatchSearchMetadata, ImageEmbeddingMetadata, Query, RedactMetadata, SearchMetadata, Snapshot
-from findie_ai.ollama import EmbeddingInputRejected, ModelUnavailable
+from findie_ai.inference.ollama import EmbeddingInputRejected, ModelUnavailable
 from findie_ai.worker import Worker
 
 
@@ -31,7 +31,7 @@ def embedding_cache(monkeypatch):
 
     client = SimpleNamespace(get=AsyncMock(side_effect=entries.get), set=AsyncMock(side_effect=save),
                              aclose=AsyncMock())
-    monkeypatch.setattr("findie_ai.search_cache.Redis.from_url", lambda *_args, **_kwargs: client)
+    monkeypatch.setattr("findie_ai.search.search_cache.Redis.from_url", lambda *_args, **_kwargs: client)
     return entries
 
 
@@ -253,7 +253,7 @@ def vector_part(part, *, payload=None):
 @pytest.mark.parametrize(("enabled", "omit_ocr"), [(True, False), (True, True), (False, False)])
 def test_original_image_embedding_is_transient_and_never_uses_redacted_pixels(enabled, omit_ocr):
     async def run():
-        from findie_ai.images import normalize
+        from findie_ai.privacy.images import normalize
 
         worker = Worker(replace(SETTINGS, image_search_enabled=enabled))
         worker.ollama.embed_image = AsyncMock(return_value=[0, 1])
@@ -929,7 +929,7 @@ def test_reconnect_keeps_inflight_byte_reservations_until_each_callback_finishes
 
 @pytest.mark.parametrize("search_first", [False, True])
 def test_upload_and_search_reuse_normalized_image_vectors_without_caching_ocr(monkeypatch, embedding_cache, search_first):
-    from findie_ai import images
+    from findie_ai.privacy import images
     from PIL.PngImagePlugin import PngInfo
 
     async def run():

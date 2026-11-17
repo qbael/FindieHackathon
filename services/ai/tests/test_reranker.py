@@ -7,10 +7,10 @@ from uuid import uuid4
 import pytest
 
 from findie_ai.config import Settings
-from findie_ai.materials import Material
-from findie_ai.ollama import ModelUnavailable
-from findie_ai.ranking import MAX_SEARCH_CANDIDATES
-from findie_ai.reranker import rerank
+from findie_ai.search.materials import Material
+from findie_ai.inference.ollama import ModelUnavailable
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.search.reranker import rerank
 
 
 SETTINGS = Settings(service_token="test", reranker_revision="b" * 64)

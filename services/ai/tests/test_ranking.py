@@ -1,6 +1,6 @@
 import pytest
 
-from findie_ai.ranking import fuse_rankings, location_tokens, normalize_text, rank_candidates
+from findie_ai.search.ranking import fuse_rankings, location_tokens, normalize_text, rank_candidates
 
 
 def candidate(item_id, description):

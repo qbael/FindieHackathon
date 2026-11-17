@@ -12,16 +12,16 @@ from uuid import UUID
 
 import aio_pika
 
-from . import images
-from .contracts import (BatchSearchMetadata, ImageEmbeddingMetadata, IndexImageMetadata, IndexMetadata, IndexVectorMetadata,
+from findie_ai.privacy import images
+from findie_ai.contracts import (BatchSearchMetadata, ImageEmbeddingMetadata, IndexImageMetadata, IndexMetadata, IndexVectorMetadata,
                         OriginalEmbedding, Query, RedactMetadata, SavedSearchMetadata, SavedSearchQuery, SearchMetadata, Snapshot)
-from .ollama import EmbeddingInputRejected, ModelUnavailable, OCR_PROFILE, Ollama
-from .store import Store
-from .search_cache import SearchCache
-from .ranking import MAX_SEARCH_CANDIDATES, fuse_rankings
-from .materials import MaterialsClient, sources as candidate_sources, thumbnail
-from .quality import select_candidates
-from .reranker import rerank
+from findie_ai.inference.ollama import EmbeddingInputRejected, ModelUnavailable, OCR_PROFILE, Ollama
+from findie_ai.search.store import Store
+from findie_ai.search.search_cache import SearchCache
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES, fuse_rankings
+from findie_ai.search.materials import MaterialsClient, sources as candidate_sources, thumbnail
+from findie_ai.search.quality import select_candidates
+from findie_ai.search.reranker import rerank
 
 
 log = logging.getLogger(__name__)

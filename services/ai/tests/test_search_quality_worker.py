@@ -9,8 +9,8 @@ import pytest
 
 from findie_ai.config import Settings
 from findie_ai.contracts import SearchMetadata
-from findie_ai.materials import Material
-from findie_ai.ollama import ModelUnavailable
+from findie_ai.search.materials import Material
+from findie_ai.inference.ollama import ModelUnavailable
 from findie_ai.worker import Worker
 
 

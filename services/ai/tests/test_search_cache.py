@@ -9,8 +9,8 @@ import pytest
 from redis.exceptions import ConnectionError
 
 from findie_ai.config import Settings
-from findie_ai.search_cache import SearchCache
-from findie_ai.store import Store
+from findie_ai.search.search_cache import SearchCache
+from findie_ai.search.store import Store
 
 
 @pytest.fixture

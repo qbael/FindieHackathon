@@ -10,9 +10,9 @@ from pamqp.encode import field_table
 import pytest
 
 from findie_ai.config import Settings
-from findie_ai.materials import MAX_MANIFEST, MaterialsClient, MaterialsUnavailable, decode_material
-from findie_ai.ollama import ModelUnavailable
-from findie_ai.ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.search.materials import MAX_MANIFEST, MaterialsClient, MaterialsUnavailable, decode_material
+from findie_ai.inference.ollama import ModelUnavailable
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
 
 
 def fixture():

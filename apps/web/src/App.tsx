@@ -1,23 +1,23 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { loadUser, logout, type UserProfile } from "./lib/auth";
-import { useAction, useResource } from "./hooks/hooks";
-import { Breadcrumb, EmptyState, ErrorNotice, Icon, Loading, useToast } from "./components/ui";
-import SignIn from "./pages/SignIn";
-import Profile from "./pages/Profile";
-import SavedSearches from "./pages/SavedSearches";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminItems from "./pages/admin/AdminItems";
-import AdminHubs from "./pages/admin/AdminHubs";
-import HubLayout, { type HubTab } from "./pages/hub/HubLayout";
-import HubIntakes from "./pages/hub/HubIntakes";
-import HubInventory from "./pages/hub/HubInventory";
-import HubHistory from "./pages/hub/HubHistory";
-import { Intakes, IntakeDetail } from "./pages/Intakes";
-import { CustodyHistory, ReturnItem } from "./pages/Custody";
-import { Home, Search, ItemDetail, Points, type SearchInput } from "./pages/Explore";
-import { PostItem, ReviewImages } from "./pages/Posting";
+import { loadUser, logout, type UserProfile } from "./features/account/auth";
+import { useAction, useResource } from "./shared/hooks/hooks";
+import { Breadcrumb, EmptyState, ErrorNotice, Icon, Loading, useToast } from "./shared/components/ui";
+import SignIn from "./features/account/SignIn";
+import Profile from "./features/account/Profile";
+import SavedSearches from "./features/search/SavedSearches";
+import AdminLayout from "./features/admin/AdminLayout";
+import AdminDashboard from "./features/admin/AdminDashboard";
+import AdminUsers from "./features/admin/AdminUsers";
+import AdminItems from "./features/admin/AdminItems";
+import AdminHubs from "./features/admin/AdminHubs";
+import HubLayout, { type HubTab } from "./features/hubs/HubLayout";
+import HubIntakes from "./features/hubs/HubIntakes";
+import HubInventory from "./features/hubs/HubInventory";
+import HubHistory from "./features/hubs/HubHistory";
+import { Intakes, IntakeDetail } from "./features/hubs/Intakes";
+import { CustodyHistory, ReturnItem } from "./features/recovery/Custody";
+import { Home, Search, ItemDetail, Points, type SearchInput } from "./features/search/Explore";
+import { PostItem, ReviewImages } from "./features/items/Posting";
 import {
   ClaimItem,
   Requests,
@@ -25,9 +25,9 @@ import {
   MyPosts,
   TransferItem,
   Messages,
-} from "./pages/Recovery";
-import { useNotifications } from "./hooks/useNotifications";
-import type { SavedSearch } from "./lib/search";
+} from "./features/recovery/Recovery";
+import { useNotifications } from "./features/notifications/useNotifications";
+import type { SavedSearch } from "./features/search/search";
 
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname.replace(/\/$/, "") || "/");

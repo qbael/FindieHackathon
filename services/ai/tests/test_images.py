@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image, ImageDraw, PngImagePlugin
 import pytest
 
-from findie_ai.images import MAX_BYTES, Regions, coarse_preview, normalize, redact, reviewed_mask
+from findie_ai.privacy.images import MAX_BYTES, Regions, coarse_preview, normalize, redact, reviewed_mask
 
 
 def encoded(format="PNG", *, size=(80, 60), **options):

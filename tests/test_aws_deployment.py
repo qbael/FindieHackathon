@@ -50,6 +50,9 @@ class AwsDeploymentTests(unittest.TestCase):
         conditions = trust['Condition']['StringEquals']
         self.assertEqual(conditions['token.actions.githubusercontent.com:aud'], 'sts.amazonaws.com')
         self.assertNotIn('StringLike', trust['Condition'])
+        self.assertEqual(conditions['token.actions.githubusercontent.com:sub'], {'Ref': 'GitHubSubject'})
+        self.assertEqual(template['Parameters']['GitHubSubject']['Default'],
+                         'repo:qbael@197704624/Findie2.0@1449042338:ref:refs/heads/main')
 
     def test_cloudfront_cannot_cache_sessions_and_starts_disabled(self):
         template = module.template()

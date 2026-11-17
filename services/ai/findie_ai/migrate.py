@@ -3,7 +3,7 @@
 import asyncio
 import os
 
-from .store import Store
+from findie_ai.search.store import Store
 
 
 def main():

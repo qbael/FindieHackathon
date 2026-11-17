@@ -9,8 +9,8 @@ import pytest
 from PIL import Image
 
 from findie_ai.config import Settings
-from findie_ai.images import MAX_BYTES
-from findie_ai.ollama import EmbeddingInputRejected, OCR_MAX_CHARS, OCR_PROFILE, ModelUnavailable, Ollama
+from findie_ai.privacy.images import MAX_BYTES
+from findie_ai.inference.ollama import EmbeddingInputRejected, OCR_MAX_CHARS, OCR_PROFILE, ModelUnavailable, Ollama
 
 
 SETTINGS = Settings(service_token='test', revision='a' * 64, dimensions=2)

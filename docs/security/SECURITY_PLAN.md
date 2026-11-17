@@ -86,7 +86,7 @@ Bắt sớm các lỗ hổng mã nguồn tĩnh trên toàn bộ 3 tầng công n
 ### Ưu tiên 2 (Trung bình):
 | Hạng mục | Vị trí file | Nội dung sửa đổi |
 | :--- | :--- | :--- |
-| **Pillow Decompression Limit** | `services/ai/findie_ai/images.py` | Đặt tường minh `Image.MAX_IMAGE_PIXELS = 25_000_000` trước khi parse header. |
+| **Pillow Decompression Limit** | `services/ai/findie_ai/privacy/images.py` | Đặt tường minh `Image.MAX_IMAGE_PIXELS = 25_000_000` trước khi parse header. |
 | **Linter bảo mật Frontend** | `apps/web/package.json` | Bổ sung script `npm run lint` với `eslint-plugin-security`. |
 | **CORS Policy tường minh** | `apps/api/Program.cs` | Khai báo CORS policy nghiêm ngặt theo domain frontend được whitelist, không dùng wildcard khi có cookie session. |
 

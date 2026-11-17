@@ -44,7 +44,7 @@ https://<CloudFront domain>/api/auth/google/signin
 
 Giữ nguyên `.github/workflows/ci.yml`. Sau CI thành công của push `main`, `.github/workflows/deploy.yml` lấy quyền OIDC theo subject đúng repo/main, build và đẩy hai image ECR có tag full commit SHA, rồi gọi `release.py`. PR không có quyền deploy. Đặt GitHub repository variable `AWS_DEPLOY_ROLE_ARN` bằng output `DeployRoleArn`; không lưu AWS access key.
 
-Repository này dùng immutable OIDC subject: `repo:qbael@197704624/HackathonSGU2026@1449042338:ref:refs/heads/main` (đã xác minh qua GitHub API). Không thay bằng subject chỉ chứa tên repo; nếu tái sử dụng cho repository khác, lấy `sub_claim_prefix` tại `/actions/oidc/customization/sub` rồi nối `:ref:refs/heads/main` và truyền tham số `GitHubSubject` phù hợp.
+Repository này dùng immutable OIDC subject: `repo:qbael@197704624/Findie2.0@1449042338:ref:refs/heads/main` (đã xác minh qua GitHub API). Không thay bằng subject chỉ chứa tên repo; nếu tái sử dụng cho repository khác, lấy `sub_claim_prefix` tại `/actions/oidc/customization/sub` rồi nối `:ref:refs/heads/main` và truyền tham số `GitHubSubject` phù hợp.
 
 Chủ project chỉ cho phép một snapshot cho lần triển khai đầu. Các release tự động sau đó không tạo snapshot hay chạy migration: API `--check-schema` kiểm tra migration chưa áp dụng và dừng nếu schema chưa khớp. Khi có thay đổi schema, cần phê duyệt backup/migration riêng trước khi chạy `release.py <SHA> --migrate`: snapshot RDS theo SHA và chờ available, .NET `--migrate` có advisory lock, Python search migration. Không reset/seed database. Chỉ áp dụng migration tương thích với bản đang chạy và bản local. Worker có thể live nhưng inference unavailable nếu notebook GPU ngắt; trạng thái này không được coi là AI ready.
 

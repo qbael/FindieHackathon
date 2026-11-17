@@ -22,11 +22,11 @@ from uuid import UUID, uuid4
 import aio_pika
 from pydantic import Field, TypeAdapter, model_validator
 
-from .config import Settings, loopback
-from .contracts import BatchSearchMetadata, Contract, Query, SearchMetadata
-from .ollama import Ollama
-from .ranking import MAX_SEARCH_CANDIDATES
-from .store import Store
+from findie_ai.config import Settings, loopback
+from findie_ai.contracts import BatchSearchMetadata, Contract, Query, SearchMetadata
+from findie_ai.inference.ollama import Ollama
+from findie_ai.search.ranking import MAX_SEARCH_CANDIDATES
+from findie_ai.search.store import Store
 
 
 class Case(Contract):

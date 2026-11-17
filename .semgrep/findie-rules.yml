@@ -10,8 +10,9 @@ rules:
           - pattern: new FileStream(..., FileMode.Create, ...)
     paths:
       include:
-        - "**/apps/api/Services/**"
-        - "**/apps/api/Controllers/**"
+        - "**/apps/api/Features/**"
+        - "**/apps/api/Shared/**"
+        - "**/apps/api/Infrastructure/**"
       exclude:
         - "**/apps/api/tests/**"
 

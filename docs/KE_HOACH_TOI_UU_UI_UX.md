@@ -60,14 +60,14 @@ flowchart LR
 ```
 
 #### Task 1.1: Ẩn form tiếp nhận của nhân viên Hub tại trang công cộng
-* **Tệp liên quan**: `apps/web/src/pages/Intakes.tsx` (dòng 161–166)
+* **Tệp liên quan**: `apps/web/src/features/hubs/Intakes.tsx` (dòng 161–166)
 * **Vấn đề**: Người dùng thường xem đề nghị tiếp nhận của mình (`own = true`) nhìn thấy accordion `<details><summary>Dành cho nhân viên điểm tiếp nhận</summary>{decisionForm}</details>`, chứa form tiếp nhận/từ chối của nhân viên Hub.
 * **Giải pháp**:
   * Kiểm tra chặt chẽ: Chỉ render `decisionForm` khi người dùng hiện tại có quyền nhân viên trực trạm (`user.isStaff` hoặc `user.isAdmin`) VÀ là nhân viên phụ trách chính điểm trạm đó (`user.managedPoints.some(p => p.id === data.targetPointId)`).
   * Đối với người dùng thường sở hữu bài đăng (`own = true`): Chỉ hiển thị thông điệp trạng thái đang chờ tiếp nhận và hướng dẫn mang đồ tới quầy.
 
 #### Task 1.2: Sửa nút thao tác sai quyền & sai trạng thái trong "Bài đăng của tôi"
-* **Tệp liên quan**: `apps/web/src/pages/Recovery.tsx` (dòng 587–594)
+* **Tệp liên quan**: `apps/web/src/features/recovery/Recovery.tsx` (dòng 587–594)
 * **Vấn đề**:
   * Đồ đã ở Hub (`item.custody.kind === "point"`) vẫn hiện link `"Xác nhận trao trả"` (dẫn tới 403 Forbidden vì người dùng không có quyền này).
   * Đồ đã ở Hub vẫn hiện link `"Chuyển vào Hub"`.
@@ -76,19 +76,19 @@ flowchart LR
   * Ẩn hoàn toàn nút `"Xác nhận trao trả"` đối với người dùng thường khi đồ đã lưu tại Hub. Nút này chỉ hiển thị khi `item.custody.kind === "external"` hoặc trong không gian quản lý của nhân viên trạm (`scope === "managed"`).
 
 #### Task 1.3: Khắc phục lỗi hiển thị sai ngày trao trả hiện vật tại Nhật ký lưu chuyển Hub
-* **Tệp liên quan**: `apps/web/src/pages/hub/HubHistory.tsx` (dòng 111)
+* **Tệp liên quan**: `apps/web/src/features/hubs/HubHistory.tsx` (dòng 111)
 * **Vấn đề**: Khi gộp các món đồ đã trao trả, mã nguồn đang gán `occurredAt: item.createdAt`. Món đồ tạo từ 1 tháng trước nhưng mới trao trả hôm nay lại bị hiển thị thời điểm trao trả là từ 1 tháng trước.
 * **Giải pháp**: 
   * Sử dụng thuộc tính ngày cập nhật trạng thái mới nhất hoặc gọi API lịch sử lưu chuyển (`/custody-events`) để lấy chính xác mốc thời gian diễn ra sự kiện `returned`.
 
 #### Task 1.4: Thay thế triệt để `alert()` và `window.confirm()` bằng Dialog UI tùy biến
 * **Tệp liên quan**:
-  * `apps/web/src/pages/admin/AdminHubs.tsx` (dòng 59, 73, 174, 194)
-  * `apps/web/src/pages/admin/AdminItems.tsx` (dòng 51, 67, 74, 96)
-  * `apps/web/src/pages/admin/AdminUsers.tsx` (dòng 35, 48)
-  * `apps/web/src/pages/hub/HubHistory.tsx` (dòng 40)
-  * `apps/web/src/pages/hub/HubIntakes.tsx` (dòng 49)
-  * `apps/web/src/pages/Posting.tsx` (dòng 827)
+  * `apps/web/src/features/admin/AdminHubs.tsx` (dòng 59, 73, 174, 194)
+  * `apps/web/src/features/admin/AdminItems.tsx` (dòng 51, 67, 74, 96)
+  * `apps/web/src/features/admin/AdminUsers.tsx` (dòng 35, 48)
+  * `apps/web/src/features/hubs/HubHistory.tsx` (dòng 40)
+  * `apps/web/src/features/hubs/HubIntakes.tsx` (dòng 49)
+  * `apps/web/src/features/items/Posting.tsx` (dòng 827)
 * **Giải pháp**:
   * Tái sử dụng component modal chuẩn `ConfirmDialog` (hoặc xây dựng State Dialog nội bộ có backdrop, tiêu đề, mô tả và nút xác nhận có màu sắc cảnh báo rõ ràng).
   * Khi thao tác thất bại, ghi nhận lỗi vào state và hiển thị banner lỗi nội tuyến (inline `ErrorNotice`) hoặc Toast thông báo thay vì gọi hàm `alert()`.
@@ -119,11 +119,11 @@ flowchart TD
 #### Task 2.1: Xây dựng Hệ thống Toast Notification (Thông báo nổi tự tắt)
 * **Vấn đề**: Dự án thiếu hệ thống thông báo nhanh khi hoàn thành các tác vụ phụ (Lưu hồ sơ, Đổi trạng thái tin, Thu hồi ảnh, Sao chép liên kết...). Giao diện hiện tại phải tải lại trang hoặc nhét alert làm vỡ layout.
 * **Giải pháp**:
-  * Bổ sung `ToastContext` và component `<ToastContainer />` vào `apps/web/src/components/ui.tsx`.
+  * Bổ sung `ToastContext` và component `<ToastContainer />` vào `apps/web/src/shared/components/ui.tsx`.
   * Hỗ trợ 4 trạng thái: `success`, `error`, `info`, `warning` với thời gian tự đóng (mặc định 3.5 giây), có nút tắt nhanh và hiệu ứng trượt mượt mà.
 
 #### Task 2.2: Bản địa hóa thông điệp lỗi kỹ thuật ProblemDetails từ ASP.NET Core
-* **Tệp liên quan**: `apps/web/src/lib/api.ts` (dòng 125–161)
+* **Tệp liên quan**: `apps/web/src/shared/lib/api.ts` (dòng 125–161)
 * **Giải pháp**:
   * Nâng cấp hàm `extractProblemMessage`: Thiết lập bảng ánh xạ các thông điệp validation phổ biến của ASP.NET Core sang tiếng Việt:
     * `"The TargetPointId field is required."` $\rightarrow$ *"Vui lòng chọn điểm tiếp nhận Findie Hub."*
@@ -132,7 +132,7 @@ flowchart TD
     * `"Invalid CSRF token."` $\rightarrow$ *"Phiên làm việc đã hết hạn. Hệ thống đang tự động làm mới..."* (đồng thời kích hoạt hàm làm mới token tự động).
 
 #### Task 2.3: Chuẩn hóa trang lỗi 404 / Empty State thân thiện
-* **Tệp liên quan**: `apps/web/src/pages/Explore.tsx` (dòng 541), `apps/web/src/pages/Custody.tsx`, `apps/web/src/pages/Intakes.tsx`
+* **Tệp liên quan**: `apps/web/src/features/search/Explore.tsx` (dòng 541), `apps/web/src/features/recovery/Custody.tsx`, `apps/web/src/features/hubs/Intakes.tsx`
 * **Giải pháp**:
   * Khi API trả về mã lỗi 404 (món đồ hoặc đề nghị không tồn tại/đã bị xóa), không hiển thị `ErrorNotice` màu đỏ kèm nút "Thử lại".
   * Thay thế bằng component `EmptyState` với icon minh họa nhẹ nhàng, tiêu đề: *"Không tìm thấy thông tin món đồ"* cùng nút điều hướng rõ ràng: `[Quay lại tìm kiếm]` hoặc `[Về trang chủ]`.
@@ -181,26 +181,26 @@ flowchart LR
   * Chuyển trang tức thì mà không cần nạp lại tài nguyên HTML/CSS/JS, giữ nguyên trạng thái phiên đăng nhập.
 
 #### Task 3.2: Tự động cập nhật tin nhắn định kỳ (Auto-polling) trong Hội thoại Trao trả
-* **Tệp liên quan**: `apps/web/src/pages/Recovery.tsx` (dòng 937–945)
+* **Tệp liên quan**: `apps/web/src/features/recovery/Recovery.tsx` (dòng 937–945)
 * **Vấn đề**: Người dùng đang chat hẹn nhận đồ nhưng không nhận được tin nhắn mới trừ khi tự bấm icon "Làm mới".
 * **Giải pháp**:
   * Thiết lập `setInterval` chạy mỗi 4 giây khi tab trình duyệt đang active (`!document.hidden`) và người dùng đang ở trong hội thoại có `chat.canSend === true`.
   * Tự động hủy interval khi chuyển sang trang khác để tiết kiệm băng thông.
 
 #### Task 3.3: Tối ưu Trải nghiệm Tìm kiếm bằng Hình ảnh (Image Search UX)
-* **Tệp liên quan**: `apps/web/src/pages/Explore.tsx` (dòng 265–294)
+* **Tệp liên quan**: `apps/web/src/features/search/Explore.tsx` (dòng 265–294)
 * **Giải pháp**:
   * Bổ sung nút **"Hủy tìm kiếm" (Cancel)** để người dùng có thể chủ động ngắt AbortController nếu mạng chậm hoặc muốn sửa lại từ khóa.
   * Hiển thị các bước xử lý trực quan: *"1/3: Đang tải ảnh..."* $\rightarrow$ *"2/3: AI đang phân tích đặc điểm..."* $\rightarrow$ *"3/3: Đối chiếu dữ liệu tin đăng..."*.
 
 #### Task 3.4: Cải thiện tín hiệu thị giác cho nút hành động nguy hiểm (Destructive Action)
-* **Tệp liên quan**: `apps/web/src/pages/Recovery.tsx` (dòng 688) & `apps/web/src/styles/styles.css`
+* **Tệp liên quan**: `apps/web/src/features/recovery/Recovery.tsx` (dòng 688) & `apps/web/src/shared/styles/styles.css`
 * **Giải pháp**:
   * Định nghĩa class CSS `.button-danger` (nền đỏ `#dc2626`, chữ trắng, hover `#b91c1c`).
   * Áp dụng cho nút *"Xác nhận xóa bài đăng"* trong modal xóa và nút *"Khóa tài khoản"* trong quản trị người dùng.
 
 #### Task 3.5: Bổ sung Lightbox xem ảnh kích thước lớn trong Chi tiết món đồ
-* **Tệp liên quan**: `apps/web/src/pages/Explore.tsx` (dòng 573–589)
+* **Tệp liên quan**: `apps/web/src/features/search/Explore.tsx` (dòng 573–589)
 * **Giải pháp**: Cho phép người dùng nhấp vào ảnh để mở popup xem ảnh phóng to, hỗ trợ kiểm tra kỹ lưỡng các chi tiết đặc điểm của món đồ trước khi gửi yêu cầu nhận đồ.
 
 ---
