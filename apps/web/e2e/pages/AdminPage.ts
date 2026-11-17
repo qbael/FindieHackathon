@@ -52,6 +52,13 @@ export class AdminPage extends BasePage {
     });
     const actionBtn = row.locator('button.btn-sm');
     await actionBtn.click();
+    const modalBtn = this.page.getByRole('button', { name: 'Xác nhận' });
+    try {
+      await modalBtn.waitFor({ state: 'visible', timeout: 5000 });
+      await modalBtn.click();
+    } catch {
+      // native dialog fallback
+    }
   }
 
   async toggleItemPublication(itemTitle: string) {
@@ -62,5 +69,12 @@ export class AdminPage extends BasePage {
     });
     const toggleBtn = row.locator('button.btn-warning, button.btn-success');
     await toggleBtn.click();
+    const modalBtn = this.page.getByRole('button', { name: 'Xác nhận' });
+    try {
+      await modalBtn.waitFor({ state: 'visible', timeout: 5000 });
+      await modalBtn.click();
+    } catch {
+      // native dialog fallback
+    }
   }
 }

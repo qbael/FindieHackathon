@@ -1,22 +1,23 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { loadUser, logout, type UserProfile } from "./lib/auth";
-import { useAction } from "./hooks/hooks";
-import { Breadcrumb, EmptyState, ErrorNotice, Icon, Loading } from "./components/ui";
-import SignIn from "./pages/SignIn";
-import Profile from "./pages/Profile";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminItems from "./pages/admin/AdminItems";
-import AdminHubs from "./pages/admin/AdminHubs";
-import HubLayout, { type HubTab } from "./pages/hub/HubLayout";
-import HubIntakes from "./pages/hub/HubIntakes";
-import HubInventory from "./pages/hub/HubInventory";
-import HubHistory from "./pages/hub/HubHistory";
-import { Intakes, IntakeDetail } from "./pages/Intakes";
-import { CustodyHistory, ReturnItem } from "./pages/Custody";
-import { Home, Search, ItemDetail, Points, type SearchInput } from "./pages/Explore";
-import { PostItem, ReviewImages } from "./pages/Posting";
+import { loadUser, logout, type UserProfile } from "./features/account/auth";
+import { useAction, useResource } from "./shared/hooks/hooks";
+import { Breadcrumb, EmptyState, ErrorNotice, Icon, Loading, useToast } from "./shared/components/ui";
+import SignIn from "./features/account/SignIn";
+import Profile from "./features/account/Profile";
+import SavedSearches from "./features/search/SavedSearches";
+import AdminLayout from "./features/admin/AdminLayout";
+import AdminDashboard from "./features/admin/AdminDashboard";
+import AdminUsers from "./features/admin/AdminUsers";
+import AdminItems from "./features/admin/AdminItems";
+import AdminHubs from "./features/admin/AdminHubs";
+import HubLayout, { type HubTab } from "./features/hubs/HubLayout";
+import HubIntakes from "./features/hubs/HubIntakes";
+import HubInventory from "./features/hubs/HubInventory";
+import HubHistory from "./features/hubs/HubHistory";
+import { Intakes, IntakeDetail } from "./features/hubs/Intakes";
+import { CustodyHistory, ReturnItem } from "./features/recovery/Custody";
+import { Home, Search, ItemDetail, Points, type SearchInput } from "./features/search/Explore";
+import { PostItem, ReviewImages } from "./features/items/Posting";
 import {
   ClaimItem,
   Requests,
@@ -24,7 +25,9 @@ import {
   MyPosts,
   TransferItem,
   Messages,
-} from "./pages/Recovery";
+} from "./features/recovery/Recovery";
+import { useNotifications } from "./features/notifications/useNotifications";
+import type { SavedSearch } from "./features/search/search";
 
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname.replace(/\/$/, "") || "/");
@@ -34,36 +37,138 @@ export default function App() {
   const [attempt, setAttempt] = useState(0);
   const [imageSearch, setImageSearch] = useState<SearchInput | null>(null);
   const [selectedHubPointId, setSelectedHubPointId] = useState<string>("");
+  const [navKey, setNavKey] = useState(0);
   const action = useAction();
+  const toast = useToast();
+
+  const currentParams = new URLSearchParams(window.location.search);
+  const activeConversationId =
+    path === "/messages" ? currentParams.get("conversation") : null;
+  const notifications = useNotifications(user, activeConversationId);
+  const savedSearches = useResource<SavedSearch[]>(
+    user ? "/api/saved-searches" : null,
+  );
+  const unreadSavedMatchesCount = (savedSearches.data ?? []).reduce(
+    (sum, search) =>
+      sum + search.matches.filter((match) => !match.readAt).length,
+    0,
+  );
+
+  useEffect(() => {
+    if (!user) return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") savedSearches.reload();
+    };
+    const interval = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [user, savedSearches.reload]);
+
+  useEffect(() => {
+    if (action.error) {
+      toast.error(action.error.message);
+    }
+  }, [action.error]);
 
   useEffect(() => {
     if (user?.managedPoints?.length && !selectedHubPointId) {
       setSelectedHubPointId(user.managedPoints[0].id);
     }
   }, [user, selectedHubPointId]);
+
   useEffect(() => {
     const navigate = () => {
       const nextPath = window.location.pathname.replace(/\/$/, "") || "/";
-      if (nextPath === path) return;
-      setLoading(true);
       setPath(nextPath);
+      setImageSearch(null);
+      setNavKey((k) => k + 1);
+      window.scrollTo(0, 0);
     };
     window.addEventListener("popstate", navigate);
     return () => window.removeEventListener("popstate", navigate);
+  }, []);
+
+  useEffect(() => {
+    const handleLinkClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const target = (event.target as HTMLElement).closest("a");
+      if (!target || !(target instanceof HTMLAnchorElement)) return;
+
+      if (target.target && target.target !== "_self") return;
+      if (target.hasAttribute("download")) return;
+
+      const href = target.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+
+      if (
+        href.startsWith("http://") ||
+        href.startsWith("https://") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:")
+      ) {
+        try {
+          const url = new URL(href, window.location.origin);
+          if (url.origin !== window.location.origin) return;
+        } catch {
+          return;
+        }
+      }
+
+      const nextUrl = new URL(href, window.location.href);
+      if (nextUrl.origin !== window.location.origin) return;
+
+      if (
+        nextUrl.pathname.startsWith("/api/") ||
+        nextUrl.pathname.startsWith("/auth/")
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      const nextPath = nextUrl.pathname.replace(/\/$/, "") || "/";
+      const nextFullPath = nextUrl.pathname + nextUrl.search + nextUrl.hash;
+      const currentFullPath =
+        window.location.pathname + window.location.search + window.location.hash;
+
+      if (nextFullPath !== currentFullPath) {
+        window.history.pushState(null, "", nextFullPath);
+      }
+      setImageSearch(null);
+      setPath(nextPath);
+      setNavKey((k) => k + 1);
+      window.scrollTo(0, 0);
+    };
+
+    document.addEventListener("click", handleLinkClick);
+    return () => document.removeEventListener("click", handleLinkClick);
   }, [path]);
+
   useEffect(() => {
     if (path === "/signin") return;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
     let active = true;
-    setLoading(true);
+    if (!user) setLoading(true);
     setError(null);
     loadUser(controller.signal)
       .then((value) => {
         if (active) setUser(value);
       })
       .catch(() => {
-        if (active)
+        if (active && !user)
           setError(
             new Error(
               "Chưa kiểm tra được phiên đăng nhập. Hãy kiểm tra kết nối và thử lại.",
@@ -89,6 +194,7 @@ export default function App() {
   const titles: Record<string, string> = {
     "/": "Kết nối để tìm lại",
     "/search": "Tìm đồ thất lạc",
+    "/saved-searches": "Tin tìm đang theo dõi",
     "/post": "Đăng tin nhặt được",
     "/requests": "Yêu cầu trao trả",
     "/messages": "Tin nhắn",
@@ -149,13 +255,22 @@ export default function App() {
     setLoading(true);
     setPath("/search");
   }} />;
-  else if (path === "/search") content = protect(() => <Search initialRequest={imageSearch} />);
+  else if (path === "/search") content = protect(() => <Search key={`${window.location.search}-${navKey}`} initialRequest={imageSearch} />);
+  else if (path === "/saved-searches") content = protect(() => <SavedSearches searches={savedSearches} />);
   else if (path === "/post") content = protect(() => <PostItem />);
   else if (path === "/posts") content = protect(() => <MyPosts />);
   else if (path === "/requests")
-    content = protect(() => <Requests user={user!} />);
+    content = protect(() => (
+      <Requests user={user!} onSeen={notifications.markRequestsSeen} />
+    ));
   else if (path === "/messages")
-    content = protect(() => <Messages user={user!} />);
+    content = protect(() => (
+      <Messages
+        user={user!}
+        unreadByConversation={notifications.unreadByConversation}
+        onReadConversation={notifications.markConversationRead}
+      />
+    ));
   else if (path === "/hubs") content = protect(() => <Points />);
   else if (path === "/profile") content = protect(() => <Profile user={user!} onUpdate={setUser} />);
   else if (path === "/intakes") content = protect(() => <Intakes user={user!} />);
@@ -291,7 +406,10 @@ export default function App() {
       ? "admin"
       : isHubMode
         ? "hub"
-        : path === "/search" || path === "/" || (itemRoute && !itemRoute[2])
+        : path === "/search" ||
+            path === "/saved-searches" ||
+            path === "/" ||
+            (itemRoute && !itemRoute[2])
         ? "search"
         : path === "/post" ||
             path === "/posts" ||
@@ -442,17 +560,35 @@ export default function App() {
             </a>
             <nav className="main-nav" aria-label="Điều hướng chính">
               {[
-                ["search", "/", "Tìm đồ"],
-                ["posts", "/posts", "Bài đăng của tôi"],
-                ["requests", "/requests", "Yêu cầu trao trả"],
-                ["messages", "/messages", "Tin nhắn"],
-              ].map(([key, href, label]) => (
+                { key: "search", href: "/", label: "Tìm đồ", count: 0 },
+                { key: "posts", href: "/posts", label: "Bài đăng của tôi", count: 0 },
+                {
+                  key: "requests",
+                  href: "/requests",
+                  label: "Yêu cầu trao trả",
+                  count: notifications.pendingRequestsCount,
+                },
+                {
+                  key: "messages",
+                  href: "/messages",
+                  label: "Tin nhắn",
+                  count: notifications.unreadMessagesCount,
+                },
+              ].map(({ key, href, label, count }) => (
                 <a
                   key={key}
                   href={href}
                   aria-current={active === key ? "page" : undefined}
                 >
-                  {label}
+                  <span>{label}</span>
+                  {count > 0 && (
+                    <span
+                      className="nav-badge"
+                      aria-label={`${count} thông báo mới`}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </a>
               ))}
             </nav>
@@ -495,6 +631,9 @@ export default function App() {
                   <summary aria-label={`Tài khoản ${user.displayName}`}>
                     <span className="avatar">
                       {user.displayName.charAt(0).toLocaleUpperCase("vi")}
+                      {notifications.pendingRequestsCount +
+                        notifications.unreadMessagesCount >
+                        0 && <span className="avatar-dot" />}
                     </span>
                   </summary>
                   <div>
@@ -513,7 +652,42 @@ export default function App() {
                       </a>
                     )}
                     <a href="/profile">Hồ sơ cá nhân</a>
+                    <a href="/saved-searches">
+                      {unreadSavedMatchesCount > 0
+                        ? `Tin tìm đang theo dõi (${unreadSavedMatchesCount} mới)`
+                        : "Tin tìm đang theo dõi"}
+                    </a>
                     <a href="/posts">Bài đăng của tôi</a>
+                    <a
+                      href="/requests"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span>Yêu cầu trao trả</span>
+                      {notifications.pendingRequestsCount > 0 && (
+                        <span className="unread-badge">
+                          {notifications.pendingRequestsCount}
+                        </span>
+                      )}
+                    </a>
+                    <a
+                      href="/messages"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span>Tin nhắn</span>
+                      {notifications.unreadMessagesCount > 0 && (
+                        <span className="unread-badge">
+                          {notifications.unreadMessagesCount}
+                        </span>
+                      )}
+                    </a>
                     <a href="/posts?scope=managed">Đồ đang quản lý</a>
                     <a href="/intakes">Theo dõi tiếp nhận</a>
                     <button
@@ -550,7 +724,6 @@ export default function App() {
         {path !== "/" && !isPortalMode && (
           <Breadcrumb current={titles[path] ?? "Thông tin trao trả"} />
         )}
-        <ErrorNotice error={action.error} />
         {content}
       </main>
 

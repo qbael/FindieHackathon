@@ -120,7 +120,7 @@ Authentication__Google__ClientSecret='YOUR_CLIENT_SECRET'
 Mở đúng `http://127.0.0.1:5173` để đăng nhập; Vite chuyển toàn bộ `/api` tới .NET.
 Trang `/` là giao diện tìm đồ; `/search`, `/post`, `/posts`, `/requests`, `/messages`,
 `/hubs` và các màn hình chi tiết kết nối với API nghiệp vụ hiện có. Giao diện dùng
-Tailwind CSS, font Be Vietnam Pro lưu cục bộ và [bộ màn hình Stitch](../design/stitch/README.md).
+Tailwind CSS, font Be Vietnam Pro lưu cục bộ và [bộ màn hình Stitch](../design/stitch/README.md); mã giao diện hiện hành nằm trong `apps/web/src/`.
 Đăng nhập tại `/signin` vẫn chỉ dùng Google; không có OTP hoặc định danh công dân giả lập.
 Các màn hình nghiệp vụ yêu cầu phiên đăng nhập. Sau OAuth, ứng dụng quay lại đường dẫn
 nội bộ đã yêu cầu; menu tài khoản có nút đăng xuất. Trang chủ không cần đăng nhập.
@@ -189,7 +189,8 @@ docker compose logs --tail=100 rabbitmq
 `make rabbitmq-up` chạy `make env` để sinh các mật khẩu còn thiếu và file
 `.cache/rabbitmq/definitions.json` chứa password hash cùng topology lấy từ
 `docs/api/rabbitmq-definitions.json`. File được bỏ qua bởi Git và mount read-only.
-Broker tự import khi khởi động: queue quorum `findie.ai.commands`, `findie.api.results`,
+`make rabbitmq-up`, `make local-setup` và `make local-run` nạp definitions mới từ host qua stdin sau khi broker sẵn sàng, kể cả khi container đang chạy và bind mount còn trỏ đến file cũ. Nếu import thất bại, setup/run dừng trước khi khởi động ứng dụng.
+Broker cũng tự import khi khởi động: queue quorum `findie.ai.commands`, `findie.api.results`,
 queue dead-letter `findie.ai.dead`, exchange và bindings tương ứng. Python tự tạo
 query/image queue tạm khi worker chạy; không tạo sẵn hai queue exclusive này.
 

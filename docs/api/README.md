@@ -8,6 +8,7 @@ trao trả, adapter ảnh/tìm kiếm AMQP, R2 output, outbox và cleanup. Worke
 
 - [Từng API nghiệp vụ: request/response, quyền, lỗi và ví dụ](recovery.md).
 - [Từng API ảnh và tìm kiếm](media-search.md).
+- [Theo dõi tin tìm, cron và thông báo khớp](saved-searches.md).
 - [Hợp đồng AMQP, outbox, lease và cleanup](amqp.md).
 - [Phạm vi kiểm thử và cách chạy](testing.md).
 
@@ -15,13 +16,10 @@ trao trả, adapter ảnh/tìm kiếm AMQP, R2 output, outbox và cleanup. Worke
 
 ```text
 apps/api/
-  Models/          ApplicationUser : IdentityUser<Guid> và 15 model nghiệp vụ
   Data/            FindieDbContext : IdentityDbContext; cấu hình quan hệ/ràng buộc
     Migrations/    Migration khởi tạo và snapshot EF Core
-  Contracts/       Request/response DTO, không trả entity Identity trực tiếp
-  Repositories/    Truy cập EF Core; interface và implementation riêng
-  Services/        Kiểm tra đầu vào và tạo DTO
-  Controllers/     API hồ sơ, điểm, món đồ, claim, chat, intake, ảnh và search
+  Features/        Controller, service, contract, model và repository theo tính năng
+  Shared/          Workflow liên tính năng, kiểu lỗi/phân trang và model outbox
   Infrastructure/ Healthcheck, AMQP request/reply, R2, outbox/receipt và cleanup output
   Security/        Google OAuth và chặn truy cập của tài khoản DisabledAt
   tests/           Smoke và kiểm thử tích hợp PostgreSQL dùng một lần
@@ -41,7 +39,7 @@ make api
 cũ chỉ được chuyển đổi tự động khi toàn bộ 16 bảng đều rỗng; script từ chối nếu có dữ liệu.
 Với dữ liệu cũ thực tế, cần migration chuyển đổi riêng; không xóa volume để chữa lỗi.
 API không tự `Migrate`, `EnsureCreated`, tạo bảng hoặc xóa dữ liệu khi khởi động.
-EF migrations là nguồn lược đồ runtime .NET; schema tìm kiếm văn bản Python nằm tại `services/ai/findie_ai/schema.sql`.
+EF migrations là nguồn lược đồ runtime .NET; schema tìm kiếm văn bản Python nằm tại `services/ai/findie_ai/search/schema.sql`.
 
 Solution `Findie.sln` gồm API và chương trình kiểm thử tích hợp. Mỗi entity nằm trong một
 tệp riêng ở `Models/`; dùng `IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>`

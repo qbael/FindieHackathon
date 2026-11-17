@@ -37,10 +37,19 @@ class Settings:
     query_instruction: str = QUERY_INSTRUCTION
     search_profile: str = "text-description-v1"
     semantic_weight: float = 0.6
+    min_image_similarity: float = 0.6
+    min_text_similarity: float = 0.6
+    relative_score_ratio: float = 0.75
+    reranker_model: str = "Qwen/Qwen3-VL-Reranker-2B"
+    reranker_revision: str = ""
+    rerank_min_image_score: float = 0.5
+    rerank_min_text_score: float = 0.5
     index_queue: str = "findie.ai.commands"
     result_queue: str = "findie.api.results"
     query_queue: str = "findie.ai.query"
     image_queue: str = "findie.ai.image"
+    materials_queue: str = "findie.api.materials"
+    materials_reply_queue: str = "findie.ai.materials.results"
     image_search_enabled: bool = False
     image_search_profile: str = "image-only-v1"
     redaction_model: str = "qwen3-vl:4b-instruct"
@@ -55,6 +64,17 @@ class Settings:
             raise ValueError("AI_SEARCH_CACHE_TTL_SECONDS must be between 1 and 3600.")
         if not 0 <= self.semantic_weight <= 1:
             raise ValueError("AI_SEARCH_SEMANTIC_WEIGHT must be between 0 and 1.")
+        for kind in ("image", "text"):
+            if not 0 <= getattr(self, f"min_{kind}_similarity") <= 1:
+                raise ValueError(f"AI_SEARCH_MIN_{kind.upper()}_SIMILARITY must be between 0 and 1.")
+            if not 0 <= getattr(self, f"rerank_min_{kind}_score") <= 1:
+                raise ValueError(f"AI_RERANK_MIN_{kind.upper()}_SCORE must be between 0 and 1.")
+        if not 0 <= self.relative_score_ratio <= 1:
+            raise ValueError("AI_SEARCH_RELATIVE_SCORE_RATIO must be between 0 and 1.")
+        if self.reranker_revision and not re.fullmatch(r"(?:sha256:)?[a-f0-9]{64}", self.reranker_revision):
+            raise ValueError("AI_RERANKER_REVISION must pin the model fingerprint SHA-256.")
+        if not self.reranker_model:
+            raise ValueError("AI_RERANKER_MODEL must be nonblank.")
         if self.redis_url:
             endpoint = urlsplit(self.redis_url)
             if (endpoint.scheme not in {"redis", "rediss"} or not endpoint.hostname
@@ -79,8 +99,9 @@ class Settings:
             if (broker.scheme not in {"amqp", "amqps"} or not broker.hostname
                     or broker.scheme == "amqp" and not loopback(broker.hostname)):
                 raise ValueError("RabbitMQ requires AMQPS outside loopback.")
-        queues = (self.index_queue, self.result_queue, self.query_queue, self.image_queue)
-        if len(set(queues)) != 4 or any(not q or len(q.encode()) > 255 for q in queues):
+        queues = (self.index_queue, self.result_queue, self.query_queue, self.image_queue,
+                  self.materials_queue, self.materials_reply_queue)
+        if len(set(queues)) != len(queues) or any(not q or len(q.encode()) > 255 for q in queues):
             raise ValueError("AI queue names must be distinct and valid.")
 
     @property
@@ -110,6 +131,15 @@ class Settings:
             query_instruction=os.environ.get("AI_EMBEDDING_QUERY_INSTRUCTION", QUERY_INSTRUCTION),
             search_profile=os.environ.get("AI_TEXT_SEARCH_PROFILE", "text-description-v1"),
             semantic_weight=semantic_weight,
+            min_image_similarity=float(os.environ.get("AI_SEARCH_MIN_IMAGE_SIMILARITY", "0.6")),
+            min_text_similarity=float(os.environ.get("AI_SEARCH_MIN_TEXT_SIMILARITY", "0.6")),
+            relative_score_ratio=float(os.environ.get("AI_SEARCH_RELATIVE_SCORE_RATIO", "0.75")),
+            reranker_model=os.environ.get("AI_RERANKER_MODEL", "Qwen/Qwen3-VL-Reranker-2B"),
+            reranker_revision=os.environ.get("AI_RERANKER_REVISION", ""),
+            rerank_min_image_score=float(os.environ.get("AI_RERANK_MIN_IMAGE_SCORE", "0.5")),
+            rerank_min_text_score=float(os.environ.get("AI_RERANK_MIN_TEXT_SCORE", "0.5")),
+            materials_queue=os.environ.get("AI_MATERIALS_QUEUE", "findie.api.materials"),
+            materials_reply_queue=os.environ.get("AI_MATERIALS_REPLY_QUEUE", "findie.ai.materials.results"),
             image_search_enabled=image_search == "true",
             image_search_profile=os.environ.get("AI_IMAGE_SEARCH_PROFILE", "image-only-v1"),
             redaction_model=os.environ.get("AI_REDACTION_MODEL", "qwen3-vl:4b-instruct"),

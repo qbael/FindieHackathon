@@ -6,6 +6,7 @@ using System.Text.Json;
 using Findie.Api.Contracts;
 using Findie.Api.Data;
 using Findie.Api.Infrastructure;
+using Findie.Api.Models;
 using Findie.Api.Repositories;
 using Findie.Api.Services;
 using Microsoft.AspNetCore.Hosting;
@@ -24,7 +25,7 @@ static class CrossServiceChecks
         var configuration = new ConfigurationBuilder().AddConfiguration(factory.Services.GetRequiredService<IConfiguration>())
             .AddInMemoryCollection(new Dictionary<string, string?> { ["RabbitMq:Uri"] = Environment.GetEnvironmentVariable("FINDIE_TEST_BROKER_URI") }).Build();
         using var gateway = new RabbitMqGateway(configuration, NullLogger<RabbitMqGateway>.Instance, scopes);
-        var storage = new StubStorage();
+        var storage = (StubStorage)factory.Services.GetRequiredService<IProcessedStorage>();
         using var maintenance = new RecoveryMaintenance(scopes, gateway, storage, configuration, NullLogger<RecoveryMaintenance>.Instance);
         var raw = Convert.FromBase64String(Environment.GetEnvironmentVariable("FINDIE_TEST_IMAGE_BASE64")!);
         var actor = await InScope(async services =>
@@ -79,29 +80,67 @@ static class CrossServiceChecks
             await Flush(item.Id, item.DocumentVersion);
             var text = await Text();
             var image = await Image();
-            Check(text.Items.Count == 1 && text.Items[0].Item.Id == item.Id, "real Python text candidate passes .NET provenance checks");
-            Check(image.Items.Count == 1 && image.Items[0].Item.Id == item.Id && image.Items[0].Item.Images.Count == 2,
+            Check(text.RankingMethod == "reranker" && text.Items.Count == 1 && text.Items[0].Item.Id == item.Id,
+                "Python receives public material over RabbitMQ and reranks the text candidate before .NET provenance checks");
+            Check(image.RankingMethod == "reranker" && image.Items.Count == 1 && image.Items[0].Item.Id == item.Id && image.Items[0].Item.Images.Count == 2,
                 "real image vectors retrieve the public item with two approved source versions");
             var combined = await Batch("ví da phòng E.205", 2);
             Check(combined.Mode == "combined" && combined.SearchProfileId == "multimodal-fusion-v1"
-                && combined.Items.Count == 1 && combined.Items[0].Item.Id == item.Id,
+                && combined.RankingMethod == "reranker" && combined.Items.Count == 1 && combined.Items[0].Item.Id == item.Id,
                 "HTTP multipart batches two images and text through real AMQP/Python fusion before .NET validation");
             var imageBatch = await Batch(null, 1);
             Check(imageBatch.Mode == "image" && imageBatch.SearchProfileId == "image-fusion-v1"
-                && imageBatch.Items.Count == 1 && imageBatch.Items[0].Item.Id == item.Id,
+                && imageBatch.RankingMethod == "reranker" && imageBatch.Items.Count == 1 && imageBatch.Items[0].Item.Id == item.Id,
                 "HTTP image-only batch preserves the image fusion contract across services");
             Check(!text.Items[0].Item.CanClaim && !image.Items[0].Item.CanClaim,
                 "search results do not allow the poster to claim their own item");
             var outsideArea = await InScope(services => Search(services).TextAsync(actor, new SearchRequest("ví", "Wrong campus"), default));
             Check(outsideArea.Items.Count == 1 && outsideArea.Items[0].Item.Id == item.Id && outsideArea.FiltersRelaxed,
                 "cross-service search retains relevant items outside the preferred area");
+            var seeker = await InScope(async services =>
+            {
+                var db = services.GetRequiredService<FindieDbContext>();
+                var user = new ApplicationUser { UserName = "bridge-saved-seeker", DisplayName = "Bridge saved seeker" };
+                db.Users.Add(user);
+                await db.SavedSearches.ExecuteUpdateAsync(update => update.SetProperty(value => value.NextCheckAt, DateTimeOffset.UtcNow.AddDays(1)));
+                await db.SaveChangesAsync();
+                return user.Id;
+            });
+            var storedOutputs = storage.Puts;
+            SavedSearchResponse saved;
+            using (var content = new MultipartFormDataContent())
+            {
+                content.Add(new StringContent("ví da phòng E.205"), "text");
+                var queryImage = new ByteArrayContent(raw);
+                queryImage.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+                content.Add(queryImage, "images", "saved-query.png");
+                using var stream = await content.ReadAsStreamAsync();
+                saved = await InScope(services => Saved(services).CreateAsync(seeker, Guid.NewGuid(), new ImageSearchFilter(),
+                    content.Headers.ContentType!.ToString(), stream, content.Headers.ContentLength, default));
+            }
+            Check(saved.ImageCount == 1 && saved.Text == "ví da phòng E.205" && storage.Puts == storedOutputs,
+                "saving a combined query embeds the image through real Python without storing its original");
+            using var savedMaintenance = new SavedSearchMaintenance(scopes, gateway, configuration, NullLogger<SavedSearchMaintenance>.Instance);
+            Check(await savedMaintenance.CheckOneAsync(default), "scheduled saved-query matching runs through the real broker");
+            var followed = (await InScope(services => Saved(services).ListAsync(seeker, default))).Single(value => value.Id == saved.Id);
+            Check(followed.LastCheckedAt is not null && followed.Matches.Count == 1 && followed.Matches[0].ItemId == item.Id
+                && followed.Matches[0].Score >= .85,
+                "real stored image and text vectors produce a threshold-qualified in-app match with current source evidence");
+            await InScope(services => services.GetRequiredService<FindieDbContext>().SavedSearches.Where(value => value.Id == saved.Id)
+                .ExecuteUpdateAsync(update => update.SetProperty(value => value.NextCheckAt, DateTimeOffset.UtcNow.AddMinutes(-1))));
+            await savedMaintenance.CheckOneAsync(default);
+            Check((await InScope(services => Saved(services).ListAsync(seeker, default))).Single(value => value.Id == saved.Id).Matches.Count == 1,
+                "repeated real saved-query scans preserve one notification per item");
+
             await InScope(services => Images(services).RetireAsync(actor, Guid.NewGuid(), item.Id, images[0].Id,
                 new RetireImageRequest(images[0].ContentVersion), default));
             item = await Current();
             Check(item.PublicationState == "published" && item.Images.Count == 1, "removing one of two approved images keeps the item public");
+            Check((await InScope(services => Saved(services).ListAsync(seeker, default))).Single(value => value.Id == saved.Id).Matches.Count == 0,
+                "saved notifications hide changed source versions immediately before the index catches up");
             var staleBatch = await Batch("ví da phòng E.205", 2);
-            Check(staleBatch.Items.Count == 0 && staleBatch.Partial,
-                ".NET rejects fused candidates from the stale search snapshot before the replacement is indexed");
+            Check(staleBatch.Items.Count == 0 && !staleBatch.Partial,
+                "Python drops candidates reported stale by the material provider before .NET receives them");
             await Flush(item.Id, item.DocumentVersion);
             Check((await Text()).Items.Count == 1 && (await Image()).Items.Count == 1,
                 "replacement snapshot retains text and the remaining approved image");
@@ -113,7 +152,8 @@ static class CrossServiceChecks
             await Flush(item.Id, item.DocumentVersion);
             Check((await Text()).Items.Count == 0 && (await Image()).Items.Count == 0,
                 "last-image retirement commits a tombstone removing text and image matches across the real service boundary");
-            Console.WriteLine("PASS: .NET -> RabbitMQ -> Python -> Ollama test double -> processed-output R2 double; HTTP multipart fusion, review, full multi-image manifest, search provenance, retirement and tombstone");
+            await InScope(async services => { await Saved(services).DeleteAsync(seeker, saved.Id, default); return true; });
+            Console.WriteLine("PASS: .NET -> RabbitMQ -> Python -> material RPC -> .NET -> processed-output R2 double -> Python reranker; all query modes, saved-search cron, provenance, retirement and tombstone");
 
             Task<ItemResponse> Current() => InScope(services => services.GetRequiredService<IItemService>().GetAsync(actor, item.Id, default));
             Task<SearchResponse> Text() => InScope(services => Search(services).TextAsync(actor, new SearchRequest("ví da phòng E.205", "Bridge-only Campus"), default));
@@ -150,6 +190,8 @@ static class CrossServiceChecks
         ImageService Images(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(),
             services.GetRequiredService<RecoveryWorkflow>(), gateway, storage, configuration);
         SearchService Search(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(), gateway, configuration,
+            services.GetRequiredService<RecoveryWorkflow>());
+        SavedSearchService Saved(IServiceProvider services) => new(services.GetRequiredService<IRecoveryRepository>(), gateway, configuration,
             services.GetRequiredService<RecoveryWorkflow>());
         async Task<T> InScope<T>(Func<IServiceProvider, Task<T>> operation)
         {

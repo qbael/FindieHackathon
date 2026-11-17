@@ -37,3 +37,40 @@ def test_worker_passes_search_semantic_weight_to_store():
         finally:
             await worker.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("kind", ["image", "text"])
+@pytest.mark.parametrize("value", ["0.6", "0", "1", "0.75"])
+def test_area_similarity_threshold_environment(monkeypatch, kind, value):
+    monkeypatch.setenv("AI_SERVICE_TOKEN", "test")
+    monkeypatch.setenv(f"AI_SEARCH_MIN_{kind.upper()}_SIMILARITY", value)
+    assert getattr(Settings.from_env(), f"min_{kind}_similarity") == float(value)
+
+
+@pytest.mark.parametrize("kind", ["image", "text"])
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf", "-0.01", "1.01", "bad", ""])
+def test_area_similarity_threshold_rejects_invalid_values(monkeypatch, kind, value):
+    monkeypatch.setenv("AI_SERVICE_TOKEN", "test")
+    monkeypatch.setenv(f"AI_SEARCH_MIN_{kind.upper()}_SIMILARITY", value)
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+@pytest.mark.parametrize("name", ["AI_SEARCH_RELATIVE_SCORE_RATIO", "AI_RERANK_MIN_IMAGE_SCORE", "AI_RERANK_MIN_TEXT_SCORE"])
+@pytest.mark.parametrize("value", ["nan", "inf", "-0.01", "1.01", "bad"])
+def test_quality_thresholds_reject_invalid_values(monkeypatch, name, value):
+    monkeypatch.setenv("AI_SERVICE_TOKEN", "test")
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+def test_material_queue_names_cannot_overlap_search_queues():
+    with pytest.raises(ValueError):
+        Settings(service_token="test", materials_reply_queue="findie.ai.query")
+
+
+def test_reranker_fingerprint_is_pinned_and_optional():
+    assert not Settings(service_token="test").reranker_revision
+    with pytest.raises(ValueError):
+        Settings(service_token="test", reranker_revision="mutable-model-tag")

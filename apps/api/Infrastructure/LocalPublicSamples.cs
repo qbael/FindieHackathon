@@ -70,7 +70,7 @@ public static class LocalPublicSamples
                 || (sample.SyntheticScenario && !sample.Payload.Content.PublicDescription.Contains("KỊCH BẢN GIẢ ĐỊNH"))
                 || !sample.Payload.Content.PublicDescription.Contains("DỮ LIỆU MẪU")
                 || !sample.Payload.Content.PublicDescription.Contains(sample.SourceUrl) || sample.Photos.Count is < 1 or > 3
-                || !File.Exists(sample.Path)) throw new ArgumentException("Run scripts/import_facebook_samples.py --prepare-json first.");
+                || !File.Exists(sample.Path)) throw new ArgumentException("Prepared sample input is invalid or its source file is missing.");
             if (sample.CoarsePreviewSourceSha256 is { } originalHash && (!sample.SyntheticScenario || sample.Photos.Count != 1
                 || originalHash.Length != 64 || originalHash.Any(c => c is not (>= '0' and <= '9' or >= 'a' and <= 'f'))
                 || sample.Photos[0].Mime != "image/png" || System.IO.Path.GetFileName(sample.Photos[0].Path) != "publication-preview.png"
@@ -181,7 +181,7 @@ public static class LocalPublicSamples
                         || plan.Regions is null || plan.Regions.Count > 32
                         || plan.Regions.Count == 0 && (!sample.SyntheticScenario || plan.Method is not null)
                         || plan.Regions.Any(region =>
-                            (region.Label is not ("face" or "identity_number" or "phone" or "address" or "qr_code" or "barcode")
+                            (region.Label is not ("face" or "identity_number" or "identifier_number" or "passport_number" or "mrz" or "signature" or "phone" or "address" or "qr_code" or "barcode")
                                 && !(sample.SyntheticScenario && region.Label == "text"))
                             || region.Bbox is not { Length: 4 } || region.Bbox.Any(value => value is < 0 or > 1000)
                             || region.Bbox[0] >= region.Bbox[2] || region.Bbox[1] >= region.Bbox[3]))
@@ -203,7 +203,7 @@ public static class LocalPublicSamples
                         reviewedMasks = JsonSerializer.Deserialize<ReviewedMasks>(await File.ReadAllTextAsync(masksReviewPath), Json)!;
                         if (reviewedMasks.PlanSha256 != planHash || reviewedMasks.InputSha256 != plan.MaskedSha256
                             || reviewedMasks.Regions is null || reviewedMasks.Regions.Count > 32
-                            || reviewedMasks.Regions.Any(region => region.Label is not ("face" or "identity_number" or "identifier_number" or "phone" or "address" or "qr_code" or "barcode" or "text")
+                            || reviewedMasks.Regions.Any(region => region.Label is not ("face" or "identity_number" or "identifier_number" or "passport_number" or "mrz" or "signature" or "phone" or "address" or "qr_code" or "barcode" or "text")
                                 || region.Bbox is not { Length: 4 } || region.Bbox.Any(value => value is < 0 or > 1000)
                                 || region.Bbox[0] >= region.Bbox[2] || region.Bbox[1] >= region.Bbox[3]))
                             throw new InvalidOperationException("Reviewed masks do not match this exact correction input and plan.");

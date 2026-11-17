@@ -28,6 +28,18 @@ static class ImageSearchChecks
             try { AiProtocol.EmbeddingDimensions(configuration); throw new InvalidOperationException("Invalid embedding dimensions should fail."); }
             catch (ApiException error) when (error.StatusCode == 503) { Check(true, "invalid embedding dimensions are rejected"); }
         }
+        foreach (var kind in new[] { "image.embed", "image.redact" })
+        foreach (var code in new[] { "invalid_ocr", "invalid_ocr_truncated", "invalid_ocr_json", "invalid_ocr_too_long", "invalid_ocr_schema", "invalid_regions", "invalid_embedding", "deadline_expired", "private upstream output" })
+        {
+            var failure = JsonSerializer.SerializeToElement(new { schemaVersion = 1, kind, succeeded = false, errorCode = code });
+            try { AiProtocol.Require(failure, kind); throw new InvalidOperationException("AI failure should reject upload."); }
+            catch (ApiException error) when (error.StatusCode == 503)
+            {
+                Check(!error.Message.Contains("basic item filters") && !error.Message.Contains("private upstream output")
+                    && (code == "private upstream output" || error.Message.Contains(code)),
+                    "image failures identify the stage with safe diagnostics and do not suggest search filters");
+            }
+        }
         using var owner = await User("image-owner");
         using var seeker = await User("image-seeker");
         var item = await Send(owner, HttpMethod.Post, "/api/items", Create("Image test"), 201);
@@ -220,10 +232,10 @@ static class ImageSearchChecks
         ai.Handler = command => SearchReply(command, [firstCandidate]);
         await Binary(ocrSeeker, "/api/search/image", original, "image/png", 502);
         ai.Handler = command => {
-            Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 200, "single-image requests retain the bounded candidate pool before API ranking");
+            Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 20, "single-image requests cap candidates at twenty before API ranking");
             Check(command.Kind == "search.hybrid.image" && !command.Persistent && command.Body.SequenceEqual(original), "image query uses transient binary transport");
             var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
-            Check(remaining.TotalSeconds is > 295 and <= 300, "image queries allow five minutes for image embedding");
+            Check(remaining.TotalSeconds is > 310 and <= 315, "image queries include fifteen seconds for quality evaluation");
             return SearchReply(command, [imageCandidate]);
         };
         var putCount = storage.Puts;
@@ -287,7 +299,89 @@ static class ImageSearchChecks
         await CheckLostTimeRanking();
         await CheckSoftAreaAndGroups();
         await CheckOriginalEmbeddingRestoration();
+        await CheckPassportRedaction();
         Console.WriteLine($"PASS: {checks} image/search/outbox checks (output-only storage, review, stale results, bounded retry and cleanup)");
+
+        async Task CheckPassportRedaction()
+        {
+            using var browser = await User("passport-redaction-owner");
+            foreach (var title in new[] { "Hộ chiếu bản mẫu", "PASSPORT sample", "Giấy tờ bản mẫu" })
+            {
+                var value = await Send(browser, HttpMethod.Post, "/api/items", Create(title), 201);
+                var id = value.GetProperty("id").GetGuid();
+                var path = $"/api/items/{id}/images";
+                string[] labels = [];
+                ai.Handler = command =>
+                {
+                    if (command.Kind == "image.embed")
+                    {
+                        var payload = EmbeddingPayload(command, factory.Services.GetRequiredService<IConfiguration>());
+                        if (title == "Giấy tờ bản mẫu")
+                            ((Dictionary<string, object?>)payload["ocr"]!)["text"] = "PASSPORT SAMPLE";
+                        return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)),
+                            JsonSerializer.SerializeToUtf8Bytes(payload)));
+                    }
+                    var metadata = ImageMetadata(command);
+                    metadata["sensitiveRegions"] = labels.Select(label => new { label, bbox = new[] { 0, 0, 1000, 1000 } }).ToArray();
+                    return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(metadata), Output.ToArray()));
+                };
+                var puts = storage.Puts;
+                foreach (var incomplete in new string[][] { [], ["face"], ["passport_number"], ["face", "mrz"], ["passport_number", "mrz"] })
+                {
+                    labels = incomplete;
+                    await Binary(browser, path, original, "image/png", 503);
+                }
+                using (var scope = factory.Services.CreateScope())
+                    Check(storage.Puts == puts && !await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages.AnyAsync(image => image.ItemId == id),
+                        "passport uploads with empty or missing required masks never create image or storage records");
+                labels = ["face", "passport_number"];
+                var image = await Binary(browser, path, original, "image/png", 201);
+                var imageId = image.GetProperty("id").GetGuid();
+                using (var scope = factory.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+                    (await db.ItemImages.SingleAsync(image => image.Id == imageId)).SensitiveRegions = "[]";
+                    await db.SaveChangesAsync();
+                }
+                await Send(browser, HttpMethod.Post, $"{path}/{imageId}/review", new { contentVersion = 1, decision = "approved" }, 503);
+                using (var scope = factory.Services.CreateScope())
+                    Check((await scope.ServiceProvider.GetRequiredService<FindieDbContext>().ItemImages.SingleAsync(image => image.Id == imageId)).ReviewState == "pending",
+                        "legacy passport output without masks cannot be approved even with a stale client");
+                using (var scope = factory.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<FindieDbContext>();
+                    (await db.ItemImages.SingleAsync(image => image.Id == imageId)).SensitiveRegions =
+                        JsonSerializer.Serialize(labels.Select(label => new { label, bbox = new[] { 0, 0, 1000, 1000 } }));
+                    await db.SaveChangesAsync();
+                }
+                await Send(browser, HttpMethod.Post, $"{path}/{imageId}/review", new { contentVersion = 1, decision = "approved" }, 200);
+                await Send(browser, HttpMethod.Post, $"{path}/{imageId}/review", new { contentVersion = 1, decision = "rejected" }, 200);
+            }
+            var card = await Send(browser, HttpMethod.Post, "/api/items", Create("Hộ chiếu và giấy tờ"), 201);
+            var cardUnclear = true;
+            ai.Handler = command =>
+            {
+                if (command.Kind == "image.embed")
+                {
+                    var payload = EmbeddingPayload(command, factory.Services.GetRequiredService<IConfiguration>());
+                    ((Dictionary<string, object?>)payload["ocr"]!)["text"] = "CĂN CƯỚC CÔNG DÂN - SAMPLE";
+                    ((Dictionary<string, object?>)payload["ocr"]!)["hasUnclearText"] = cardUnclear;
+                    return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(StubAiGateway.ReplyMetadata(command)),
+                        JsonSerializer.SerializeToUtf8Bytes(payload)));
+                }
+                var metadata = ImageMetadata(command);
+                metadata["sensitiveRegions"] = new[] { "face", "identity_number", "address", "qr_code" }
+                    .Select(label => new { label, bbox = new[] { 0, 0, 1000, 1000 } }).ToArray();
+                return Task.FromResult(new AiReply(JsonSerializer.SerializeToElement(metadata), Output.ToArray()));
+            };
+            var cardPath = $"/api/items/{card.GetProperty("id").GetGuid()}/images";
+            await Binary(browser, cardPath, original, "image/png", 503);
+            cardUnclear = false;
+            var cardImage = await Binary(browser, cardPath, original, "image/png", 201);
+            await Send(browser, HttpMethod.Post, $"{cardPath}/{cardImage.GetProperty("id").GetGuid()}/review",
+                new { contentVersion = 1, decision = "approved" }, 200);
+            Check(true, "CCCD OCR overrides a passport post title without requiring a passport-number mask");
+        }
 
         async Task CheckSoftAreaAndGroups()
         {
@@ -305,8 +399,8 @@ static class ImageSearchChecks
             ai.Handler = command => SearchReply(command, candidates);
             const string query = "/api/search/images?area=quang%20trung";
             var result = await Multipart(browser, query, [original], "white bottle", 200);
-            Check(Ids(result).SequenceEqual([local.Id, remote.Id, weak.Id, imageOnly.Id, textOnly.Id]),
-                "results group combined matches before image-only and text-only matches, boost nearby matches and deduplicate items across groups");
+            Check(Ids(result).SequenceEqual([local.Id, weak.Id, remote.Id, imageOnly.Id, textOnly.Id]),
+                "results put the preferred area first, then combined, image-only and text-only groups, without duplicates");
             Check(result.GetProperty("filtersRelaxed").GetBoolean() && !result.GetProperty("partial").GetBoolean(),
                 "out-of-area results are reported and duplicate matches do not make the response partial");
             var limited = await Multipart(browser, query + "&limit=1", [original], "white bottle", 200);
@@ -315,24 +409,37 @@ static class ImageSearchChecks
             ai.Handler = command => SearchReply(command, Enumerable.Repeat(Fused(0.016, 0.008, remote.Image, remote.Text), 15)
                 .Append(Fused(0.0155, 0.008, local.Image, local.Text)).ToArray());
             limited = await Multipart(browser, query + "&limit=1", [original], "white bottle", 200);
-            Check(Ids(limited).SequenceEqual([local.Id]), "area boosting considers candidates beyond the old fifteen-candidate cutoff");
+            Check(Ids(limited).SequenceEqual([local.Id]), "area ordering considers candidates beyond the old fifteen-candidate cutoff");
             ai.Handler = command => SearchReply(command, candidates);
             var unfiltered = await Multipart(browser, "/api/search/images", [original], "white bottle", 200);
             Check(Ids(unfiltered).SequenceEqual([remote.Id, local.Id, weak.Id, imageOnly.Id, textOnly.Id]),
                 "without an area preference each group keeps descending relevance scores");
             ai.Handler = command => SearchReply(command, [Fused(0.016, 0.008, remote.Image, remote.Text), Fused(0.01, 0.005, weak.Image, weak.Text)]);
             result = await Multipart(browser, query, [original], "white bottle", 200);
-            Check(Ids(result).SequenceEqual([remote.Id, weak.Id]), "a bounded area boost cannot bury a much stronger out-of-area match");
+            Check(Ids(result).SequenceEqual([weak.Id, remote.Id]), "the preferred area comes before a higher-scoring out-of-area match");
             result = await Multipart(browser, query + "&from=2026-01-02", [original], "white bottle", 200);
             Check(!Ids(result).Any(), "soft area ranking keeps date filters strict");
 
             ai.Handler = command => SearchReply(command, [remote.Image, local.Image]);
             result = await Binary(browser, "/api/search/image?area=quang%20trung", original, "image/png", 200);
-            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "single-image search boosts the preferred area while retaining remote matches");
+            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "single-image search puts the preferred area first while retaining remote matches");
             ai.Handler = command => SearchReply(command, [remote.Text, local.Text]);
             result = await Send(browser, HttpMethod.Post, "/api/search", new { text = "white bottle", area = "quang trung" }, 200);
-            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "text search boosts the preferred area while retaining remote matches");
+            Check(Ids(result).SequenceEqual([local.Id, remote.Id]), "text search puts the preferred area first while retaining remote matches");
 
+            ai.Handler = command => SearchReply(command, [Fused(0.016, 0.008, remote.Image, remote.Text),
+                Fused(0.016, 0, local.Image), Fused(0, 0.008, weak.Text)]);
+            result = await Multipart(browser, "/api/search/images?area=QUANG%20TRUNG", [original], "white bottle", 200);
+            Check(Ids(result).SequenceEqual([local.Id, weak.Id, remote.Id]),
+                "case-insensitive area priority puts local image-only and text-only matches before remote combined matches");
+            limited = await Multipart(browser, query + "&limit=2", [original], "white bottle", 200);
+            Check(Ids(limited).SequenceEqual([local.Id, weak.Id]) && !limited.GetProperty("filtersRelaxed").GetBoolean(),
+                "the result limit is applied after area and modality grouping");
+            result = await Multipart(browser, "/api/search/images?area=unknown", [original], "white bottle", 200);
+            Check(Ids(result).SequenceEqual([remote.Id, local.Id, weak.Id]) && result.GetProperty("filtersRelaxed").GetBoolean(),
+                "an unmatched area keeps all results in their normal group and relevance order");
+
+            using var validationBrowser = await User("area-ranking-validation");
             foreach (var (field, invalid) in new (string, object?)[] {
                 ("imageScore", -0.001), ("imageScore", 1d), ("textScore", -0.001), ("textScore", 0.01),
                 ("score", 0.001), ("imageScore", "not-a-score"), ("textScore", null) })
@@ -340,16 +447,16 @@ static class ImageSearchChecks
                 var candidate = (Dictionary<string, object?>)Fused(0.016, 0.008, remote.Image, remote.Text);
                 candidate[field] = invalid;
                 ai.Handler = command => SearchReply(command, [candidate]);
-                await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+                await Multipart(validationBrowser, "/api/search/images", [original], "white bottle", 502);
             }
             var missing = (Dictionary<string, object?>)Fused(0.016, 0.008, remote.Image, remote.Text);
             missing.Remove("imageScore");
             ai.Handler = command => SearchReply(command, [missing]);
-            await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+            await Multipart(validationBrowser, "/api/search/images", [original], "white bottle", 502);
             ai.Handler = command => SearchReply(command, [Fused(0.016, 0, imageOnly.Image), Fused(0.01, 0.005, remote.Image, remote.Text)]);
-            await Multipart(browser, "/api/search/images", [original], "white bottle", 502);
+            await Multipart(validationBrowser, "/api/search/images", [original], "white bottle", 502);
             ai.Handler = command => SearchReply(command, [Fused(0.016, 0.0000000000001, imageOnly.Image)]);
-            await Multipart(browser, "/api/search/images", [original], null, 502);
+            await Multipart(validationBrowser, "/api/search/images", [original], null, 502);
 
             async Task<(Guid Id, object Text, object Image)> Publish(string title, string area)
             {
@@ -513,7 +620,13 @@ static class ImageSearchChecks
             var path = $"/api/items/{limitedId}/images";
             var firstKey = Guid.NewGuid();
             var uploaded = new List<JsonElement>();
-            ai.Handler = ImageReply;
+            ai.Handler = command =>
+            {
+                if (command.Kind == "image.embed")
+                    Check(command.Metadata.GetProperty("cacheScope").GetGuid() == actor,
+                        "upload image embedding cache is scoped to the authenticated actor");
+                return ImageReply(command);
+            };
             for (short position = 1; position <= 3; position++)
                 uploaded.Add(await Binary(browser, path + $"?position={position}", original, "image/png", 201,
                     position == 1 ? firstKey : null));
@@ -608,7 +721,7 @@ static class ImageSearchChecks
             var firstText = await Candidate(itemId, false);
             ai.Handler = command =>
             {
-                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 800, "batch requests retain every bounded branch candidate before API ranking");
+                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 20, "batch requests cap the complete fused candidate pool at twenty");
                 Check(!command.Persistent && command.Metadata.GetProperty("area").GetString() == "Campus"
                     && command.Metadata.GetProperty("from").GetString() == "2026-01-01"
                     && command.Metadata.GetProperty("until").GetString() == "2026-01-01", "batch search receives filters through transient AI transport");
@@ -619,7 +732,7 @@ static class ImageSearchChecks
                     && descriptors.All(value => value.GetProperty("contentType").GetString() == "image/png")
                     && command.Metadata.GetProperty("text").GetString() == "ví màu đen", "batch metadata preserves exact image boundaries and trimmed description");
                 var remaining = command.Metadata.GetProperty("deadlineAt").GetDateTimeOffset() - DateTimeOffset.UtcNow;
-                Check(remaining.TotalSeconds is > 935 and <= 940, "Python receives the complete multimodal search deadline");
+                Check(remaining.TotalSeconds is > 950 and <= 955, "Python receives the complete multimodal search and quality deadline");
                 buffers.Add(command.Body);
                 batchQueries++;
                 return SearchReply(command, [Fused(0.035, 0.005, imageCandidate, firstText), Fused(0, 0.005, secondText)]);
@@ -701,15 +814,15 @@ static class ImageSearchChecks
             using var limitBrowser = await User("candidate-limit-seeker");
             ai.Handler = command =>
             {
-                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 200, "text requests retain the bounded candidate pool before API ranking");
-                return SearchReply(command, Enumerable.Repeat(firstText, 200).ToArray());
+                Check(command.Metadata.GetProperty("candidateLimit").GetInt32() == 20, "text requests cap candidates at twenty before API ranking");
+                return SearchReply(command, Enumerable.Repeat(firstText, 20).ToArray());
             };
             await Send(limitBrowser, HttpMethod.Post, "/api/search", new { text = "wallet" }, 200);
-            ai.Handler = command => SearchReply(command, Enumerable.Repeat(firstText, 201).ToArray());
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(firstText, 21).ToArray());
             await Send(limitBrowser, HttpMethod.Post, "/api/search", new { text = "wallet" }, 502);
-            ai.Handler = command => SearchReply(command, Enumerable.Repeat(imageCandidate, 201).ToArray());
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(imageCandidate, 21).ToArray());
             await Binary(limitBrowser, "/api/search/image", original, "image/png", 502);
-            ai.Handler = command => SearchReply(command, Enumerable.Repeat(Fused(1d / 61, 0, imageCandidate), 201).ToArray());
+            ai.Handler = command => SearchReply(command, Enumerable.Repeat(Fused(1d / 61, 0, imageCandidate), 21).ToArray());
             await Multipart(limitBrowser, "/api/search/images", [original], null, 502);
             ai.Handler = command => SearchReply(command, [imageCandidate]);
         }
